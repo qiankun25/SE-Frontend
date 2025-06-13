@@ -27,8 +27,12 @@
         <!-- 条件筛选区域 -->
         <search-conditions ref="searchConditionsRef" @search="handleConditionSearch" @remove="removeCondition" />
 
+        <!-- 展示字段选择区域 -->
+        <display-fields @fields-change="handleFieldsChange" />
+
         <!-- 数据表格区域 -->
-        <company-table ref="tableRef" :data="tableData" :loading="loading" @sort-change="handleSortChange"
+        <company-table ref="tableRef" :data="tableData" :loading="loading" :selected-fields="selectedFields"
+            :time-range="currentTimeRange" @sort-change="handleSortChange"
             @pagination-change="handlePaginationChange" />
     </div>
 </template>
@@ -40,25 +44,14 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import SearchConditions from '../components/SearchConditions.vue'
 import CompanyTable from '../components/CompanyTable.vue'
+import DisplayFields from '../components/DisplayFields.vue'
 import ExcelJS from 'exceljs'
-
-interface CompanyData {
-    id: number
-    name: string
-    code: string
-    address: string
-    certificateCount: number
-    vehicleType: string
-    category: string
-    fuelType: string
-    uploadYear: number
-    uploadMonth: number
-}
+import { companiesData } from '../datas/companiesData'
 
 const router = useRouter()
 const username = ref(localStorage.getItem('username') || '用户')
 const searchKeyword = ref('')
-const tableData = ref<CompanyData[]>([])
+const tableData = ref([])
 const loading = ref(false)
 const exporting = ref(false)
 const searchConditionsRef = ref()
@@ -74,11 +67,35 @@ const pageSize = ref(10)
 
 // 当前的搜索条件
 const currentConditions = ref<any[]>([])
+const currentTimeRange = ref<[Date, Date] | null>(null)
+
+// 选中的展示字段
+const selectedFields = ref<string[]>([
+    'company_id',
+    'company_name',
+    'social_credit_code',
+    'company_type',
+    'national_standard_industry',
+    'registered_address',
+    'subsidiaries',
+    'production_addresses',
+    'capacity',
+    'vehicle_brand',
+    'vehicle_category',
+    'new_energy',
+    'certificate_count'
+])
 
 // 条件搜索处理
 const handleConditionSearch = (conditions: any[]) => {
     currentConditions.value = conditions
-    console.log('搜索条件:', conditions)
+    // 更新时间范围
+    const timeRangeCondition = conditions.find(c => c.timeRange)
+    if (timeRangeCondition) {
+        currentTimeRange.value = timeRangeCondition.timeRange
+    } else {
+        currentTimeRange.value = null
+    }
     fetchData()
 }
 
@@ -89,39 +106,17 @@ const removeCondition = (index: number) => {
     fetchData()
 }
 
-// 模拟数据获取
+// 字段变化处理
+const handleFieldsChange = (fields: string[]) => {
+    selectedFields.value = fields
+}
+
+// 获取数据
 const fetchData = async () => {
     loading.value = true
     try {
-        // TODO: 替换为实际的API调用
-        // 这里模拟API调用
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        // 模拟数据
-        const mockData: CompanyData[] = Array.from({ length: 20 }, (_, index) => ({
-            id: index + 1,
-            name: '企业' + (index + 1),
-            code: 'CODE' + (index + 1),
-            address: '地址' + (index + 1),
-            certificateCount: Math.floor(Math.random() * 1000),
-            vehicleType: Math.random() > 0.5 ? '整车' : '底盘',
-            category: ['乘用车', '货车', '客车', '专用车', '摩托车', '挂车'][Math.floor(Math.random() * 6)],
-            fuelType: Math.random() > 0.5 ? '燃油' : '新能源',
-            uploadYear: 2024,
-            uploadMonth: Math.floor(Math.random() * 12) + 1
-        }))
-
-        // 应用排序
-        if (currentSort.value.prop && currentSort.value.order) {
-            mockData.sort((a, b) => {
-                const factor = currentSort.value.order === 'ascending' ? 1 : -1
-                const aValue = a[currentSort.value.prop as keyof CompanyData]
-                const bValue = b[currentSort.value.prop as keyof CompanyData]
-                return ((aValue as number) - (bValue as number)) * factor
-            })
-        }
-
-        tableData.value = mockData
+        // 使用实际数据
+        tableData.value = companiesData
     } catch (error) {
         console.error('获取数据失败:', error)
         ElMessage.error('获取数据失败')
@@ -132,7 +127,6 @@ const fetchData = async () => {
 
 // 搜索处理
 const handleSearch = () => {
-    // TODO: 实现搜索逻辑
     console.log('搜索关键字:', searchKeyword.value)
     fetchData()
 }
@@ -150,6 +144,28 @@ const handlePaginationChange = ({ page, size }: { page: number, size: number }) 
     fetchData()
 }
 
+// 计算合格证数量
+const calculateCertificateCount = (vehicle: any) => {
+    if (!currentTimeRange.value) {
+        return 0
+    }
+
+    const [start, end] = currentTimeRange.value
+    const certificateData = vehicle.certificate_count[0]
+    let totalCount = 0
+
+    certificateData.forEach((item: any) => {
+        const [year, month] = item.time.split('-')
+        const itemDate = new Date(parseInt(year), parseInt(month) - 1)
+
+        if (itemDate >= start && itemDate <= end) {
+            totalCount += item.count
+        }
+    })
+
+    return totalCount
+}
+
 // 导出数据
 const handleExport = async () => {
     try {
@@ -165,21 +181,47 @@ const handleExport = async () => {
         const worksheet = workbook.addWorksheet('企业数据')
 
         // 定义表头
-        worksheet.columns = [
-            { header: '企业ID', key: 'id', width: 10 },
-            { header: '企业代码', key: 'code', width: 15 },
-            { header: '企业名称', key: 'name', width: 30 },
-            { header: '地址', key: 'address', width: 40 },
-            { header: '合格证数量', key: 'certificateCount', width: 15 },
-            { header: '底盘或整车', key: 'vehicleType', width: 15 },
-            { header: '六大类', key: 'category', width: 15 },
-            { header: '能源类型', key: 'fuelType', width: 15 },
-            { header: '上传年', key: 'uploadYear', width: 10 },
-            { header: '上传月', key: 'uploadMonth', width: 10 }
-        ]
+        const headers = selectedFields.value.map(field => {
+            const fieldMap: Record<string, string> = {
+                company_id: '企业ID',
+                company_name: '企业名称',
+                social_credit_code: '企业代码',
+                company_type: '企业类型',
+                national_standard_industry: '国标行业分类',
+                registered_address: '注册地址',
+                subsidiaries: '子公司名称',
+                production_addresses: '生产基地名称',
+                capacity: '基地产能',
+                vehicle_brand: '车辆品牌',
+                vehicle_category: '车辆类别',
+                new_energy: '能源类型',
+                certificate_count: '合格证数量'
+            }
+            return { header: fieldMap[field], key: field, width: 20 }
+        })
+
+        worksheet.columns = headers
 
         // 添加数据
-        worksheet.addRows(data)
+        data.forEach(company => {
+            const row: any = {}
+            selectedFields.value.forEach(field => {
+                if (field === 'subsidiaries') {
+                    row[field] = company.subsidiaries.map((s: any) => s.company_name).join(', ')
+                } else if (field === 'production_addresses') {
+                    row[field] = company.production_addresses.map((a: any) => a.address).join(', ')
+                } else if (field === 'capacity') {
+                    row[field] = company.production_addresses.map((a: any) => `${a.capacity}万辆`).join(', ')
+                } else if (field === 'vehicle_brand' || field === 'vehicle_category' || field === 'new_energy') {
+                    row[field] = company.vehicles.map((v: any) => v[field] || '传统能源').join(', ')
+                } else if (field === 'certificate_count') {
+                    row[field] = company.vehicles.map((v: any) => calculateCertificateCount(v)).join(', ')
+                } else {
+                    row[field] = company[field]
+                }
+            })
+            worksheet.addRow(row)
+        })
 
         // 生成并下载文件
         const buffer = await workbook.xlsx.writeBuffer()
