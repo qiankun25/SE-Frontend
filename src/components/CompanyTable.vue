@@ -93,20 +93,56 @@ const total = computed(() => props.data.length)
 
 // 处理数据展示
 const processedData = computed(() => {
+    console.log('CompanyTable props:', {
+        data: props.data,
+        selectedFields: props.selectedFields,
+        timeRange: props.timeRange
+    })
+
+    if (!props.data || !Array.isArray(props.data)) {
+        console.warn('CompanyTable: 接收到的数据不是数组或为空')
+        return []
+    }
+
     return props.data.map(company => {
-        const processedCompany = { ...company }
-        if (props.timeRange && props.timeRange.length === 2) {
-            processedCompany.vehicles = company.vehicles.map(vehicle => ({
-                ...vehicle,
-                certificate_count: calculateCertificateCount(vehicle)
-            }))
+        if (!company) {
+            console.warn('CompanyTable: 企业数据为空')
+            return {}
         }
+
+        const processedCompany = { ...company }
+
+        // 确保 vehicles 数组存在
+        if (!processedCompany.vehicles) {
+            processedCompany.vehicles = []
+        }
+
+        if (props.timeRange && props.timeRange.length === 2) {
+            processedCompany.vehicles = processedCompany.vehicles.map(vehicle => {
+                if (!vehicle) {
+                    console.warn('CompanyTable: 车辆数据为空')
+                    return {}
+                }
+
+                return {
+                    ...vehicle,
+                    certificate_count: calculateCertificateCount(vehicle)
+                }
+            })
+        }
+
+        console.log('处理后的企业数据：', processedCompany)
         return processedCompany
     })
 })
 
 // 计算合格证数量
 const calculateCertificateCount = (vehicle: any) => {
+    if (!vehicle || !vehicle.certificate_count || !Array.isArray(vehicle.certificate_count[0])) {
+        console.warn('CompanyTable: 车辆合格证数据格式不正确')
+        return 0
+    }
+
     if (!props.timeRange || props.timeRange.length !== 2) {
         return 0
     }
@@ -124,9 +160,18 @@ const calculateCertificateCount = (vehicle: any) => {
     let totalCount = 0
 
     certificateData.forEach((item: any) => {
-        const [year, month] = item.time.split('-')
-        const itemDate = new Date(parseInt(year), parseInt(month) - 1)
+        if (!item || !item.time || !item.count) {
+            console.warn('CompanyTable: 合格证数据项格式不正确')
+            return
+        }
 
+        const [year, month] = item.time.split('-')
+        if (!year || !month) {
+            console.warn('CompanyTable: 合格证时间格式不正确')
+            return
+        }
+
+        const itemDate = new Date(parseInt(year), parseInt(month) - 1)
         if (itemDate >= start && itemDate <= end) {
             totalCount += item.count
         }

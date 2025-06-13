@@ -34,7 +34,18 @@ const searchConditionsRef = ref()
 
 // 数据状态
 const companiesData = ref<Company[]>([])
-const selectedFields = ref<string[]>([])
+const originalData = ref<Company[]>([])
+const selectedFields = ref<string[]>([
+    'company_id',
+    'company_name',
+    'social_credit_code',
+    'company_type',
+    'national_standard_industry',
+    'registered_address',
+    'subsidiaries',
+    'production_addresses',
+    'vehicle_brand'
+])
 const currentTimeRange = ref<[Date, Date] | undefined>(undefined)
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -43,6 +54,8 @@ const sortOrder = ref<'asc' | 'desc'>('asc')
 
 // 过滤后的数据
 const filteredData = computed(() => {
+    console.log('计算 filteredData，当前数据：', companiesData.value)
+    console.log('当前选中的字段：', selectedFields.value)
     return companiesData.value
 })
 
@@ -50,6 +63,7 @@ const filteredData = computed(() => {
 const handleSearch = (conditions: any[]) => {
     console.log('开始搜索，搜索条件：', conditions)
     currentPage.value = 1
+
     // 更新当前时间范围
     if (conditions.length > 0 && conditions[0].timeRange) {
         currentTimeRange.value = conditions[0].timeRange
@@ -57,8 +71,8 @@ const handleSearch = (conditions: any[]) => {
         currentTimeRange.value = undefined
     }
 
-    // 强制更新过滤后的数据
-    const filtered = companiesData.value.filter(company => {
+    // 从原始数据中过滤
+    const filtered = originalData.value.filter(company => {
         console.log('正在检查企业：', company.company_name)
         return conditions.every((condition: any) => {
             // 企业名称匹配
@@ -137,10 +151,16 @@ const handleRemoveCondition = (index: number) => {
     if (searchConditionsRef.value?.selectedConditions[index]?.timeRange) {
         currentTimeRange.value = undefined
     }
+
+    // 如果没有搜索条件了，恢复原始数据
+    if (searchConditionsRef.value?.selectedConditions.length === 0) {
+        companiesData.value = originalData.value
+    }
 }
 
 // 处理字段变化
 const handleFieldsChange = (fields: string[]) => {
+    console.log('字段变化：', fields)
     selectedFields.value = fields
 }
 
@@ -223,9 +243,11 @@ onMounted(async () => {
     try {
         // 导入数据
         const { companiesData: data } = await import('../datas/companiesData.js')
-        companiesData.value = data
+        originalData.value = data // 保存原始数据
+        companiesData.value = data // 设置当前数据
         console.log('数据加载完成，总数据量：', companiesData.value.length)
         console.log('示例数据：', companiesData.value[0])
+        console.log('初始选中的字段：', selectedFields.value)
     } catch (error) {
         console.error('数据加载失败：', error)
         ElMessage.error('获取数据失败')

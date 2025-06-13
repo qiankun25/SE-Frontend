@@ -582,7 +582,7 @@ export const companiesData =  [
         "company_name": "广东小鹏汽车科技集团有限公司",
         "social_credit_code": "91440101MA5CTGH317",
         "company_type": "有限责任公司（港澳台法人独资）",
-        "national_standard_industry": "工程和技术研究和试验发展",
+        "national_standard_industry": "新能源车整车制造",
         "registered_address": "广州市黄埔区中新知识城亿创街1号406房之176",
         "center": [
           113.554301,

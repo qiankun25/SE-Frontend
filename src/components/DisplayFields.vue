@@ -29,12 +29,8 @@ const fields = ref<Field[]>([
     { key: 'national_standard_industry', label: '国标行业分类', selected: true },
     { key: 'registered_address', label: '注册地址', selected: true },
     { key: 'subsidiaries', label: '子公司名称', selected: true },
-    { key: 'production_addresses', label: '生产基地名称', selected: true },
-    { key: 'capacity', label: '基地产能', selected: true },
-    { key: 'vehicle_brand', label: '车辆品牌', selected: true },
-    { key: 'vehicle_category', label: '车辆类别', selected: true },
-    { key: 'new_energy', label: '能源类型', selected: true },
-    { key: 'certificate_count', label: '合格证数量', selected: true }
+    { key: 'production_addresses', label: '生产基地信息', selected: true },
+    { key: 'vehicle_brand', label: '车辆信息', selected: true }
 ])
 
 const toggleField = (field: Field) => {
