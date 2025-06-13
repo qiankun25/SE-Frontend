@@ -1,75 +1,86 @@
 <template>
     <div class="search-conditions">
-        <el-form :model="form" label-width="120px">
-            <el-row :gutter="20">
-                <el-col :span="8">
-                    <el-form-item label="企业名称">
-                        <el-input v-model="form.companyName" placeholder="请输入企业名称" />
-                    </el-form-item>
-                </el-col>
-                <el-col :span="8">
-                    <el-form-item label="能源类型">
-                        <el-select v-model="form.energyType" placeholder="请选择能源类型" style="width: 100%">
-                            <el-option label="全部" value="" />
-                            <el-option label="燃油" value="fuel" />
-                            <el-option label="新能源" value="new_energy" />
-                        </el-select>
-                    </el-form-item>
-                </el-col>
-                <el-col :span="8">
-                    <el-form-item label="六大类">
-                        <el-select v-model="form.vehicleCategory" placeholder="请选择车辆类别" style="width: 100%">
-                            <el-option label="全部" value="" />
-                            <el-option label="乘用车" value="passenger" />
-                            <el-option label="货车" value="truck" />
-                            <el-option label="客车" value="bus" />
-                            <el-option label="专用车" value="special" />
-                            <el-option label="摩托车" value="motorcycle" />
-                            <el-option label="挂车" value="trailer" />
-                        </el-select>
-                    </el-form-item>
-                </el-col>
-            </el-row>
-
-            <el-row :gutter="20">
-                <el-col :span="12">
-                    <el-form-item label="时间段">
-                        <div class="time-range">
+        <div class="condition-form">
+            <el-form :model="form" label-width="100px">
+                <el-row :gutter="20">
+                    <el-col :span="8">
+                        <el-form-item label="企业名称">
+                            <el-input v-model="form.company_name" placeholder="请输入企业名称" />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="8">
+                        <el-form-item label="国标行业分类">
+                            <el-select v-model="form.national_standard_industry" placeholder="请选择搜索的国标行业"
+                                style="width: 100%">
+                                <el-option label="全部" value="" />
+                                <el-option label="汽柴油车整车制造" value="汽柴油车整车制造" />
+                                <el-option label="新能源车整车制造" value="新能源车整车制造" />
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="8">
+                        <el-form-item label="新能源类别">
+                            <el-select v-model="form.new_energy" placeholder="请选择能源类型" style="width: 100%">
+                                <el-option label="全部" value="" />
+                                <el-option label="非新能源车" value="null" />
+                                <el-option label="纯电动" value="纯电动" />
+                                <el-option label="插电式混合动力" value="插电式混合动力" />
+                                <el-option label="增程式电动" value="增程式电动" />
+                                <el-option label="燃料电池" value="燃料电池" />
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-row :gutter="20">
+                    <el-col :span="8">
+                        <el-form-item label="六大类">
+                            <el-select v-model="form.vehicle_category" placeholder="请选择车辆类别" style="width: 100%">
+                                <el-option label="全部" value="" />
+                                <el-option label="乘用车" value="乘用车" />
+                                <el-option label="货车" value="货车" />
+                                <el-option label="客车" value="客车" />
+                                <el-option label="专用车" value="专用车" />
+                                <el-option label="摩托车" value="摩托车" />
+                                <el-option label="挂车" value="挂车" />
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="8">
+                        <el-form-item label="车辆类型">
+                            <el-select v-model="form.vehicle_type" placeholder="请选择车辆类型" style="width: 100%">
+                                <el-option label="全部" value="" />
+                                <el-option label="整车" value="整车" />
+                                <el-option label="底盘" value="底盘" />
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="8">
+                        <el-form-item label="时间范围">
                             <el-date-picker v-model="form.timeRange" type="daterange" range-separator="至"
-                                start-placeholder="开始日期" end-placeholder="结束日期" :shortcuts="dateShortcuts"
-                                value-format="YYYY-MM" style="width: 100%" unlink-panels />
-                        </div>
-                    </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                    <el-form-item label="合格证类别">
-                        <el-select v-model="form.certificateType" placeholder="请选择合格证类别" style="width: 100%">
-                            <el-option label="全部" value="" />
-                            <el-option label="整车" value="complete" />
-                            <el-option label="底盘" value="chassis" />
-                        </el-select>
-                    </el-form-item>
-                </el-col>
-            </el-row>
-
-            <el-row>
-                <el-col :span="24" style="text-align: center">
+                                start-placeholder="开始日期" end-placeholder="结束日期" style="width: 100%" />
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-form-item>
                     <el-button type="primary" @click="handleAddCondition">添加条件</el-button>
-                    <el-button @click="handleReset">重置</el-button>
-                </el-col>
-            </el-row>
+                    <el-button @click="resetForm">重置</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
 
-            <!-- 已选条件展示区域 -->
-            <div v-if="selectedConditions.length > 0" class="selected-conditions">
-                <div class="conditions-title">已选条件：</div>
-                <div class="conditions-list">
-                    <el-tag v-for="(condition, index) in selectedConditions" :key="index" closable class="condition-tag"
-                        @close="removeCondition(index)">
-                        {{ formatCondition(condition) }}
-                    </el-tag>
-                </div>
+        <div class="selected-conditions" v-if="selectedConditions.length > 0">
+            <div class="condition-tags">
+                <el-tag v-for="(condition, index) in selectedConditions" :key="index" closable
+                    @close="handleRemoveCondition(index)" class="condition-tag">
+                    {{ formatCondition(condition) }}
+                </el-tag>
             </div>
-        </el-form>
+            <div class="condition-actions">
+                <el-button type="primary" @click="handleSearch"
+                    :disabled="selectedConditions.length === 0">搜索</el-button>
+                <el-button @click="handleReset">重置</el-button>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -77,158 +88,122 @@
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 
-const emit = defineEmits(['search'])
-
 interface SearchForm {
-    companyName: string
-    energyType: string
-    vehicleCategory: string
+    company_name: string
+    national_standard_industry: string
+    new_energy: string
+    vehicle_category: string
+    vehicle_type: string
     timeRange: [Date, Date] | undefined
-    certificateType: string
 }
 
+const emit = defineEmits(['search', 'remove'])
+
 const form = reactive<SearchForm>({
-    companyName: '',
-    energyType: '',
-    vehicleCategory: '',
-    timeRange: undefined,
-    certificateType: ''
+    company_name: '',
+    national_standard_industry: '',
+    new_energy: '',
+    vehicle_category: '',
+    vehicle_type: '',
+    timeRange: undefined
 })
 
-const selectedConditions = ref<SearchForm[]>([])
+const selectedConditions = ref<any[]>([])
 
-// 日期快捷选项
-const dateShortcuts = [
-    {
-        text: '本季度',
-        value: () => {
-            const now = new Date()
-            const quarter = Math.floor((now.getMonth() / 3))
-            const start = new Date(now.getFullYear(), quarter * 3, 1)
-            const end = new Date(now.getFullYear(), (quarter + 1) * 3, 0)
-            return [start, end]
-        }
-    },
-    {
-        text: '今年',
-        value: () => {
-            const now = new Date()
-            return [
-                new Date(now.getFullYear(), 0, 1),
-                new Date(now.getFullYear(), 11, 31)
-            ]
-        }
-    },
-    {
-        text: '去年',
-        value: () => {
-            const now = new Date()
-            return [
-                new Date(now.getFullYear() - 1, 0, 1),
-                new Date(now.getFullYear() - 1, 11, 31)
-            ]
-        }
-    },
-    {
-        text: '近两年',
-        value: () => {
-            const now = new Date()
-            return [
-                new Date(now.getFullYear() - 1, 0, 1),
-                new Date(now.getFullYear(), 11, 31)
-            ]
-        }
+const handleAddCondition = () => {
+    const condition: SearchCondition = {}
+
+    if (form.company_name) {
+        condition.company_name = form.company_name
     }
-]
+    if (form.national_standard_industry) {
+        condition.national_standard_industry = form.national_standard_industry
+    }
+    if (form.new_energy) {
+        condition.new_energy = form.new_energy
+    }
+    if (form.vehicle_category) {
+        condition.vehicle_category = form.vehicle_category
+    }
+    if (form.vehicle_type) {
+        condition.vehicle_type = form.vehicle_type
+    }
+    if (form.timeRange) {
+        condition.timeRange = form.timeRange
+    }
 
-// 格式化条件显示
-const formatCondition = (condition: SearchForm) => {
+    // 只有当至少有一个条件被设置时才添加
+    if (Object.keys(condition).length > 0) {
+        selectedConditions.value = [...selectedConditions.value, condition]
+        console.log('添加条件后的条件列表：', selectedConditions.value)
+        resetForm()
+    }
+}
+
+const handleSearch = () => {
+    if (selectedConditions.value.length === 0) {
+        ElMessage.warning('请至少添加一个搜索条件')
+        return
+    }
+    console.log('发送搜索条件：', selectedConditions.value)
+    emit('search', selectedConditions.value)
+}
+
+const handleRemoveCondition = (index: number) => {
+    selectedConditions.value = selectedConditions.value.filter((_, i) => i !== index)
+    console.log('移除条件后的条件列表：', selectedConditions.value)
+    emit('remove', index)
+}
+
+const handleReset = () => {
+    selectedConditions.value = []
+    resetForm()
+    console.log('重置后的条件列表：', selectedConditions.value)
+    emit('search', [])
+}
+
+const resetForm = () => {
+    form.company_name = ''
+    form.national_standard_industry = ''
+    form.new_energy = ''
+    form.vehicle_category = ''
+    form.vehicle_type = ''
+    form.timeRange = undefined
+}
+
+const formatDate = (date: Date) => {
+    return date.toLocaleDateString()
+}
+
+const formatCondition = (condition: any) => {
     const parts: string[] = []
 
-    if (condition.companyName) {
-        parts.push(`企业名称: ${condition.companyName}`)
+    if (condition.company_name) {
+        parts.push(`企业名称: ${condition.company_name}`)
     }
-    if (condition.energyType) {
-        parts.push(`能源类型: ${condition.energyType === 'fuel' ? '燃油' : '新能源'}`)
+    if (condition.national_standard_industry) {
+        parts.push(`国标行业分类: ${condition.national_standard_industry}`)
     }
-    if (condition.vehicleCategory) {
-        const categoryMap: Record<string, string> = {
-            passenger: '乘用车',
-            truck: '货车',
-            bus: '客车',
-            special: '专用车',
-            motorcycle: '摩托车',
-            trailer: '挂车'
+    if (condition.new_energy) {
+        const energyTypeMap: Record<string, string> = {
+            'null': '非新能源车',
+            '纯电动': '纯电动',
+            '插电式混合动力': '插电式混合动力',
+            '增程式电动': '增程式电动',
+            '燃料电池': '燃料电池'
         }
-        parts.push(`六大类: ${categoryMap[condition.vehicleCategory] || condition.vehicleCategory}`)
+        parts.push(`能源类型: ${energyTypeMap[condition.new_energy] || condition.new_energy}`)
+    }
+    if (condition.vehicle_category) {
+        parts.push(`车辆类别: ${condition.vehicle_category}`)
     }
     if (condition.timeRange) {
         const [start, end] = condition.timeRange
-        const formatDate = (date: Date) => {
-            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-        }
         parts.push(`时间段: ${formatDate(start)} 至 ${formatDate(end)}`)
-    }
-    if (condition.certificateType) {
-        parts.push(`合格证类别: ${condition.certificateType === 'complete' ? '整车' : '底盘'}`)
     }
 
     return parts.join(' | ')
 }
-
-// 添加条件
-const handleAddCondition = () => {
-    // 检查是否有选择条件
-    const hasCondition = Object.values(form).some(value => {
-        if (Array.isArray(value)) {
-            return value.some(v => v)
-        }
-        return value !== ''
-    })
-
-    if (!hasCondition) {
-        ElMessage.warning('请至少选择一个条件')
-        return
-    }
-
-    selectedConditions.value.push({ ...form })
-    emit('search', selectedConditions.value)
-}
-
-// 移除条件
-const removeCondition = (index: number) => {
-    selectedConditions.value.splice(index, 1)
-    emit('search', selectedConditions.value)
-}
-
-// 重置
-const handleReset = () => {
-    resetConditions()
-    emit('search', [])
-}
-
-// 更新条件列表
-const updateConditions = (conditions: SearchForm[]) => {
-    selectedConditions.value = conditions
-}
-
-// 重置所有条件
-const resetConditions = () => {
-    Object.keys(form).forEach(key => {
-        if (key === 'timeRange') {
-            (form as any)[key] = undefined
-        } else {
-            (form as any)[key] = ''
-        }
-    })
-    selectedConditions.value = []
-}
-
-// 暴露方法给父组件
-defineExpose({
-    updateConditions,
-    resetConditions
-})
 </script>
 
 <style scoped>
@@ -239,35 +214,26 @@ defineExpose({
     box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
-.time-range {
-    display: flex;
-    gap: 10px;
-    align-items: center;
+.condition-form {
+    margin-bottom: 20px;
 }
 
 .selected-conditions {
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #f5f7fa;
-    border-radius: 4px;
+    border-top: 1px solid #ebeef5;
+    padding-top: 20px;
 }
 
-.conditions-title {
-    font-weight: bold;
-    margin-bottom: 10px;
-    color: #606266;
-}
-
-.conditions-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+.condition-tags {
+    margin-bottom: 15px;
 }
 
 .condition-tag {
-    max-width: 100%;
-    white-space: normal;
-    height: auto;
-    padding: 5px 10px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+.condition-actions {
+    display: flex;
+    gap: 10px;
 }
 </style>

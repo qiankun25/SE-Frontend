@@ -1,295 +1,263 @@
 <template>
-    <div class="home-container">
-        <!-- 顶部操作栏 -->
-        <div class="header-actions">
-            <div class="welcome-text">
-                欢迎, {{ username }}
+    <div class="home">
+        <div class="header">
+            <div class="welcome">
+                <h2>欢迎使用汽车企业查询系统</h2>
             </div>
-            <div class="action-buttons">
-                <el-button type="primary" @click="handleExport" :loading="exporting">
-                    导出数据
-                </el-button>
-                <el-button type="danger" @click="handleLogout">
-                    退出登录
-                </el-button>
+            <div class="actions">
+                <el-button type="primary" @click="handleExport">导出数据</el-button>
+                <el-button @click="handleLogout">退出登录</el-button>
             </div>
         </div>
 
-        <!-- 顶部搜索框 -->
-        <div class="search-header">
-            <el-input v-model="searchKeyword" placeholder="请输入关键字搜索" class="top-search" :prefix-icon="Search">
-                <template #append>
-                    <el-button :icon="Search" @click="handleSearch">搜索</el-button>
-                </template>
-            </el-input>
+        <div class="main-content">
+            <search-conditions ref="searchConditionsRef" @search="handleSearch" @remove="handleRemoveCondition" />
+            <display-fields v-model:selected-fields="selectedFields" @change="handleFieldsChange" />
+            <company-table :data="filteredData" :selected-fields="selectedFields" :time-range="currentTimeRange"
+                @sort="handleSort" @page-change="handlePageChange" @size-change="handleSizeChange" />
         </div>
-
-        <!-- 条件筛选区域 -->
-        <search-conditions ref="searchConditionsRef" @search="handleConditionSearch" @remove="removeCondition" />
-
-        <!-- 展示字段选择区域 -->
-        <display-fields @fields-change="handleFieldsChange" />
-
-        <!-- 数据表格区域 -->
-        <company-table ref="tableRef" :data="tableData" :loading="loading" :selected-fields="selectedFields"
-            :time-range="currentTimeRange" @sort-change="handleSortChange"
-            @pagination-change="handlePaginationChange" />
     </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
-import { Search } from '@element-plus/icons-vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import SearchConditions from '../components/SearchConditions.vue'
-import CompanyTable from '../components/CompanyTable.vue'
 import DisplayFields from '../components/DisplayFields.vue'
-import ExcelJS from 'exceljs'
-import { companiesData } from '../datas/companiesData'
+import CompanyTable from '../components/CompanyTable.vue'
+import type { Company } from '../types/company'
+import { exportToExcel } from '../utils/export'
 
 const router = useRouter()
-const username = ref(localStorage.getItem('username') || '用户')
-const searchKeyword = ref('')
-const tableData = ref([])
-const loading = ref(false)
-const exporting = ref(false)
 const searchConditionsRef = ref()
-const tableRef = ref()
 
-// 当前的排序和分页状态
-const currentSort = ref({
-    prop: '',
-    order: ''
-})
+// 数据状态
+const companiesData = ref<Company[]>([])
+const selectedFields = ref<string[]>([])
+const currentTimeRange = ref<[Date, Date] | undefined>(undefined)
 const currentPage = ref(1)
 const pageSize = ref(10)
+const sortField = ref<string>('')
+const sortOrder = ref<'asc' | 'desc'>('asc')
 
-// 当前的搜索条件
-const currentConditions = ref<any[]>([])
-const currentTimeRange = ref<[Date, Date] | null>(null)
+// 过滤后的数据
+const filteredData = computed(() => {
+    return companiesData.value
+})
 
-// 选中的展示字段
-const selectedFields = ref<string[]>([
-    'company_id',
-    'company_name',
-    'social_credit_code',
-    'company_type',
-    'national_standard_industry',
-    'registered_address',
-    'subsidiaries',
-    'production_addresses',
-    'capacity',
-    'vehicle_brand',
-    'vehicle_category',
-    'new_energy',
-    'certificate_count'
-])
-
-// 条件搜索处理
-const handleConditionSearch = (conditions: any[]) => {
-    currentConditions.value = conditions
-    // 更新时间范围
-    const timeRangeCondition = conditions.find(c => c.timeRange)
-    if (timeRangeCondition) {
-        currentTimeRange.value = timeRangeCondition.timeRange
+// 处理搜索
+const handleSearch = (conditions: any[]) => {
+    console.log('开始搜索，搜索条件：', conditions)
+    currentPage.value = 1
+    // 更新当前时间范围
+    if (conditions.length > 0 && conditions[0].timeRange) {
+        currentTimeRange.value = conditions[0].timeRange
     } else {
-        currentTimeRange.value = null
+        currentTimeRange.value = undefined
     }
-    fetchData()
+
+    // 强制更新过滤后的数据
+    const filtered = companiesData.value.filter(company => {
+        console.log('正在检查企业：', company.company_name)
+        return conditions.every((condition: any) => {
+            // 企业名称匹配
+            if (condition.company_name && condition.company_name !== '') {
+                const nameMatch = company.company_name.includes(condition.company_name)
+                console.log('企业名称匹配：', company.company_name, condition.company_name, nameMatch)
+                if (!nameMatch) return false
+            }
+
+            // 国标行业分类匹配
+            if (condition.national_standard_industry && condition.national_standard_industry !== '') {
+                const industryMatch = company.national_standard_industry === condition.national_standard_industry
+                console.log('行业分类匹配：', company.company_name, company.national_standard_industry, condition.national_standard_industry, industryMatch)
+                if (!industryMatch) return false
+            }
+
+            // 新能源类别匹配
+            if (condition.new_energy && condition.new_energy !== '') {
+                const hasMatchingVehicle = company.vehicles.some(vehicle => {
+                    if (condition.new_energy === 'null') {
+                        return vehicle.new_energy === null
+                    }
+                    return vehicle.new_energy === condition.new_energy
+                })
+                console.log('新能源类别匹配：', company.company_name, condition.new_energy, hasMatchingVehicle)
+                if (!hasMatchingVehicle) return false
+            }
+
+            // 车辆类别匹配
+            if (condition.vehicle_category && condition.vehicle_category !== '') {
+                const hasMatchingCategory = company.vehicles.some(vehicle =>
+                    vehicle.vehicle_category === condition.vehicle_category
+                )
+                console.log('车辆类别匹配：', company.company_name, condition.vehicle_category, hasMatchingCategory)
+                if (!hasMatchingCategory) return false
+            }
+
+            // 车辆类型匹配（整车/底盘）
+            if (condition.vehicle_type && condition.vehicle_type !== '') {
+                const isCompleteVehicle = company.national_standard_industry.includes('整车制造')
+                const typeMatch = (condition.vehicle_type === '整车' && isCompleteVehicle) ||
+                    (condition.vehicle_type === '底盘' && !isCompleteVehicle)
+                console.log('车辆类型匹配：', company.company_name, condition.vehicle_type, typeMatch)
+                if (!typeMatch) return false
+            }
+
+            // 时间段匹配
+            if (condition.timeRange) {
+                const [start, end] = condition.timeRange
+                const hasMatchingTimeRange = company.vehicles.some(vehicle => {
+                    const certificateData = vehicle.certificate_count[0]
+                    return certificateData.some((item: any) => {
+                        const [year, month] = item.time.split('-')
+                        const itemDate = new Date(parseInt(year), parseInt(month) - 1)
+                        return itemDate >= start && itemDate <= end
+                    })
+                })
+                console.log('时间段匹配：', company.company_name, condition.timeRange, hasMatchingTimeRange)
+                if (!hasMatchingTimeRange) return false
+            }
+
+            return true
+        })
+    })
+
+    console.log('过滤后数据量：', filtered.length)
+    console.log('过滤后数据：', filtered)
+
+    // 更新过滤后的数据
+    companiesData.value = filtered
 }
 
-// 移除条件
-const removeCondition = (index: number) => {
-    currentConditions.value.splice(index, 1)
-    searchConditionsRef.value?.updateConditions(currentConditions.value)
-    fetchData()
+// 处理移除条件
+const handleRemoveCondition = (index: number) => {
+    // 如果移除的是时间范围条件，清空当前时间范围
+    if (searchConditionsRef.value?.selectedConditions[index]?.timeRange) {
+        currentTimeRange.value = undefined
+    }
 }
 
-// 字段变化处理
+// 处理字段变化
 const handleFieldsChange = (fields: string[]) => {
     selectedFields.value = fields
 }
 
-// 获取数据
-const fetchData = async () => {
-    loading.value = true
-    try {
-        // 使用实际数据
-        tableData.value = companiesData
-    } catch (error) {
-        console.error('获取数据失败:', error)
-        ElMessage.error('获取数据失败')
-    } finally {
-        loading.value = false
-    }
+// 处理排序
+const handleSort = (field: string, order: 'asc' | 'desc') => {
+    sortField.value = field
+    sortOrder.value = order
 }
 
-// 搜索处理
-const handleSearch = () => {
-    console.log('搜索关键字:', searchKeyword.value)
-    fetchData()
-}
-
-// 排序变化处理
-const handleSortChange = ({ prop, order }: { prop: string, order: string }) => {
-    currentSort.value = { prop, order }
-    fetchData()
-}
-
-// 分页变化处理
-const handlePaginationChange = ({ page, size }: { page: number, size: number }) => {
+// 处理分页
+const handlePageChange = (page: number) => {
     currentPage.value = page
-    pageSize.value = size
-    fetchData()
 }
 
-// 计算合格证数量
-const calculateCertificateCount = (vehicle: any) => {
-    if (!currentTimeRange.value) {
-        return 0
-    }
-
-    const [start, end] = currentTimeRange.value
-    const certificateData = vehicle.certificate_count[0]
-    let totalCount = 0
-
-    certificateData.forEach((item: any) => {
-        const [year, month] = item.time.split('-')
-        const itemDate = new Date(parseInt(year), parseInt(month) - 1)
-
-        if (itemDate >= start && itemDate <= end) {
-            totalCount += item.count
-        }
-    })
-
-    return totalCount
+// 处理每页条数变化
+const handleSizeChange = (size: number) => {
+    pageSize.value = size
+    currentPage.value = 1
 }
 
 // 导出数据
-const handleExport = async () => {
-    try {
-        exporting.value = true
-
-        const data = tableData.value
-        if (!data || data.length === 0) {
-            ElMessage.warning('没有可导出的数据')
-            return
-        }
-
-        const workbook = new ExcelJS.Workbook()
-        const worksheet = workbook.addWorksheet('企业数据')
-
-        // 定义表头
-        const headers = selectedFields.value.map(field => {
-            const fieldMap: Record<string, string> = {
-                company_id: '企业ID',
-                company_name: '企业名称',
-                social_credit_code: '企业代码',
-                company_type: '企业类型',
-                national_standard_industry: '国标行业分类',
-                registered_address: '注册地址',
-                subsidiaries: '子公司名称',
-                production_addresses: '生产基地名称',
-                capacity: '基地产能',
-                vehicle_brand: '车辆品牌',
-                vehicle_category: '车辆类别',
-                new_energy: '能源类型',
-                certificate_count: '合格证数量'
-            }
-            return { header: fieldMap[field], key: field, width: 20 }
-        })
-
-        worksheet.columns = headers
-
-        // 添加数据
-        data.forEach(company => {
-            const row: any = {}
-            selectedFields.value.forEach(field => {
-                if (field === 'subsidiaries') {
-                    row[field] = company.subsidiaries.map((s: any) => s.company_name).join(', ')
-                } else if (field === 'production_addresses') {
-                    row[field] = company.production_addresses.map((a: any) => a.address).join(', ')
-                } else if (field === 'capacity') {
-                    row[field] = company.production_addresses.map((a: any) => `${a.capacity}万辆`).join(', ')
-                } else if (field === 'vehicle_brand' || field === 'vehicle_category' || field === 'new_energy') {
-                    row[field] = company.vehicles.map((v: any) => v[field] || '传统能源').join(', ')
-                } else if (field === 'certificate_count') {
-                    row[field] = company.vehicles.map((v: any) => calculateCertificateCount(v)).join(', ')
-                } else {
-                    row[field] = company[field]
-                }
-            })
-            worksheet.addRow(row)
-        })
-
-        // 生成并下载文件
-        const buffer = await workbook.xlsx.writeBuffer()
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = '企业数据_' + new Date().toLocaleDateString() + '.xlsx'
-        link.click()
-        window.URL.revokeObjectURL(url)
-
-        ElMessage.success('导出成功')
-    } catch (error) {
-        console.error('导出失败:', error)
-        ElMessage.error('导出失败')
-    } finally {
-        exporting.value = false
+const handleExport = () => {
+    if (filteredData.value.length === 0) {
+        ElMessage.warning('没有可导出的数据')
+        return
     }
+
+    // 准备导出数据
+    const exportData = filteredData.value.map(company => {
+        const row: Record<string, any> = {}
+        selectedFields.value.forEach(field => {
+            switch (field) {
+                case 'subsidiaries':
+                    row['子公司名称'] = company.subsidiaries.join(', ')
+                    break
+                case 'production_addresses':
+                    row['生产基地名称'] = company.production_addresses.join(', ')
+                    break
+                case 'capacity':
+                    row['基地产能'] = company.capacity.join(', ')
+                    break
+                default:
+                    row[field] = company[field as keyof Company]
+            }
+        })
+        return row
+    })
+
+    // 准备表头
+    const headers = selectedFields.value.map(field => {
+        const headerMap: Record<string, string> = {
+            company_id: '企业ID',
+            company_name: '企业名称',
+            social_credit_code: '企业代码',
+            company_type: '企业类型',
+            national_standard_industry: '国标行业分类',
+            registered_address: '注册地址',
+            subsidiaries: '子公司名称',
+            production_addresses: '生产基地名称',
+            capacity: '基地产能',
+            vehicle_brand: '车辆品牌',
+            vehicle_category: '车辆类别',
+            new_energy: '能源类型',
+            certificate_count: '合格证数量'
+        }
+        return headerMap[field] || field
+    })
+
+    // 导出Excel
+    exportToExcel(exportData, headers, '汽车企业数据')
 }
 
 // 退出登录
 const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn')
-    localStorage.removeItem('username')
     router.push('/login')
 }
 
 // 初始化
-onMounted(() => {
-    fetchData()
+onMounted(async () => {
+    try {
+        // 导入数据
+        const { companiesData: data } = await import('../datas/companiesData.js')
+        companiesData.value = data
+        console.log('数据加载完成，总数据量：', companiesData.value.length)
+        console.log('示例数据：', companiesData.value[0])
+    } catch (error) {
+        console.error('数据加载失败：', error)
+        ElMessage.error('获取数据失败')
+    }
 })
 </script>
 
 <style scoped>
-.home-container {
+.home {
     padding: 20px;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
 }
 
-.header-actions {
+.header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 20px;
-    background-color: #fff;
-    border-radius: 4px;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
 }
 
-.welcome-text {
-    font-size: 16px;
-    color: #606266;
+.welcome h2 {
+    margin: 0;
+    color: #303133;
 }
 
-.action-buttons {
+.actions {
     display: flex;
     gap: 10px;
 }
 
-.search-header {
-    padding: 20px 0;
-}
-
-.top-search {
-    width: 500px;
-    margin: 0 auto;
+.main-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 </style>

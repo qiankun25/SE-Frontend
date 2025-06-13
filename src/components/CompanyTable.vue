@@ -19,46 +19,34 @@
                         </div>
                     </template>
                 </el-table-column>
-                <el-table-column v-else-if="field === 'production_addresses'" label="生产基地名称" min-width="150">
+                <el-table-column v-else-if="field === 'production_addresses'" label="生产基地信息" min-width="300">
                     <template #default="{ row }">
-                        <div v-for="address in row.production_addresses" :key="address.address">
-                            {{ address.address }}
-                        </div>
+                        <el-table :data="row.production_addresses" border style="width: 100%">
+                            <el-table-column prop="address" label="生产基地名称" min-width="200" />
+                            <el-table-column prop="capacity" label="基地产能" width="100">
+                                <template #default="{ row }">
+                                    {{ row.capacity }}万辆
+                                </template>
+                            </el-table-column>
+                        </el-table>
                     </template>
                 </el-table-column>
-                <el-table-column v-else-if="field === 'capacity'" label="基地产能" width="100">
+                <el-table-column v-else-if="field === 'vehicle_brand'" label="车辆信息" min-width="400">
                     <template #default="{ row }">
-                        <div v-for="address in row.production_addresses" :key="address.address">
-                            {{ address.capacity }}万辆
-                        </div>
-                    </template>
-                </el-table-column>
-                <el-table-column v-else-if="field === 'vehicle_brand'" label="车辆品牌" width="120">
-                    <template #default="{ row }">
-                        <div v-for="vehicle in row.vehicles" :key="vehicle.vehicle_brand">
-                            {{ vehicle.vehicle_brand }}
-                        </div>
-                    </template>
-                </el-table-column>
-                <el-table-column v-else-if="field === 'vehicle_category'" label="车辆类别" width="120">
-                    <template #default="{ row }">
-                        <div v-for="vehicle in row.vehicles" :key="vehicle.vehicle_category">
-                            {{ vehicle.vehicle_category }}
-                        </div>
-                    </template>
-                </el-table-column>
-                <el-table-column v-else-if="field === 'new_energy'" label="能源类型" width="120">
-                    <template #default="{ row }">
-                        <div v-for="vehicle in row.vehicles" :key="vehicle.new_energy">
-                            {{ vehicle.new_energy || '传统能源' }}
-                        </div>
-                    </template>
-                </el-table-column>
-                <el-table-column v-else-if="field === 'certificate_count'" label="合格证数量" width="120" sortable="custom">
-                    <template #default="{ row }">
-                        <div v-for="vehicle in row.vehicles" :key="vehicle.vehicle_brand">
-                            {{ calculateCertificateCount(vehicle) }}
-                        </div>
+                        <el-table :data="row.vehicles" border style="width: 100%">
+                            <el-table-column prop="vehicle_brand" label="车辆品牌" width="120" />
+                            <el-table-column prop="vehicle_category" label="车辆类别" width="120" />
+                            <el-table-column prop="new_energy" label="能源类型" width="120">
+                                <template #default="{ row }">
+                                    {{ row.new_energy || '传统能源' }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="合格证数量" width="120" sortable="custom">
+                                <template #default="{ row }">
+                                    {{ calculateCertificateCount(row) }}
+                                </template>
+                            </el-table-column>
+                        </el-table>
                     </template>
                 </el-table-column>
             </template>
@@ -101,11 +89,11 @@ const emit = defineEmits(['sort-change', 'pagination-change'])
 // 分页相关
 const currentPage = ref(1)
 const pageSize = ref(10)
-const total = ref(companiesData.length)
+const total = computed(() => props.data.length)
 
 // 处理数据展示
 const processedData = computed(() => {
-    return companiesData.map(company => {
+    return props.data.map(company => {
         const processedCompany = { ...company }
         if (props.timeRange && props.timeRange.length === 2) {
             processedCompany.vehicles = company.vehicles.map(vehicle => ({
