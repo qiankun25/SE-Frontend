@@ -11,7 +11,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
 const emit = defineEmits(['fields-change'])
 
@@ -37,6 +37,11 @@ const toggleField = (field: Field) => {
     field.selected = !field.selected
     emit('fields-change', fields.value.filter(f => f.selected).map(f => f.key))
 }
+
+// 组件挂载时发送初始选中的字段
+onMounted(() => {
+    emit('fields-change', fields.value.filter(f => f.selected).map(f => f.key))
+})
 </script>
 
 <style scoped>

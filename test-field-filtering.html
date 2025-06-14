@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字段过滤测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-title {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .test-step {
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+        .expected {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .issue {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .fixed {
+            color: #007bff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">CompanyTable组件字段过滤功能测试指南</h1>
+        
+        <h2>问题分析总结</h2>
+        <div class="test-step">
+            <h3 class="issue">发现的主要问题：</h3>
+            <ol>
+                <li><strong>事件名称不匹配：</strong> Home.vue监听@change事件，但DisplayFields.vue发出fields-change事件</li>
+                <li><strong>字段初始化问题：</strong> selectedFields初始为空数组，但DisplayFields中字段默认都选中</li>
+                <li><strong>数据格式不一致：</strong> certificate_count有些是双重数组，有些是单层数组</li>
+                <li><strong>字段定义不匹配：</strong> DisplayFields中定义的字段与实际数据结构不完全匹配</li>
+            </ol>
+        </div>
+
+        <h2>修复内容</h2>
+        <div class="test-step">
+            <h3 class="fixed">已修复的问题：</h3>
+            <ol>
+                <li><strong>修复事件监听：</strong> 将Home.vue中的@change改为@fields-change</li>
+                <li><strong>初始化selectedFields：</strong> 设置默认选中的字段列表</li>
+                <li><strong>添加组件挂载事件：</strong> DisplayFields组件挂载时自动发送初始字段选择</li>
+                <li><strong>优化字段定义：</strong> 移除不存在的字段，保留核心字段</li>
+                <li><strong>修复数据格式处理：</strong> 改进calculateCertificateCount函数处理不同数据格式</li>
+                <li><strong>更新导出功能：</strong> 修复导出时的字段映射</li>
+            </ol>
+        </div>
+
+        <h2>测试步骤</h2>
+        <div class="test-step">
+            <h3>1. 基本字段显示测试</h3>
+            <p><strong>操作：</strong> 打开主页面，观察表格显示的列</p>
+            <p class="expected">预期结果：</p>
+            <ul>
+                <li>表格应显示默认选中的字段：企业ID、企业名称、企业代码、企业类型、国标行业分类、注册地址、子公司名称、生产基地信息、车辆信息</li>
+                <li>DisplayFields组件中对应的标签应显示为绿色（选中状态）</li>
+            </ul>
+        </div>
+
+        <div class="test-step">
+            <h3>2. 字段切换测试</h3>
+            <p><strong>操作：</strong> 点击DisplayFields中的字段标签来切换字段显示</p>
+            <p class="expected">预期结果：</p>
+            <ul>
+                <li>点击绿色标签应变为灰色，对应列从表格中消失</li>
+                <li>点击灰色标签应变为绿色，对应列在表格中出现</li>
+                <li>表格列的变化应该是实时的</li>
+            </ul>
+        </div>
+
+        <div class="test-step">
+            <h3>3. 复杂字段显示测试</h3>
+            <p><strong>操作：</strong> 确保"子公司名称"、"生产基地信息"、"车辆信息"字段被选中</p>
+            <p class="expected">预期结果：</p>
+            <ul>
+                <li>子公司名称列应显示子公司的名称列表</li>
+                <li>生产基地信息列应显示嵌套表格，包含基地名称和产能</li>
+                <li>车辆信息列应显示嵌套表格，包含品牌、类别、能源类型和合格证数量</li>
+            </ul>
+        </div>
+
+        <div class="test-step">
+            <h3>4. 时间范围与合格证数量测试</h3>
+            <p><strong>操作：</strong> 设置搜索条件中的时间范围，观察车辆信息中的合格证数量</p>
+            <p class="expected">预期结果：</p>
+            <ul>
+                <li>合格证数量应根据选择的时间范围动态计算</li>
+                <li>不应出现NaN或错误的数值</li>
+                <li>控制台不应有数据格式错误的警告</li>
+            </ul>
+        </div>
+
+        <div class="test-step">
+            <h3>5. 导出功能测试</h3>
+            <p><strong>操作：</strong> 选择不同的字段组合，然后点击"导出数据"</p>
+            <p class="expected">预期结果：</p>
+            <ul>
+                <li>导出的Excel文件应只包含选中的字段</li>
+                <li>复杂字段（如子公司、生产基地、车辆信息）应正确格式化</li>
+                <li>表头应使用中文名称</li>
+            </ul>
+        </div>
+
+        <h2>验证修复效果</h2>
+        <div class="test-step">
+            <p><strong>如果修复成功，您应该看到：</strong></p>
+            <ul class="expected">
+                <li>✅ 页面加载时表格显示默认选中的字段</li>
+                <li>✅ 点击字段标签能实时切换表格列的显示/隐藏</li>
+                <li>✅ 所有字段都能正确显示数据</li>
+                <li>✅ 合格证数量计算正确，无错误提示</li>
+                <li>✅ 导出功能按选中字段正确导出</li>
+            </ul>
+        </div>
+
+        <div class="test-step">
+            <p><strong>如果仍有问题，请检查：</strong></p>
+            <ul class="issue">
+                <li>浏览器控制台是否有JavaScript错误</li>
+                <li>网络请求是否正常</li>
+                <li>数据加载是否完成</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>技术细节说明</h2>
+        <div class="test-step">
+            <h3>修复的核心代码变更：</h3>
+            <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto;">
+// Home.vue - 修复事件监听
+&lt;display-fields @fields-change="handleFieldsChange" /&gt;
+
+// Home.vue - 初始化selectedFields
+const selectedFields = ref&lt;string[]&gt;([
+    'company_id', 'company_name', 'social_credit_code', 'company_type', 
+    'national_standard_industry', 'registered_address', 'subsidiaries', 
+    'production_addresses', 'vehicle_brand'
+])
+
+// DisplayFields.vue - 添加挂载时事件发送
+onMounted(() => {
+    emit('fields-change', fields.value.filter(f => f.selected).map(f => f.key))
+})
+
+// CompanyTable.vue - 修复数据格式处理
+let certificateData = vehicle.certificate_count
+if (Array.isArray(certificateData) && Array.isArray(certificateData[0])) {
+    certificateData = certificateData[0]
+}
+            </pre>
+        </div>
+    </div>
+</body>
+</html>

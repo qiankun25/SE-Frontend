@@ -12,7 +12,7 @@
 
         <div class="main-content">
             <search-conditions ref="searchConditionsRef" @search="handleSearch" @remove="handleRemoveCondition" />
-            <display-fields v-model:selected-fields="selectedFields" @change="handleFieldsChange" />
+            <display-fields @fields-change="handleFieldsChange" />
             <company-table :data="filteredData" :selected-fields="selectedFields" :time-range="currentTimeRange"
                 @sort="handleSort" @page-change="handlePageChange" @size-change="handleSizeChange" />
         </div>
@@ -34,17 +34,11 @@ const searchConditionsRef = ref()
 
 // 数据状态
 const companiesData = ref<Company[]>([])
-const originalData = ref<Company[]>([])
+const originalData = ref<Company[]>([]) // 添加原始数据存储
 const selectedFields = ref<string[]>([
-    'company_id',
-    'company_name',
-    'social_credit_code',
-    'company_type',
-    'national_standard_industry',
-    'registered_address',
-    'subsidiaries',
-    'production_addresses',
-    'vehicle_brand'
+    'company_id', 'company_name', 'social_credit_code', 'company_type',
+    'national_standard_industry', 'registered_address', 'subsidiaries',
+    'production_addresses', 'vehicle_brand'
 ])
 const currentTimeRange = ref<[Date, Date] | undefined>(undefined)
 const currentPage = ref(1)
@@ -55,7 +49,6 @@ const sortOrder = ref<'asc' | 'desc'>('asc')
 // 过滤后的数据
 const filteredData = computed(() => {
     console.log('计算 filteredData，当前数据：', companiesData.value)
-    console.log('当前选中的字段：', selectedFields.value)
     return companiesData.value
 })
 
@@ -160,7 +153,6 @@ const handleRemoveCondition = (index: number) => {
 
 // 处理字段变化
 const handleFieldsChange = (fields: string[]) => {
-    console.log('字段变化：', fields)
     selectedFields.value = fields
 }
 
@@ -194,13 +186,13 @@ const handleExport = () => {
         selectedFields.value.forEach(field => {
             switch (field) {
                 case 'subsidiaries':
-                    row['子公司名称'] = company.subsidiaries.join(', ')
+                    row['子公司名称'] = company.subsidiaries?.map((sub: any) => sub.company_name).join(', ') || ''
                     break
                 case 'production_addresses':
-                    row['生产基地名称'] = company.production_addresses.join(', ')
+                    row['生产基地信息'] = company.production_addresses?.map((addr: any) => `${addr.address}(${addr.capacity}万辆)`).join(', ') || ''
                     break
-                case 'capacity':
-                    row['基地产能'] = company.capacity.join(', ')
+                case 'vehicle_brand':
+                    row['车辆信息'] = company.vehicles?.map((vehicle: any) => `${vehicle.vehicle_brand}-${vehicle.vehicle_category}${vehicle.new_energy ? `(${vehicle.new_energy})` : ''}`).join(', ') || ''
                     break
                 default:
                     row[field] = company[field as keyof Company]
@@ -219,12 +211,8 @@ const handleExport = () => {
             national_standard_industry: '国标行业分类',
             registered_address: '注册地址',
             subsidiaries: '子公司名称',
-            production_addresses: '生产基地名称',
-            capacity: '基地产能',
-            vehicle_brand: '车辆品牌',
-            vehicle_category: '车辆类别',
-            new_energy: '能源类型',
-            certificate_count: '合格证数量'
+            production_addresses: '生产基地信息',
+            vehicle_brand: '车辆信息'
         }
         return headerMap[field] || field
     })
@@ -247,7 +235,6 @@ onMounted(async () => {
         companiesData.value = data // 设置当前数据
         console.log('数据加载完成，总数据量：', companiesData.value.length)
         console.log('示例数据：', companiesData.value[0])
-        console.log('初始选中的字段：', selectedFields.value)
     } catch (error) {
         console.error('数据加载失败：', error)
         ElMessage.error('获取数据失败')

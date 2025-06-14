@@ -93,12 +93,6 @@ const total = computed(() => props.data.length)
 
 // 处理数据展示
 const processedData = computed(() => {
-    console.log('CompanyTable props:', {
-        data: props.data,
-        selectedFields: props.selectedFields,
-        timeRange: props.timeRange
-    })
-
     if (!props.data || !Array.isArray(props.data)) {
         console.warn('CompanyTable: 接收到的数据不是数组或为空')
         return []
@@ -130,16 +124,14 @@ const processedData = computed(() => {
                 }
             })
         }
-
-        console.log('处理后的企业数据：', processedCompany)
         return processedCompany
     })
 })
 
 // 计算合格证数量
 const calculateCertificateCount = (vehicle: any) => {
-    if (!vehicle || !vehicle.certificate_count || !Array.isArray(vehicle.certificate_count[0])) {
-        console.warn('CompanyTable: 车辆合格证数据格式不正确')
+    if (!vehicle || !vehicle.certificate_count) {
+        console.warn('CompanyTable: 车辆合格证数据不存在')
         return 0
     }
 
@@ -156,18 +148,29 @@ const calculateCertificateCount = (vehicle: any) => {
         end.setMonth(end.getMonth() + 1)
     }
 
-    const certificateData = vehicle.certificate_count[0]
+    // 处理不同的数据格式：有些是双重数组，有些是单层数组
+    let certificateData = vehicle.certificate_count
+    if (Array.isArray(certificateData) && Array.isArray(certificateData[0])) {
+        // 双重数组格式
+        certificateData = certificateData[0]
+    }
+
+    if (!Array.isArray(certificateData)) {
+        console.warn('CompanyTable: 合格证数据格式不正确')
+        return 0
+    }
+
     let totalCount = 0
 
     certificateData.forEach((item: any) => {
-        if (!item || !item.time || !item.count) {
-            console.warn('CompanyTable: 合格证数据项格式不正确')
+        if (!item || !item.time || typeof item.count !== 'number') {
+            console.warn('CompanyTable: 合格证数据项格式不正确', item)
             return
         }
 
         const [year, month] = item.time.split('-')
         if (!year || !month) {
-            console.warn('CompanyTable: 合格证时间格式不正确')
+            console.warn('CompanyTable: 合格证时间格式不正确', item.time)
             return
         }
 
