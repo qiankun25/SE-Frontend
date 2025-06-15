@@ -14,7 +14,7 @@
             <search-conditions ref="searchConditionsRef" @search="handleSearch" @remove="handleRemoveCondition" />
             <display-fields @fields-change="handleFieldsChange" />
             <company-table :data="filteredData" :selected-fields="selectedFields" :time-range="currentTimeRange"
-                @sort="handleSort" @page-change="handlePageChange" @size-change="handleSizeChange" />
+                :loading="loading" @sort="handleSort" @page-change="handlePageChange" @size-change="handleSizeChange" />
         </div>
     </div>
 </template>
@@ -35,6 +35,8 @@ const searchConditionsRef = ref()
 // 数据状态
 const companiesData = ref<Company[]>([])
 const originalData = ref<Company[]>([]) // 添加原始数据存储
+const loading = ref(false)
+const hasSearched = ref(false) // 添加搜索状态标记
 const selectedFields = ref<string[]>([
     'company_id', 'company_name', 'social_credit_code', 'company_type',
     'national_standard_industry', 'registered_address', 'subsidiaries',
@@ -46,8 +48,11 @@ const pageSize = ref(10)
 const sortField = ref<string>('')
 const sortOrder = ref<'asc' | 'desc'>('asc')
 
-// 过滤后的数据
+// 过滤后的数据 - 只有搜索后才显示数据
 const filteredData = computed(() => {
+    if (!hasSearched.value) {
+        return [] // 未搜索时返回空数组
+    }
     console.log('计算 filteredData，当前数据：', companiesData.value)
     return companiesData.value
 })
@@ -56,16 +61,26 @@ const filteredData = computed(() => {
 const handleSearch = (conditions: any[]) => {
     console.log('开始搜索，搜索条件：', conditions)
     currentPage.value = 1
+    hasSearched.value = true // 标记已经进行过搜索
 
-    // 更新当前时间范围
-    if (conditions.length > 0 && conditions[0].timeRange) {
-        currentTimeRange.value = conditions[0].timeRange
-    } else {
+    // 如果没有搜索条件，显示空数据
+    if (conditions.length === 0) {
+        companiesData.value = []
         currentTimeRange.value = undefined
+        return
     }
 
-    // 从原始数据中过滤
-    const filtered = originalData.value.filter(company => {
+    // 更新当前时间范围
+    let timeRange: [Date, Date] | undefined = undefined
+    conditions.forEach(condition => {
+        if (condition.timeRange) {
+            timeRange = condition.timeRange
+        }
+    })
+    currentTimeRange.value = timeRange
+
+    // 从原始数据中过滤企业级数据
+    let filtered = originalData.value.filter(company => {
         console.log('正在检查企业：', company.company_name)
         return conditions.every((condition: any) => {
             // 企业名称匹配
@@ -112,23 +127,56 @@ const handleSearch = (conditions: any[]) => {
                 if (!typeMatch) return false
             }
 
-            // 时间段匹配
-            if (condition.timeRange) {
-                const [start, end] = condition.timeRange
-                const hasMatchingTimeRange = company.vehicles.some(vehicle => {
-                    const certificateData = vehicle.certificate_count[0]
-                    return certificateData.some((item: any) => {
-                        const [year, month] = item.time.split('-')
-                        const itemDate = new Date(parseInt(year), parseInt(month) - 1)
-                        return itemDate >= start && itemDate <= end
-                    })
-                })
-                console.log('时间段匹配：', company.company_name, condition.timeRange, hasMatchingTimeRange)
-                if (!hasMatchingTimeRange) return false
-            }
-
             return true
         })
+    })
+
+    // 对车辆级数据进行过滤
+    filtered = filtered.map(company => {
+        // 创建企业对象的深拷贝
+        const newCompany = {
+            ...company,
+            vehicles: [...company.vehicles]
+        }
+
+        // 步骤1：车辆级过滤（基于新能源类别和车辆类别）
+        const vehicleConditions = conditions.filter(condition =>
+            condition.new_energy || condition.vehicle_category
+        )
+
+        if (vehicleConditions.length > 0) {
+            newCompany.vehicles = newCompany.vehicles.filter(vehicle => {
+                return vehicleConditions.every(condition => {
+                    // 新能源类别匹配
+                    if (condition.new_energy && condition.new_energy !== '') {
+                        if (condition.new_energy === 'null') {
+                            if (vehicle.new_energy !== null) return false
+                        } else {
+                            if (vehicle.new_energy !== condition.new_energy) return false
+                        }
+                    }
+
+                    // 车辆类别匹配
+                    if (condition.vehicle_category && condition.vehicle_category !== '') {
+                        if (vehicle.vehicle_category !== condition.vehicle_category) return false
+                    }
+
+                    return true
+                })
+            })
+        }
+
+        // 步骤2：合格证级过滤（基于时间范围）
+        newCompany.vehicles = newCompany.vehicles.map(vehicle => {
+            const newVehicle = { ...vehicle };
+
+            // 不在这里过滤certificate_count数据，只传递原始数据和时间范围
+            // 让CompanyTable组件负责根据时间范围计算合格证数量
+
+            return newVehicle;
+        });
+
+        return newCompany
     })
 
     console.log('过滤后数据量：', filtered.length)
@@ -138,6 +186,7 @@ const handleSearch = (conditions: any[]) => {
     companiesData.value = filtered
 }
 
+
 // 处理移除条件
 const handleRemoveCondition = (index: number) => {
     // 如果移除的是时间范围条件，清空当前时间范围
@@ -145,9 +194,10 @@ const handleRemoveCondition = (index: number) => {
         currentTimeRange.value = undefined
     }
 
-    // 如果没有搜索条件了，恢复原始数据
+    // 如果没有搜索条件了，清空数据显示
     if (searchConditionsRef.value?.selectedConditions.length === 0) {
-        companiesData.value = originalData.value
+        companiesData.value = []
+        hasSearched.value = false // 重置搜索状态
     }
 }
 
@@ -229,15 +279,18 @@ const handleLogout = () => {
 // 初始化
 onMounted(async () => {
     try {
+        loading.value = true
         // 导入数据
         const { companiesData: data } = await import('../datas/companiesData.js')
         originalData.value = data // 保存原始数据
-        companiesData.value = data // 设置当前数据
-        console.log('数据加载完成，总数据量：', companiesData.value.length)
-        console.log('示例数据：', companiesData.value[0])
+        // 不设置 companiesData.value，保持为空数组，只有搜索后才显示数据
+        console.log('数据加载完成，总数据量：', originalData.value.length)
+        console.log('示例数据：', originalData.value[0])
     } catch (error) {
         console.error('数据加载失败：', error)
         ElMessage.error('获取数据失败')
+    } finally {
+        loading.value = false
     }
 })
 </script>

@@ -56,8 +56,10 @@
                     </el-col>
                     <el-col :span="8">
                         <el-form-item label="时间范围">
-                            <el-date-picker v-model="form.timeRange" type="daterange" range-separator="至"
-                                start-placeholder="开始日期" end-placeholder="结束日期" style="width: 100%" />
+                            <!-- 月份范围选择器 -->
+                            <el-date-picker v-model="form.timeRange" type="monthrange" range-separator="至"
+                                start-placeholder="开始月份" end-placeholder="结束月份" value-format="YYYY-MM"
+                                style="width: 100%" />
                         </el-form-item>
                     </el-col>
                 </el-row>
@@ -68,6 +70,7 @@
             </el-form>
         </div>
 
+        <!-- 已选条件 -->
         <div class="selected-conditions" v-if="selectedConditions.length > 0">
             <div class="condition-tags">
                 <el-tag v-for="(condition, index) in selectedConditions" :key="index" closable
@@ -87,6 +90,7 @@
 <script lang="ts" setup>
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
+import type { SearchCondition } from '../types/search'
 
 interface SearchForm {
     company_name: string
@@ -94,7 +98,7 @@ interface SearchForm {
     new_energy: string
     vehicle_category: string
     vehicle_type: string
-    timeRange: [Date, Date] | undefined
+    timeRange: [string, string] | undefined
 }
 
 const emit = defineEmits(['search', 'remove'])
@@ -128,8 +132,15 @@ const handleAddCondition = () => {
     if (form.vehicle_type) {
         condition.vehicle_type = form.vehicle_type
     }
-    if (form.timeRange) {
-        condition.timeRange = form.timeRange
+    if (form.timeRange && form.timeRange.length === 2) {
+        // 转换月份范围为日期范围
+        const [startMonth, endMonth] = form.timeRange
+        const startDate = new Date(startMonth + '-01')
+        const endDate = new Date(endMonth + '-01')
+        endDate.setMonth(endDate.getMonth() + 1)
+        endDate.setDate(0) // 设置为月末最后一天
+
+        condition.timeRange = [startDate, endDate]
     }
 
     // 只有当至少有一个条件被设置时才添加
@@ -171,10 +182,6 @@ const resetForm = () => {
     form.timeRange = undefined
 }
 
-const formatDate = (date: Date) => {
-    return date.toLocaleDateString()
-}
-
 const formatCondition = (condition: any) => {
     const parts: string[] = []
 
@@ -199,7 +206,10 @@ const formatCondition = (condition: any) => {
     }
     if (condition.timeRange) {
         const [start, end] = condition.timeRange
-        parts.push(`时间段: ${formatDate(start)} 至 ${formatDate(end)}`)
+        // 只显示年月格式
+        const startStr = start.toISOString().slice(0, 7)
+        const endStr = end.toISOString().slice(0, 7)
+        parts.push(`时间段: ${startStr} 至 ${endStr}`)
     }
 
     return parts.join(' | ')
