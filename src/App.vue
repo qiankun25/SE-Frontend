@@ -1,38 +1,96 @@
 <script lang="ts" setup>
-import HelloWorld from './components/HelloWorld.vue'
+// 应用入口组件
 </script>
 
 <template>
-  <div class="app-container">
+  <div id="app">
     <router-view />
   </div>
 </template>
 
 <style>
-html,
-body {
+#app {
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #2c3e50;
+  height: 100vh;
+  overflow: hidden;
+}
+
+* {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
   height: 100%;
   background-color: #f5f7fa;
 }
 
-.app-container {
-  min-height: 100vh;
+/* Element Plus 样式覆盖 */
+.el-card {
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+.el-card__header {
+  background-color: #fafafa;
+  border-bottom: 1px solid #ebeef5;
 }
 
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+.el-table {
+  font-size: 14px;
 }
 
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+.el-table th {
+  background-color: #fafafa;
+  color: #606266;
+  font-weight: 600;
+}
+
+.el-button {
+  border-radius: 4px;
+}
+
+.el-input__wrapper {
+  border-radius: 4px;
+}
+
+.el-select .el-input__wrapper {
+  border-radius: 4px;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 响应式断点 */
+@media (max-width: 768px) {
+  .el-table {
+    font-size: 12px;
+  }
+
+  .el-card__body {
+    padding: 15px;
+  }
 }
 </style>
