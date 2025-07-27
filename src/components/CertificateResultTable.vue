@@ -188,6 +188,7 @@ const dynamicColumns = computed(() => {
   const hasCompanyCondition = conditions.some(c => c.companies && c.companies.length > 0)
   const hasVehicleModelCondition = conditions.some(c => c.vehicleModels && c.vehicleModels.length > 0)
   const hasVehicleBrandCondition = conditions.some(c => c.vehicleBrands && c.vehicleBrands.length > 0)
+  const hasVehicleClassCondition = conditions.some(c => c.vehicleClass && c.vehicleClass.length > 0)
   const hasTimeCondition = conditions.some(c => c.timeRangeType)
   const hasComparisonCondition = conditions.some(c => c.enableComparison)
   const hasLocationCondition = conditions.some(c =>
@@ -216,12 +217,14 @@ const dynamicColumns = computed(() => {
     })
   }
 
-  // 车辆类别列
-  columns.push({
-    key: 'vehicleCategory',
-    label: '车辆类别',
-    width: 100
-  })
+  // 车辆类别列 - 只有当前提条件中选择了车辆类别时才显示
+  if (hasVehicleClassCondition) {
+    columns.push({
+      key: 'vehicleCategory',
+      label: '车辆类别',
+      width: 100
+    })
+  }
 
   // 生产地址列
   if (hasLocationCondition) {

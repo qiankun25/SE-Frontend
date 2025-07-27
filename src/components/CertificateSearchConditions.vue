@@ -17,24 +17,19 @@
         </el-alert>
 
         <el-row :gutter="20" style="margin-top: 15px;">
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="车辆类别">
-              <el-radio-group v-model="form.vehicleClass">
-                <el-radio label="整车">整车</el-radio>
-                <el-radio label="底盘">底盘</el-radio>
-              </el-radio-group>
+              <el-checkbox-group v-model="form.vehicleClass">
+                <el-checkbox label="整车">整车</el-checkbox>
+                <el-checkbox label="底盘">底盘</el-checkbox>
+              </el-checkbox-group>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="车辆类型">
               <el-checkbox v-model="form.excludeNonAnnouncement">
                 排除非《公告》产品
               </el-checkbox>
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="显示排行">
-              <el-switch v-model="form.showRanking" active-text="显示排名" inactive-text="不显示排名" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -219,6 +214,13 @@
               </el-radio-group>
             </el-form-item>
           </el-col>
+
+          <!-- 显示排行 -->
+          <el-col :span="8">
+            <el-form-item label="显示排行">
+              <el-switch v-model="form.showRanking" active-text="显示排名" inactive-text="不显示排名" />
+            </el-form-item>
+          </el-col>
         </el-row>
 
         <!-- 操作按钮 -->
@@ -246,9 +248,8 @@ import CompanyAutoComplete from './CompanyAutoComplete.vue'
 
 interface SearchForm {
   // 前提条件
-  vehicleClass: string
+  vehicleClass: string[]
   excludeNonAnnouncement: boolean
-  showRanking: boolean
 
   // 主要查询条件
   companies: any[]
@@ -267,6 +268,7 @@ interface SearchForm {
   fuelTypes: string[]
   newEnergyCategories: string[]
   isNewEnergy: string
+  showRanking: boolean
 }
 
 const emit = defineEmits(['add-condition', 'reset'])
@@ -276,7 +278,7 @@ const showPresetConditions = ref(false)
 
 const form = reactive<SearchForm>({
   // 前提条件默认值
-  vehicleClass: '整车',
+  vehicleClass: [],
   excludeNonAnnouncement: true,
   showRanking: false,
 
@@ -364,13 +366,13 @@ const handleAddCondition = () => {
   if (form.fuelTypes.length > 0) condition.fuelTypes = [...form.fuelTypes]
   if (form.newEnergyCategories.length > 0) condition.newEnergyCategories = [...form.newEnergyCategories]
   if (form.isNewEnergy) condition.isNewEnergy = form.isNewEnergy
+  if (form.showRanking) condition.showRanking = form.showRanking
 
   // 添加前提条件
-  condition.vehicleClass = form.vehicleClass
+  condition.vehicleClass = [...form.vehicleClass]
   condition.excludeNonAnnouncement = form.excludeNonAnnouncement
-  condition.showRanking = form.showRanking
 
-  if (Object.keys(condition).length <= 3) { // 只有前提条件
+  if (Object.keys(condition).length <= 2) { // 只有前提条件
     ElMessage.warning('请至少选择一个查询条件')
     return
   }
@@ -382,7 +384,7 @@ const handleAddCondition = () => {
 const handleReset = () => {
   // 重置为默认值
   Object.assign(form, {
-    vehicleClass: '整车',
+    vehicleClass: [],
     excludeNonAnnouncement: true,
     showRanking: false,
     companies: [],
