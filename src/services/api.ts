@@ -84,6 +84,18 @@ export const certificateQuantityApi = {
       body: JSON.stringify(params),
     });
   },
+
+  // 获取企业列表
+  async getCompaniesList(): Promise<
+    ApiResponse<
+      Array<{
+        code: string;
+        name: string;
+      }>
+    >
+  > {
+    return request("/certificate-quantity/companies");
+  },
 };
 
 // 合格证单证查询相关API
@@ -307,20 +319,6 @@ export const otherStatisticsApi = {
 
 // 通用API
 export const commonApi = {
-  // 搜索企业
-  async searchCompanies(query: string): Promise<
-    ApiResponse<
-      Array<{
-        id: string;
-        name: string;
-        code: string;
-        shortName?: string;
-      }>
-    >
-  > {
-    return request(`/common/companies/search?q=${encodeURIComponent(query)}`);
-  },
-
   // 获取地区数据
   async getRegions(): Promise<
     ApiResponse<

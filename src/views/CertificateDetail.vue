@@ -43,8 +43,9 @@
           </el-col>
 
           <el-col :span="8">
-            <company-selector v-model="searchForm.company" label="企业选择" :show-id-input="false" :show-code-input="false"
-              @change="handleCompanyChange" />
+            <el-form-item label="企业选择">
+              <el-input v-model="searchForm.companyName" placeholder="请输入企业名称" clearable />
+            </el-form-item>
           </el-col>
         </el-row>
 
@@ -235,7 +236,7 @@ import { Search, Refresh, Grid, Document } from '@element-plus/icons-vue'
 
 // 导入通用组件
 import TimeRangePicker from '../components/common/TimeRangePicker.vue'
-import CompanySelector from '../components/common/CompanySelector.vue'
+
 import ExportButton from '../components/common/ExportButton.vue'
 import HelpTooltip from '../components/common/HelpTooltip.vue'
 
@@ -257,7 +258,7 @@ const batchInput = ref('')
 const searchForm = reactive<Partial<CertificateDetailParams> & { queryMode: 'single' | 'batch' }>({
   certificateNumber: '',
   vin: '',
-  company: undefined,
+  companyName: '',
   vehicleModel: '',
   timeRange: undefined,
   queryMode: 'single'
@@ -302,7 +303,7 @@ const exportFields = [
 // 事件处理函数
 const handleSearch = async () => {
   if (searchForm.queryMode === 'single') {
-    if (!searchForm.certificateNumber && !searchForm.vin && !searchForm.company) {
+    if (!searchForm.certificateNumber && !searchForm.vin && !searchForm.companyName) {
       ElMessage.warning('请至少输入一个查询条件')
       return
     }

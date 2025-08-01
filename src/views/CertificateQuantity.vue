@@ -99,138 +99,310 @@ const handleSearch = async (conditions: any[]) => {
   try {
     console.log('开始查询，查询条件:', conditions)
 
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // 调用后端API
+    const { certificateQuantityApi } = await import('../services/api')
 
-    // 根据查询条件生成模拟数据
-    const mockData = generateMockData(conditions)
+    // 构建查询参数
+    const params = {
+      page: 1,
+      pageSize: 100,
+      field: 'certificateCount',
+      order: 'desc' as const,
+      ...buildSearchParams(conditions)
+    }
 
-    tableData.value = mockData
-    ElMessage.success(`查询完成，共找到 ${mockData.length} 条记录`)
+    const response = await certificateQuantityApi.search(params)
+
+    if (response.code === 200) {
+      tableData.value = response.data.list
+
+      // 开发环境下验证返回数据
+      if (import.meta.env.DEV) {
+        import('../utils/vehicle-name-query-test').then(({ validateVehicleNameInResponse, testTableColumnLogic }) => {
+          validateVehicleNameInResponse(response.data.list)
+          testTableColumnLogic(conditions)
+        })
+
+        // 运行完整的修复验证
+        import('../utils/vehicle-name-fix-validation').then(({ runFullValidation }) => {
+          const expectedPrimaryColumn = conditions.some(c => c.vehicleNames && c.vehicleNames.length > 0) &&
+            !conditions.some(c => c.selectedCompanies && c.selectedCompanies.length > 0)
+            ? 'vehicleName' : 'companyName'
+
+          runFullValidation(conditions, response, expectedPrimaryColumn)
+            .then(result => {
+              if (result.success) {
+                console.log('🎉 实时验证通过！车辆名称修复正常工作')
+              } else {
+                console.warn('⚠️ 实时验证发现问题:', result.message)
+              }
+            })
+        })
+      }
+
+      ElMessage.success(`查询完成，共找到 ${response.data.total} 条记录`)
+    } else {
+      throw new Error(response.message)
+    }
   } catch (error) {
     console.error('查询失败:', error)
     ElMessage.error('查询失败，请重试')
+    tableData.value = []
   } finally {
     loading.value = false
   }
 }
 
-// 生成模拟数据的函数
-const generateMockData = (conditions: any[]) => {
-  const baseData = [
-    {
-      companyId: 'C001',
-      companyName: '一汽集团有限公司',
-      vehicleBrand: '红旗',
-      vehicleModel: 'H9',
-      vehicleCategory: '乘用车',
-      certificateCount: 15680,
-      currentPeriodCount: 15680,
-      previousPeriodCount: 12000,
-      comparisonRatio: 0.307,
-      ranking: 1,
-      timePeriod: '2024年',
-      productionLocation: '长春市',
-      fuelType: '汽油',
-      newEnergyCategory: ''
-    },
-    {
-      companyId: 'C002',
-      companyName: '比亚迪股份有限公司',
-      vehicleBrand: '比亚迪',
-      vehicleModel: '汉EV',
-      vehicleCategory: '乘用车',
-      certificateCount: 12450,
-      currentPeriodCount: 12450,
-      previousPeriodCount: 8000,
-      comparisonRatio: 0.556,
-      ranking: 2,
-      timePeriod: '2024年',
-      productionLocation: '深圳市',
-      fuelType: '电',
-      newEnergyCategory: '纯电动'
-    },
-    {
-      companyId: 'C003',
-      companyName: '上汽集团股份有限公司',
-      vehicleBrand: '荣威',
-      vehicleModel: 'RX5',
-      vehicleCategory: '乘用车',
-      certificateCount: 9800,
-      currentPeriodCount: 9800,
-      previousPeriodCount: 11000,
-      comparisonRatio: -0.109,
-      ranking: 3,
-      timePeriod: '2024年',
-      productionLocation: '上海市',
-      fuelType: '汽油',
-      newEnergyCategory: ''
-    }
-  ]
+// 构建查询参数
+const buildSearchParams = (conditions: any[]) => {
+  const params: any = {}
 
-  // 根据条件过滤和调整数据
-  let filteredData = [...baseData]
+  // 收集所有参数的数组，用于合并多个条件
+  const allCompanyNames: string[] = []
+  const allCompanyCodes: string[] = []
+  const allVehicleBrands: string[] = []
+  const allVehicleModels: string[] = []
+  const allVehicleNames: string[] = []
+  const allVehicleClass: string[] = []
+  const allSixCategories: string[] = []
+  const allFuelTypes: string[] = []
+  const allNewEnergyCategories: string[] = []
+  const allProductionAddresses: string[] = []
+  const allProductionProvinces: string[] = []
+  const allProductionCities: string[] = []
 
-  // 检查是否启用排行功能
-  const hasRankingEnabled = conditions.some(c => c.showRanking)
-
-  // 根据查询条件过滤数据
   conditions.forEach(condition => {
-    // 企业过滤
-    if (condition.companies && condition.companies.length > 0) {
-      const companyNames = condition.companies.map((c: any) => c.name)
-      filteredData = filteredData.filter(item =>
-        companyNames.some((name: string) => item.companyName.includes(name))
-      )
+    // 开发环境下验证条件映射
+    if (import.meta.env.DEV) {
+      import('../utils/api-validation').then(({ validateConditionMapping }) => {
+        const validation = validateConditionMapping(condition)
+        if (!validation.valid) {
+          console.warn('⚠️ 发现未映射的查询条件字段:', validation.unmappedFields)
+          console.info('✅ 已映射的字段:', validation.mappedFields)
+        }
+      })
     }
 
-    // 车辆品牌过滤
+    // 企业信息 - 处理新的多选企业逻辑
+    if (condition.selectedCompanies && condition.selectedCompanies.length > 0) {
+      // 调试企业选择
+      if (import.meta.env.DEV) {
+        import('../utils/query-debug').then(({ debugCompanySelection }) => {
+          debugCompanySelection(condition.selectedCompanies)
+        })
+      }
+
+      // 提取企业名称和代码，合并到总列表中
+      const companyNames = condition.selectedCompanies
+        .map((c: any) => c.name)
+        .filter((name: string) => name && name.trim())
+      const companyCodes = condition.selectedCompanies
+        .map((c: any) => c.code)
+        .filter((code: string) => code && code.trim())
+
+      allCompanyNames.push(...companyNames)
+      allCompanyCodes.push(...companyCodes)
+    }
+    // 兼容旧的单个企业选择方式
+    else {
+      if (condition.companyName) {
+        allCompanyNames.push(condition.companyName)
+      }
+      if (condition.companyCode) {
+        allCompanyCodes.push(condition.companyCode)
+      }
+    }
+
+    // 车辆信息 - 合并多个条件的值
     if (condition.vehicleBrands && condition.vehicleBrands.length > 0) {
-      filteredData = filteredData.filter(item =>
-        condition.vehicleBrands.includes(item.vehicleBrand)
-      )
+      allVehicleBrands.push(...condition.vehicleBrands)
     }
-
-    // 车辆型号过滤
     if (condition.vehicleModels && condition.vehicleModels.length > 0) {
-      filteredData = filteredData.filter(item =>
-        condition.vehicleModels.includes(item.vehicleModel)
-      )
+      allVehicleModels.push(...condition.vehicleModels)
+    }
+    if (condition.vehicleNames && condition.vehicleNames.length > 0) {
+      allVehicleNames.push(...condition.vehicleNames)
+    }
+    if (condition.vehicleClass && condition.vehicleClass.length > 0) {
+      allVehicleClass.push(...condition.vehicleClass)
+    }
+    if (condition.vehicleCategory) {
+      params.vehicleCategory = condition.vehicleCategory
     }
 
-    // 燃料种类过滤
+    // 分类信息 - 合并多个条件的值
+    if (condition.sixCategories && condition.sixCategories.length > 0) {
+      allSixCategories.push(...condition.sixCategories)
+    }
+    if (condition.commercialOrPassenger) {
+      params.commercialOrPassenger = condition.commercialOrPassenger
+    }
+
+    // 燃料和新能源 - 合并多个条件的值
     if (condition.fuelTypes && condition.fuelTypes.length > 0) {
-      filteredData = filteredData.filter(item =>
-        condition.fuelTypes.includes(item.fuelType)
-      )
+      allFuelTypes.push(...condition.fuelTypes)
+    }
+    if (condition.newEnergyCategories && condition.newEnergyCategories.length > 0) {
+      allNewEnergyCategories.push(...condition.newEnergyCategories)
+    }
+    if (condition.isNewEnergy) {
+      params.isNewEnergy = condition.isNewEnergy
     }
 
-    // 新能源类别过滤
-    if (condition.newEnergyCategories && condition.newEnergyCategories.length > 0) {
-      filteredData = filteredData.filter(item =>
-        condition.newEnergyCategories.includes(item.newEnergyCategory) ||
-        (item.newEnergyCategory === '' && condition.newEnergyCategories.includes('非新能源'))
-      )
+    // 地址信息 - 合并多个条件的值
+    if (condition.productionAddresses && condition.productionAddresses.length > 0) {
+      allProductionAddresses.push(...condition.productionAddresses)
+    }
+    if (condition.productionProvinces && condition.productionProvinces.length > 0) {
+      allProductionProvinces.push(...condition.productionProvinces)
+    }
+    if (condition.productionCities && condition.productionCities.length > 0) {
+      allProductionCities.push(...condition.productionCities)
+    }
+
+    // 时间相关
+    if (condition.timeRange) {
+      params.timeRange = {
+        startDate: condition.timeRange.startDate,
+        endDate: condition.timeRange.endDate
+      }
+    }
+    if (condition.timeRangeType) {
+      params.timeRangeType = condition.timeRangeType
+    }
+    if (condition.timeUnit) {
+      params.timeUnit = condition.timeUnit
+    }
+    if (condition.enableComparison) {
+      params.enableComparison = condition.enableComparison
+    }
+
+    // 其他选项
+    if (condition.excludeNonAnnouncement !== undefined) {
+      params.excludeNonAnnouncement = condition.excludeNonAnnouncement
+    }
+    if (condition.showRanking) {
+      params.showRanking = condition.showRanking
     }
   })
 
-  // 重新计算排名（如果启用了排行功能）
-  if (hasRankingEnabled) {
-    filteredData = filteredData
-      .sort((a, b) => b.certificateCount - a.certificateCount) // 按合格证数量降序排列
-      .map((item, index) => ({
-        ...item,
-        ranking: index + 1
-      }))
-  } else {
-    // 如果未启用排行，移除ranking字段或设为0
-    filteredData = filteredData.map(item => ({
-      ...item,
-      ranking: 0
-    }))
+  // 设置合并后的企业参数
+  if (allCompanyNames.length > 0) {
+    // 去重
+    const uniqueCompanyNames = [...new Set(allCompanyNames)]
+
+    if (uniqueCompanyNames.length > 1) {
+      // 多企业查询：优先使用companyNames
+      params.companyNames = uniqueCompanyNames
+      console.log('🏢 多企业名称查询:', uniqueCompanyNames)
+    } else {
+      // 单企业查询：使用companyName（兼容性）
+      params.companyName = uniqueCompanyNames[0]
+      console.log('🏢 单企业名称查询:', uniqueCompanyNames[0])
+    }
+  }
+  if (allCompanyCodes.length > 0) {
+    // 去重
+    const uniqueCompanyCodes = [...new Set(allCompanyCodes)]
+
+    if (uniqueCompanyCodes.length > 1) {
+      // 多企业查询：优先使用companyCodes
+      params.companyCodes = uniqueCompanyCodes
+      console.log('🏢 多企业代码查询:', uniqueCompanyCodes)
+    } else {
+      // 单企业查询：使用companyCode（兼容性）
+      params.companyCode = uniqueCompanyCodes[0]
+      console.log('🏢 单企业代码查询:', uniqueCompanyCodes[0])
+    }
   }
 
-  return filteredData
+  // 设置合并后的车辆参数
+  if (allVehicleBrands.length > 0) {
+    const uniqueBrands = [...new Set(allVehicleBrands)]
+    if (uniqueBrands.length > 1) {
+      params.vehicleBrands = uniqueBrands
+      console.log('🚗 多车辆品牌查询:', uniqueBrands)
+    } else {
+      params.vehicleBrand = uniqueBrands[0]
+      console.log('🚗 单车辆品牌查询:', uniqueBrands[0])
+    }
+  }
+  if (allVehicleModels.length > 0) {
+    const uniqueModels = [...new Set(allVehicleModels)]
+    if (uniqueModels.length > 1) {
+      params.vehicleModels = uniqueModels
+      console.log('🚗 多车辆型号查询:', uniqueModels)
+    } else {
+      params.vehicleModel = uniqueModels[0]
+      console.log('🚗 单车辆型号查询:', uniqueModels[0])
+    }
+  }
+  if (allVehicleNames.length > 0) {
+    params.vehicleNames = [...new Set(allVehicleNames)]
+    console.log('🚗 车辆名称查询:', params.vehicleNames)
+  }
+  if (allVehicleClass.length > 0) {
+    params.vehicleClass = [...new Set(allVehicleClass)]
+    console.log('🚗 车辆类别查询:', params.vehicleClass)
+  }
+
+  // 设置合并后的分类参数
+  if (allSixCategories.length > 0) {
+    params.sixCategories = [...new Set(allSixCategories)]
+    console.log('📊 六大类查询:', params.sixCategories)
+  }
+
+  // 设置合并后的燃料和新能源参数
+  if (allFuelTypes.length > 0) {
+    const uniqueFuelTypes = [...new Set(allFuelTypes)]
+    if (uniqueFuelTypes.length > 1) {
+      params.fuelTypes = uniqueFuelTypes
+      console.log('⛽ 多燃料类型查询:', uniqueFuelTypes)
+    } else {
+      params.fuelType = uniqueFuelTypes[0]
+      console.log('⛽ 单燃料类型查询:', uniqueFuelTypes[0])
+    }
+  }
+  if (allNewEnergyCategories.length > 0) {
+    const uniqueEnergyTypes = [...new Set(allNewEnergyCategories)]
+    if (uniqueEnergyTypes.length > 1) {
+      params.newEnergyCategories = uniqueEnergyTypes
+      console.log('🔋 多新能源类型查询:', uniqueEnergyTypes)
+    } else {
+      params.newEnergyType = uniqueEnergyTypes[0]
+      console.log('🔋 单新能源类型查询:', uniqueEnergyTypes[0])
+    }
+  }
+
+  // 设置合并后的地址参数
+  if (allProductionAddresses.length > 0) {
+    const uniqueAddresses = [...new Set(allProductionAddresses)]
+    if (uniqueAddresses.length > 1) {
+      params.productionAddresses = uniqueAddresses
+      console.log('🏭 多生产地址查询:', uniqueAddresses)
+    } else {
+      params.productionAddress = uniqueAddresses[0]
+      console.log('🏭 单生产地址查询:', uniqueAddresses[0])
+    }
+  }
+  if (allProductionProvinces.length > 0) {
+    params.productionProvinces = [...new Set(allProductionProvinces)]
+    console.log('🏭 生产省份查询:', params.productionProvinces)
+  }
+  if (allProductionCities.length > 0) {
+    params.productionCities = [...new Set(allProductionCities)]
+    console.log('🏭 生产城市查询:', params.productionCities)
+  }
+
+  // 调试查询参数
+  if (import.meta.env.DEV) {
+    console.log('🔍 最终查询参数:', params)
+    import('../utils/query-debug').then(({ debugQueryParams }) => {
+      debugQueryParams(conditions, params)
+    })
+  }
+
+  return params
 }
 
 const handleReset = () => {
@@ -240,20 +412,54 @@ const handleReset = () => {
   ElMessage.success('已重置所有条件')
 }
 
-const handleExport = () => {
+const handleExport = async () => {
   if (!hasSearched.value || tableData.value.length === 0) {
     ElMessage.warning('没有可导出的数据')
     return
   }
 
-  // 这里应该调用实际的导出功能
-  console.log('导出数据:', tableData.value)
-  ElMessage.success('数据导出成功')
+  try {
+    const { certificateQuantityApi, exportUtils } = await import('../services/api')
+
+    // 构建导出参数
+    const params = {
+      ...buildSearchParams(selectedConditions.value),
+      field: 'certificateCount', // 添加必需的排序字段
+      order: 'desc' as const,
+      format: 'excel' as const,
+      filename: '合格证总量统计'
+    }
+
+    const blob = await certificateQuantityApi.export(params)
+    exportUtils.downloadFile(blob, exportUtils.generateFilename('合格证总量统计'))
+
+    ElMessage.success('数据导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败，请重试')
+  }
 }
 
-const handleExportData = (data: any[]) => {
-  console.log('导出选中数据:', data)
-  ElMessage.success('数据导出成功')
+const handleExportData = async (data: any[]) => {
+  try {
+    const { certificateQuantityApi, exportUtils } = await import('../services/api')
+
+    const params = {
+      ...buildSearchParams(selectedConditions.value),
+      field: 'certificateCount', // 添加必需的排序字段
+      order: 'desc' as const,
+      format: 'excel' as const,
+      filename: '合格证总量统计_选中数据'
+    }
+
+    const blob = await certificateQuantityApi.export(params)
+    exportUtils.downloadFile(blob, exportUtils.generateFilename('合格证总量统计_选中'))
+
+    ElMessage.success('选中数据导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败，请重试')
+  }
 }
 
 const handleViewDetail = (row: any) => {
@@ -269,6 +475,35 @@ const handleSortChange = (sortInfo: { prop: string; order: string }) => {
 // 生命周期
 onMounted(() => {
   console.log('合格证总量查询页面已加载')
+
+  // 开发环境下打印API映射报告
+  if (import.meta.env.DEV) {
+    import('../utils/api-validation').then(({ printMappingReport }) => {
+      printMappingReport()
+    })
+
+    // 运行多企业查询测试
+    import('../utils/multi-company-query-test').then(({ testMultiCompanyQuery, testSingleConditionMultiCompany }) => {
+      testMultiCompanyQuery()
+      testSingleConditionMultiCompany()
+    })
+
+    // 运行多车辆品牌查询测试
+    import('../utils/multi-vehicle-brand-test').then(({ testMultiVehicleBrandQuery, testSingleConditionMultiBrand }) => {
+      testMultiVehicleBrandQuery()
+      testSingleConditionMultiBrand()
+    })
+
+    // 运行车辆名称查询测试
+    import('../utils/vehicle-name-query-test').then(({ testVehicleNameQuery }) => {
+      testVehicleNameQuery()
+    })
+
+    // 运行修复验证测试
+    import('../utils/vehicle-name-fix-validation').then(({ runTest }) => {
+      runTest()
+    })
+  }
 })
 </script>
 

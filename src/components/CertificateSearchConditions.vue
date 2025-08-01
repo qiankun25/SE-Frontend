@@ -40,28 +40,157 @@
       <el-form :model="form" label-width="120px">
         <el-row :gutter="20">
           <!-- 企业选择 -->
-          <el-col :span="8">
-            <company-auto-complete v-model="form.companies" label="企业选择" placeholder="请输入企业代码或企业名称" :multiple="true"
-              :allow-batch-import="true" @change="handleCompanyChange" />
+          <el-col :span="12">
+            <el-form-item label="企业选择">
+              <div class="enterprise-selection">
+                <!-- 已选择的企业标签 -->
+                <div v-if="form.selectedCompanies.length > 0" class="selected-companies">
+                  <el-tag v-for="(company, index) in form.selectedCompanies" :key="`${company.code}-${index}`" closable
+                    @close="removeCompany(index)" :type="company.isPartialMatch ? 'warning' : 'primary'"
+                    class="company-tag">
+                    <span class="company-tag-content">
+                      <span class="company-name">{{ company.name }}</span>
+                      <span v-if="company.code && !company.isPartialMatch" class="company-code">({{ company.code
+                      }})</span>
+                      <span v-if="company.isPartialMatch" class="partial-match-hint">(部分匹配)</span>
+                    </span>
+                  </el-tag>
+                </div>
+
+                <!-- 输入区域 -->
+                <div class="enterprise-input-group">
+                  <el-input v-model="form.companyNameInput" placeholder="输入企业名称（支持部分匹配）" style="flex: 1" clearable
+                    @input="handleCompanyNameInput" @keyup.enter="addCompanyByName">
+                    <template #prepend>企业名称</template>
+                    <template #append>
+                      <el-button @click="addCompanyByName" :disabled="!form.companyNameInput.trim()">
+                        添加
+                      </el-button>
+                    </template>
+                  </el-input>
+                  <el-input v-model="form.companyCodeInput" placeholder="输入企业代码" style="flex: 1; margin-left: 8px"
+                    clearable @input="handleCompanyCodeInput" @keyup.enter="addCompanyByCode">
+                    <template #prepend>企业代码</template>
+                    <template #append>
+                      <el-button @click="addCompanyByCode" :disabled="!form.companyCodeInput.trim()">
+                        添加
+                      </el-button>
+                    </template>
+                  </el-input>
+                </div>
+
+                <!-- 加载状态 -->
+                <div v-if="loadingCompanies" class="loading-companies">
+                  <el-icon class="is-loading">
+                    <Loading />
+                  </el-icon>
+                  正在加载企业数据...
+                </div>
+
+                <!-- 建议列表 -->
+                <div class="enterprise-suggestions" v-else-if="showCompanySuggestions && companySuggestions.length > 0">
+                  <div class="suggestion-header">
+                    匹配的企业（点击添加）：
+                    <el-button type="text" size="small" @click="addAllSuggestions">
+                      全部添加
+                    </el-button>
+                  </div>
+                  <div class="suggestion-list">
+                    <div v-for="company in companySuggestions" :key="company.code" class="suggestion-item"
+                      @click="addCompanyFromSuggestion(company)">
+                      <div class="company-info">
+                        <span class="company-name">{{ company.name }}</span>
+                        <span class="company-code">{{ company.code }}</span>
+                      </div>
+                      <el-icon class="add-icon">
+                        <Plus />
+                      </el-icon>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </el-form-item>
           </el-col>
 
           <!-- 车辆型号 -->
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="车辆型号">
-              <el-select v-model="form.vehicleModels" multiple filterable allow-create placeholder="请输入车辆型号"
-                style="width: 100%">
-                <el-option v-for="model in vehicleModelOptions" :key="model" :label="model" :value="model" />
-              </el-select>
+              <div class="vehicle-input-selection">
+                <!-- 已选择的车辆型号标签 -->
+                <div v-if="form.vehicleModels.length > 0" class="selected-items">
+                  <el-tag v-for="(model, index) in form.vehicleModels" :key="`model-${index}`" closable
+                    @close="removeVehicleModel(index)" type="primary" class="item-tag">
+                    {{ model }}
+                  </el-tag>
+                </div>
+
+                <!-- 输入区域 -->
+                <el-input v-model="form.vehicleModelInput" placeholder="输入车辆型号，回车添加" clearable
+                  @keyup.enter="addVehicleModel" @input="handleVehicleModelInput">
+                  <template #append>
+                    <el-button @click="addVehicleModel" :disabled="!form.vehicleModelInput.trim()">
+                      添加
+                    </el-button>
+                  </template>
+                </el-input>
+
+                <!-- 建议列表 -->
+                <div class="suggestions" v-if="showVehicleModelSuggestions && vehicleModelSuggestions.length > 0">
+                  <div class="suggestion-header">
+                    匹配的车辆型号（点击添加）：
+                  </div>
+                  <div class="suggestion-list">
+                    <div v-for="model in vehicleModelSuggestions" :key="model" class="suggestion-item"
+                      @click="addVehicleModelFromSuggestion(model)">
+                      <span class="suggestion-text">{{ model }}</span>
+                      <el-icon class="add-icon">
+                        <Plus />
+                      </el-icon>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </el-form-item>
           </el-col>
 
           <!-- 车辆品牌 -->
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="车辆品牌">
-              <el-select v-model="form.vehicleBrands" multiple filterable allow-create placeholder="请输入车辆品牌"
-                style="width: 100%">
-                <el-option v-for="brand in vehicleBrandOptions" :key="brand" :label="brand" :value="brand" />
-              </el-select>
+              <div class="vehicle-input-selection">
+                <!-- 已选择的车辆品牌标签 -->
+                <div v-if="form.vehicleBrands.length > 0" class="selected-items">
+                  <el-tag v-for="(brand, index) in form.vehicleBrands" :key="`brand-${index}`" closable
+                    @close="removeVehicleBrand(index)" type="primary" class="item-tag">
+                    {{ brand }}
+                  </el-tag>
+                </div>
+
+                <!-- 输入区域 -->
+                <el-input v-model="form.vehicleBrandInput" placeholder="输入车辆品牌，回车添加" clearable
+                  @keyup.enter="addVehicleBrand" @input="handleVehicleBrandInput">
+                  <template #append>
+                    <el-button @click="addVehicleBrand" :disabled="!form.vehicleBrandInput.trim()">
+                      添加
+                    </el-button>
+                  </template>
+                </el-input>
+
+                <!-- 建议列表 -->
+                <div class="suggestions" v-if="showVehicleBrandSuggestions && vehicleBrandSuggestions.length > 0">
+                  <div class="suggestion-header">
+                    匹配的车辆品牌（点击添加）：
+                  </div>
+                  <div class="suggestion-list">
+                    <div v-for="brand in vehicleBrandSuggestions" :key="brand" class="suggestion-item"
+                      @click="addVehicleBrandFromSuggestion(brand)">
+                      <span class="suggestion-text">{{ brand }}</span>
+                      <el-icon class="add-icon">
+                        <Plus />
+                      </el-icon>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </el-form-item>
           </el-col>
         </el-row>
@@ -70,49 +199,57 @@
           <!-- 车辆名称 -->
           <el-col :span="8">
             <el-form-item label="车辆名称">
-              <el-select v-model="form.vehicleNames" multiple filterable allow-create placeholder="请输入车辆名称（模糊查询）"
-                style="width: 100%">
-                <el-option v-for="name in vehicleNameOptions" :key="name" :label="name" :value="name" />
-              </el-select>
+              <div class="vehicle-input-selection">
+                <!-- 已选择的车辆名称标签 -->
+                <div v-if="form.vehicleNames.length > 0" class="selected-items">
+                  <el-tag v-for="(name, index) in form.vehicleNames" :key="`name-${index}`" closable
+                    @close="removeVehicleName(index)" type="primary" class="item-tag">
+                    {{ name }}
+                  </el-tag>
+                </div>
+
+                <!-- 输入区域 -->
+                <el-input v-model="form.vehicleNameInput" placeholder="输入车辆名称，回车添加" clearable
+                  @keyup.enter="addVehicleName" @input="handleVehicleNameInput">
+                  <template #append>
+                    <el-button @click="addVehicleName" :disabled="!form.vehicleNameInput.trim()">
+                      添加
+                    </el-button>
+                  </template>
+                </el-input>
+
+                <!-- 建议列表 -->
+                <div class="suggestions" v-if="showVehicleNameSuggestions && vehicleNameSuggestions.length > 0">
+                  <div class="suggestion-header">
+                    匹配的车辆名称（点击添加）：
+                  </div>
+                  <div class="suggestion-list">
+                    <div v-for="name in vehicleNameSuggestions" :key="name" class="suggestion-item"
+                      @click="addVehicleNameFromSuggestion(name)">
+                      <span class="suggestion-text">{{ name }}</span>
+                      <el-icon class="add-icon">
+                        <Plus />
+                      </el-icon>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </el-form-item>
           </el-col>
 
-          <!-- 时间范围 -->
-          <el-col :span="8">
+          <!-- 时间范围选择 -->
+          <el-col :span="16">
             <el-form-item label="时间范围">
-              <div class="time-range-container">
-                <el-select v-model="form.timeRangeType" placeholder="选择时间类型" style="width: 100%; margin-bottom: 8px;"
-                  @change="handleTimeRangeTypeChange">
-                  <el-option label="总量" value="total" />
-                  <el-option label="近两年" value="recent2years" />
-                  <el-option label="近六月" value="recent6months" />
-                  <el-option label="今年" value="thisYear" />
-                  <el-option label="去年" value="lastYear" />
-                  <el-option label="自定义" value="custom" />
-                </el-select>
-
-                <el-select v-if="form.timeRangeType !== 'total'" v-model="form.timeUnit" placeholder="选择时间单位"
-                  style="width: 100%; margin-bottom: 8px;">
-                  <el-option label="年" value="year" />
-                  <el-option label="月" value="month" />
-                  <el-option label="日" value="day" />
-                </el-select>
-
-                <el-date-picker v-if="form.timeRangeType === 'custom'" v-model="form.customTimeRange" type="daterange"
-                  range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" style="width: 100%" />
-              </div>
-            </el-form-item>
-          </el-col>
-
-          <!-- 同期比 -->
-          <el-col :span="8">
-            <el-form-item label="同期比">
-              <div class="comparison-container">
-                <el-switch v-model="form.enableComparison" @change="handleComparisonChange" />
-                <el-text v-if="!form.timeRangeType" type="info" size="small" style="margin-left: 8px;">
-                  请先选择时间范围
-                </el-text>
-              </div>
+              <TimeSelectionAdapter
+                v-model="timeSelectionData"
+                :size="'default'"
+                :disabled="false"
+                :show-debug-info="isDevelopment"
+                @change="handleTimeSelectionChange"
+                @query-params-change="handleQueryParamsChange"
+                @validation-change="handleTimeValidationChange"
+                @error="handleTimeSelectionError"
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -121,11 +258,42 @@
           <!-- 生产地址 -->
           <el-col :span="8">
             <el-form-item label="生产地址">
-              <el-select v-model="form.productionAddresses" multiple filterable allow-create placeholder="请输入生产地址（模糊查询）"
-                style="width: 100%">
-                <el-option v-for="address in productionAddressOptions" :key="address" :label="address"
-                  :value="address" />
-              </el-select>
+              <div class="vehicle-input-selection">
+                <!-- 已选择的生产地址标签 -->
+                <div v-if="form.productionAddresses.length > 0" class="selected-items">
+                  <el-tag v-for="(address, index) in form.productionAddresses" :key="`address-${index}`" closable
+                    @close="removeProductionAddress(index)" type="primary" class="item-tag">
+                    {{ address }}
+                  </el-tag>
+                </div>
+
+                <!-- 输入区域 -->
+                <el-input v-model="form.productionAddressInput" placeholder="输入生产地址，回车添加" clearable
+                  @keyup.enter="addProductionAddress" @input="handleProductionAddressInput">
+                  <template #append>
+                    <el-button @click="addProductionAddress" :disabled="!form.productionAddressInput.trim()">
+                      添加
+                    </el-button>
+                  </template>
+                </el-input>
+
+                <!-- 建议列表 -->
+                <div class="suggestions"
+                  v-if="showProductionAddressSuggestions && productionAddressSuggestions.length > 0">
+                  <div class="suggestion-header">
+                    匹配的生产地址（点击添加）：
+                  </div>
+                  <div class="suggestion-list">
+                    <div v-for="address in productionAddressSuggestions" :key="address" class="suggestion-item"
+                      @click="addProductionAddressFromSuggestion(address)">
+                      <span class="suggestion-text">{{ address }}</span>
+                      <el-icon class="add-icon">
+                        <Plus />
+                      </el-icon>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </el-form-item>
           </el-col>
 
@@ -179,15 +347,41 @@
           <!-- 燃料种类 -->
           <el-col :span="8">
             <el-form-item label="燃料种类">
-              <el-select v-model="form.fuelTypes" multiple filterable allow-create placeholder="请输入燃料种类（模糊查询）"
-                style="width: 100%">
-                <el-option label="电" value="电" />
-                <el-option label="油" value="油" />
-                <el-option label="汽油" value="汽油" />
-                <el-option label="柴油" value="柴油" />
-                <el-option label="天然气" value="天然气" />
-                <el-option label="混合动力" value="混合动力" />
-              </el-select>
+              <div class="vehicle-input-selection">
+                <!-- 已选择的燃料种类标签 -->
+                <div v-if="form.fuelTypes.length > 0" class="selected-items">
+                  <el-tag v-for="(fuel, index) in form.fuelTypes" :key="`fuel-${index}`" closable
+                    @close="removeFuelType(index)" type="primary" class="item-tag">
+                    {{ fuel }}
+                  </el-tag>
+                </div>
+
+                <!-- 输入区域 -->
+                <el-input v-model="form.fuelTypeInput" placeholder="输入燃料种类，回车添加" clearable @keyup.enter="addFuelType"
+                  @input="handleFuelTypeInput">
+                  <template #append>
+                    <el-button @click="addFuelType" :disabled="!form.fuelTypeInput.trim()">
+                      添加
+                    </el-button>
+                  </template>
+                </el-input>
+
+                <!-- 建议列表 -->
+                <div class="suggestions" v-if="showFuelTypeSuggestions && fuelTypeSuggestions.length > 0">
+                  <div class="suggestion-header">
+                    匹配的燃料种类（点击添加）：
+                  </div>
+                  <div class="suggestion-list">
+                    <div v-for="fuel in fuelTypeSuggestions" :key="fuel" class="suggestion-item"
+                      @click="addFuelTypeFromSuggestion(fuel)">
+                      <span class="suggestion-text">{{ fuel }}</span>
+                      <el-icon class="add-icon">
+                        <Plus />
+                      </el-icon>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </el-form-item>
           </el-col>
         </el-row>
@@ -242,9 +436,12 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import CompanyAutoComplete from './CompanyAutoComplete.vue'
+import { Plus, Loading } from '@element-plus/icons-vue'
+import TimeSelectionAdapter from './TimeSelectionAdapter.vue'
+import type { QueryParams, ValidationResult } from '../types/time-selection'
+
 
 interface SearchForm {
   // 前提条件
@@ -252,29 +449,56 @@ interface SearchForm {
   excludeNonAnnouncement: boolean
 
   // 主要查询条件
-  companies: any[]
+  selectedCompanies: CompanyInfo[]  // 已选择的企业列表
+  companyNameInput: string          // 企业名称输入框
+  companyCodeInput: string          // 企业代码输入框
   vehicleModels: string[]
+  vehicleModelInput: string         // 车辆型号输入框
   vehicleBrands: string[]
+  vehicleBrandInput: string         // 车辆品牌输入框
   vehicleNames: string[]
+  vehicleNameInput: string          // 车辆名称输入框
   timeRangeType: string
   timeUnit: string
   customTimeRange: [Date, Date] | null
   enableComparison: boolean
   productionAddresses: string[]
+  productionAddressInput: string    // 生产地址输入框
   productionProvinces: string[]
   productionCities: string[]
   sixCategories: string[]
   commercialOrPassenger: string
   fuelTypes: string[]
+  fuelTypeInput: string             // 燃料种类输入框
   newEnergyCategories: string[]
   isNewEnergy: string
   showRanking: boolean
+}
+
+interface CompanyInfo {
+  code: string
+  name: string
+  isPartialMatch?: boolean  // 是否为部分匹配（用户输入的不完整信息）
 }
 
 const emit = defineEmits(['add-condition', 'reset'])
 
 // 响应式数据
 const showPresetConditions = ref(false)
+const showCompanySuggestions = ref(false)
+const companySuggestions = ref<CompanyInfo[]>([])
+
+// 车辆相关建议状态
+const showVehicleModelSuggestions = ref(false)
+const vehicleModelSuggestions = ref<string[]>([])
+const showVehicleBrandSuggestions = ref(false)
+const vehicleBrandSuggestions = ref<string[]>([])
+const showVehicleNameSuggestions = ref(false)
+const vehicleNameSuggestions = ref<string[]>([])
+const showProductionAddressSuggestions = ref(false)
+const productionAddressSuggestions = ref<string[]>([])
+const showFuelTypeSuggestions = ref(false)
+const fuelTypeSuggestions = ref<string[]>([])
 
 const form = reactive<SearchForm>({
   // 前提条件默认值
@@ -283,23 +507,77 @@ const form = reactive<SearchForm>({
   showRanking: false,
 
   // 主要查询条件
-  companies: [],
+  selectedCompanies: [],
+  companyNameInput: '',
+  companyCodeInput: '',
   vehicleModels: [],
+  vehicleModelInput: '',
   vehicleBrands: [],
+  vehicleBrandInput: '',
   vehicleNames: [],
+  vehicleNameInput: '',
   timeRangeType: '',
   timeUnit: 'year',
   customTimeRange: null,
   enableComparison: false,
   productionAddresses: [],
+  productionAddressInput: '',
   productionProvinces: [],
   productionCities: [],
   sixCategories: [],
   commercialOrPassenger: '',
   fuelTypes: [],
+  fuelTypeInput: '',
   newEnergyCategories: [],
   isNewEnergy: ''
 })
+
+// 企业数据（从后端获取）
+const companyDatabase = ref<CompanyInfo[]>([])
+const loadingCompanies = ref(false)
+
+// 时间选择相关数据
+const timeSelectionData = ref({
+  timeRangeType: '',
+  timeUnit: 'year',
+  customTimeRange: null,
+  enableComparison: false
+})
+
+// 查询参数
+const currentQueryParams = ref<QueryParams | null>(null)
+
+// 时间验证状态
+const timeValidationResult = ref<ValidationResult | null>(null)
+
+// 开发环境标识
+const isDevelopment = computed(() => import.meta.env.DEV)
+
+// 获取企业列表
+const fetchCompanies = async () => {
+  try {
+    loadingCompanies.value = true
+    const { certificateQuantityApi } = await import('../services/api')
+    const response = await certificateQuantityApi.getCompaniesList()
+
+    if (response.code === 200) {
+      companyDatabase.value = response.data.map(company => ({
+        code: company.code,
+        name: company.name,
+        isPartialMatch: false
+      }))
+      console.log(`✅ 成功加载 ${companyDatabase.value.length} 个企业信息`)
+    } else {
+      console.error('获取企业列表失败:', response.message)
+      ElMessage.error('获取企业列表失败')
+    }
+  } catch (error) {
+    console.error('获取企业列表出错:', error)
+    ElMessage.error('获取企业列表出错')
+  } finally {
+    loadingCompanies.value = false
+  }
+}
 
 // 选项数据
 const vehicleModelOptions = ref(['Model S', 'Model 3', 'Model X', 'Model Y', 'H9', '汉EV'])
@@ -318,11 +596,463 @@ const cityOptions = computed(() => {
   return ['北京市', '上海市', '深圳市', '广州市', '杭州市', '成都市', '西安市', '武汉市']
 })
 
-// 事件处理
-const handleCompanyChange = (companies: any[]) => {
-  console.log('企业选择变化:', companies)
+// 企业选择相关事件处理
+
+// 检查企业是否已经被选择
+const isCompanySelected = (company: CompanyInfo): boolean => {
+  return form.selectedCompanies.some(selected => {
+    // 如果有企业代码，优先按代码匹配
+    if (company.code && selected.code && company.code.trim() !== '') {
+      return selected.code === company.code
+    }
+    // 否则按企业名称精确匹配
+    if (company.name && selected.name && company.name.trim() !== '') {
+      return selected.name === company.name
+    }
+    return false
+  })
 }
 
+// 添加企业到选择列表
+const addCompanyToSelection = (company: CompanyInfo) => {
+  if (!isCompanySelected(company)) {
+    form.selectedCompanies.push({ ...company })
+    ElMessage.success(`已添加企业：${company.name}${company.code ? ` (${company.code})` : ''}`)
+  } else {
+    // 允许重复添加，但给出提示
+    form.selectedCompanies.push({ ...company })
+    ElMessage.info(`企业 ${company.name} 已重复添加，查询时将使用OR逻辑`)
+  }
+}
+
+// 从选择列表中移除企业
+const removeCompany = (index: number) => {
+  const removed = form.selectedCompanies.splice(index, 1)[0]
+  ElMessage.info(`已移除企业：${removed.name}`)
+}
+
+// 处理企业名称输入
+const handleCompanyNameInput = (value: string) => {
+  if (value.trim()) {
+    // 根据企业名称搜索，显示匹配的企业（不过滤已选择的企业，允许重复选择）
+    companySuggestions.value = companyDatabase.value.filter(company =>
+      company.name.toLowerCase().includes(value.toLowerCase())
+    ).slice(0, 8) // 最多显示8个建议
+    showCompanySuggestions.value = companySuggestions.value.length > 0
+  } else {
+    showCompanySuggestions.value = false
+    companySuggestions.value = []
+  }
+}
+
+// 处理企业代码输入
+const handleCompanyCodeInput = (value: string) => {
+  if (value.trim()) {
+    // 根据企业代码搜索（不过滤已选择的企业，允许重复选择）
+    const matchedCompanies = companyDatabase.value.filter(company =>
+      company.code.toLowerCase().includes(value.toLowerCase())
+    )
+
+    companySuggestions.value = matchedCompanies.slice(0, 8)
+    showCompanySuggestions.value = companySuggestions.value.length > 0
+
+    // 如果找到完全匹配的企业代码，自动补全企业名称
+    const exactMatch = companyDatabase.value.find(company =>
+      company.code.toLowerCase() === value.toLowerCase()
+    )
+    if (exactMatch) {
+      // 可以选择是否自动补全，这里暂时不自动补全，让用户手动选择
+    }
+  } else {
+    showCompanySuggestions.value = false
+    companySuggestions.value = []
+  }
+}
+
+// 通过企业名称添加（支持部分匹配）
+const addCompanyByName = () => {
+  const name = form.companyNameInput.trim()
+  if (!name) return
+
+  // 检查是否有完全匹配的企业
+  const exactMatch = companyDatabase.value.find(company =>
+    company.name.toLowerCase() === name.toLowerCase()
+  )
+
+  if (exactMatch) {
+    addCompanyToSelection(exactMatch)
+  } else {
+    // 添加部分匹配的企业
+    const partialCompany: CompanyInfo = {
+      code: '',
+      name: name,
+      isPartialMatch: true
+    }
+    addCompanyToSelection(partialCompany)
+  }
+
+  // 清空输入框
+  form.companyNameInput = ''
+  showCompanySuggestions.value = false
+}
+
+// 通过企业代码添加
+const addCompanyByCode = () => {
+  const code = form.companyCodeInput.trim()
+  if (!code) return
+
+  // 查找对应的企业
+  const matchedCompany = companyDatabase.value.find(company =>
+    company.code.toLowerCase() === code.toLowerCase()
+  )
+
+  if (matchedCompany) {
+    addCompanyToSelection(matchedCompany)
+  } else {
+    // 添加未找到的企业代码
+    const unknownCompany: CompanyInfo = {
+      code: code,
+      name: `企业代码: ${code}`,
+      isPartialMatch: true
+    }
+    addCompanyToSelection(unknownCompany)
+  }
+
+  // 清空输入框
+  form.companyCodeInput = ''
+  showCompanySuggestions.value = false
+}
+
+// 从建议列表添加企业
+const addCompanyFromSuggestion = (company: CompanyInfo) => {
+  addCompanyToSelection(company)
+
+  // 清空相关输入框
+  if (form.companyNameInput) {
+    form.companyNameInput = ''
+  }
+  if (form.companyCodeInput) {
+    form.companyCodeInput = ''
+  }
+
+  showCompanySuggestions.value = false
+}
+
+// 添加所有建议的企业
+const addAllSuggestions = () => {
+  let addedCount = 0
+  let duplicateCount = 0
+
+  companySuggestions.value.forEach(company => {
+    if (!isCompanySelected(company)) {
+      form.selectedCompanies.push({ ...company })
+      addedCount++
+    } else {
+      duplicateCount++
+    }
+  })
+
+  if (addedCount > 0) {
+    ElMessage.success(`已添加 ${addedCount} 个企业${duplicateCount > 0 ? `，跳过 ${duplicateCount} 个重复企业` : ''}`)
+  } else {
+    ElMessage.info('所有建议的企业都已存在')
+  }
+
+  // 清空输入框和建议
+  form.companyNameInput = ''
+  form.companyCodeInput = ''
+  showCompanySuggestions.value = false
+}
+
+// 点击外部关闭建议框
+const handleClickOutside = (event: Event) => {
+  const target = event.target as HTMLElement
+  if (!target.closest('.enterprise-selection') && !target.closest('.vehicle-input-selection')) {
+    showCompanySuggestions.value = false
+    showVehicleModelSuggestions.value = false
+    showVehicleBrandSuggestions.value = false
+    showVehicleNameSuggestions.value = false
+    showProductionAddressSuggestions.value = false
+    showFuelTypeSuggestions.value = false
+  }
+}
+
+// 车辆型号相关处理函数
+const handleVehicleModelInput = (value: string) => {
+  if (value.trim()) {
+    vehicleModelSuggestions.value = vehicleModelOptions.value.filter(model =>
+      model.toLowerCase().includes(value.toLowerCase()) &&
+      !form.vehicleModels.includes(model)
+    ).slice(0, 6)
+    showVehicleModelSuggestions.value = vehicleModelSuggestions.value.length > 0
+  } else {
+    showVehicleModelSuggestions.value = false
+  }
+}
+
+const addVehicleModel = () => {
+  const model = form.vehicleModelInput.trim()
+  if (!model) return
+
+  if (!form.vehicleModels.includes(model)) {
+    form.vehicleModels.push(model)
+    ElMessage.success(`已添加车辆型号：${model}`)
+  } else {
+    ElMessage.warning('该车辆型号已存在')
+  }
+
+  form.vehicleModelInput = ''
+  showVehicleModelSuggestions.value = false
+}
+
+const addVehicleModelFromSuggestion = (model: string) => {
+  if (!form.vehicleModels.includes(model)) {
+    form.vehicleModels.push(model)
+    ElMessage.success(`已添加车辆型号：${model}`)
+  }
+  form.vehicleModelInput = ''
+  showVehicleModelSuggestions.value = false
+}
+
+const removeVehicleModel = (index: number) => {
+  const removed = form.vehicleModels.splice(index, 1)[0]
+  ElMessage.info(`已移除车辆型号：${removed}`)
+}
+
+// 车辆品牌相关处理函数
+const handleVehicleBrandInput = (value: string) => {
+  if (value.trim()) {
+    vehicleBrandSuggestions.value = vehicleBrandOptions.value.filter(brand =>
+      brand.toLowerCase().includes(value.toLowerCase()) &&
+      !form.vehicleBrands.includes(brand)
+    ).slice(0, 6)
+    showVehicleBrandSuggestions.value = vehicleBrandSuggestions.value.length > 0
+  } else {
+    showVehicleBrandSuggestions.value = false
+  }
+}
+
+const addVehicleBrand = () => {
+  const brand = form.vehicleBrandInput.trim()
+  if (!brand) return
+
+  if (!form.vehicleBrands.includes(brand)) {
+    form.vehicleBrands.push(brand)
+    ElMessage.success(`已添加车辆品牌：${brand}`)
+  } else {
+    ElMessage.warning('该车辆品牌已存在')
+  }
+
+  form.vehicleBrandInput = ''
+  showVehicleBrandSuggestions.value = false
+}
+
+const addVehicleBrandFromSuggestion = (brand: string) => {
+  if (!form.vehicleBrands.includes(brand)) {
+    form.vehicleBrands.push(brand)
+    ElMessage.success(`已添加车辆品牌：${brand}`)
+  }
+  form.vehicleBrandInput = ''
+  showVehicleBrandSuggestions.value = false
+}
+
+const removeVehicleBrand = (index: number) => {
+  const removed = form.vehicleBrands.splice(index, 1)[0]
+  ElMessage.info(`已移除车辆品牌：${removed}`)
+}
+
+// 车辆名称相关处理函数
+const handleVehicleNameInput = (value: string) => {
+  if (value.trim()) {
+    vehicleNameSuggestions.value = vehicleNameOptions.value.filter(name =>
+      name.toLowerCase().includes(value.toLowerCase()) &&
+      !form.vehicleNames.includes(name)
+    ).slice(0, 6)
+    showVehicleNameSuggestions.value = vehicleNameSuggestions.value.length > 0
+  } else {
+    showVehicleNameSuggestions.value = false
+  }
+}
+
+const addVehicleName = () => {
+  const name = form.vehicleNameInput.trim()
+  if (!name) return
+
+  if (!form.vehicleNames.includes(name)) {
+    form.vehicleNames.push(name)
+    ElMessage.success(`已添加车辆名称：${name}`)
+  } else {
+    ElMessage.warning('该车辆名称已存在')
+  }
+
+  form.vehicleNameInput = ''
+  showVehicleNameSuggestions.value = false
+}
+
+const addVehicleNameFromSuggestion = (name: string) => {
+  if (!form.vehicleNames.includes(name)) {
+    form.vehicleNames.push(name)
+    ElMessage.success(`已添加车辆名称：${name}`)
+  }
+  form.vehicleNameInput = ''
+  showVehicleNameSuggestions.value = false
+}
+
+const removeVehicleName = (index: number) => {
+  const removed = form.vehicleNames.splice(index, 1)[0]
+  ElMessage.info(`已移除车辆名称：${removed}`)
+}
+
+// 生产地址相关处理函数
+const handleProductionAddressInput = (value: string) => {
+  if (value.trim()) {
+    productionAddressSuggestions.value = productionAddressOptions.value.filter(address =>
+      address.toLowerCase().includes(value.toLowerCase()) &&
+      !form.productionAddresses.includes(address)
+    ).slice(0, 6)
+    showProductionAddressSuggestions.value = productionAddressSuggestions.value.length > 0
+  } else {
+    showProductionAddressSuggestions.value = false
+  }
+}
+
+const addProductionAddress = () => {
+  const address = form.productionAddressInput.trim()
+  if (!address) return
+
+  if (!form.productionAddresses.includes(address)) {
+    form.productionAddresses.push(address)
+    ElMessage.success(`已添加生产地址：${address}`)
+  } else {
+    ElMessage.warning('该生产地址已存在')
+  }
+
+  form.productionAddressInput = ''
+  showProductionAddressSuggestions.value = false
+}
+
+const addProductionAddressFromSuggestion = (address: string) => {
+  if (!form.productionAddresses.includes(address)) {
+    form.productionAddresses.push(address)
+    ElMessage.success(`已添加生产地址：${address}`)
+  }
+  form.productionAddressInput = ''
+  showProductionAddressSuggestions.value = false
+}
+
+const removeProductionAddress = (index: number) => {
+  const removed = form.productionAddresses.splice(index, 1)[0]
+  ElMessage.info(`已移除生产地址：${removed}`)
+}
+
+// 燃料种类相关处理函数
+const fuelTypeOptions = ref(['电', '油', '汽油', '柴油', '天然气', '混合动力', '氢能', '纯电动', '插电式混合动力'])
+
+const handleFuelTypeInput = (value: string) => {
+  if (value.trim()) {
+    fuelTypeSuggestions.value = fuelTypeOptions.value.filter(fuel =>
+      fuel.toLowerCase().includes(value.toLowerCase()) &&
+      !form.fuelTypes.includes(fuel)
+    ).slice(0, 6)
+    showFuelTypeSuggestions.value = fuelTypeSuggestions.value.length > 0
+  } else {
+    showFuelTypeSuggestions.value = false
+  }
+}
+
+const addFuelType = () => {
+  const fuel = form.fuelTypeInput.trim()
+  if (!fuel) return
+
+  if (!form.fuelTypes.includes(fuel)) {
+    form.fuelTypes.push(fuel)
+    ElMessage.success(`已添加燃料种类：${fuel}`)
+  } else {
+    ElMessage.warning('该燃料种类已存在')
+  }
+
+  form.fuelTypeInput = ''
+  showFuelTypeSuggestions.value = false
+}
+
+const addFuelTypeFromSuggestion = (fuel: string) => {
+  if (!form.fuelTypes.includes(fuel)) {
+    form.fuelTypes.push(fuel)
+    ElMessage.success(`已添加燃料种类：${fuel}`)
+  }
+  form.fuelTypeInput = ''
+  showFuelTypeSuggestions.value = false
+}
+
+const removeFuelType = (index: number) => {
+  const removed = form.fuelTypes.splice(index, 1)[0]
+  ElMessage.info(`已移除燃料种类：${removed}`)
+}
+
+// 生命周期钩子
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+
+  // 获取企业列表数据
+  fetchCompanies()
+
+  // 开发环境下运行企业选择功能测试
+  if (import.meta.env.DEV) {
+    import('../utils/company-selection-test').then(({ runCompanySelectionTests }) => {
+      runCompanySelectionTests()
+    })
+
+    // 运行修复测试
+    import('../utils/company-selection-fix-test').then(({ testCompanySelectionFix }) => {
+      testCompanySelectionFix()
+    })
+
+    // 运行快速输入功能测试
+    import('../utils/quick-input-test').then(({ testQuickInputFeature, testKeyboardEvents, testUXImprovements }) => {
+      testQuickInputFeature()
+      testKeyboardEvents()
+      testUXImprovements()
+    })
+  }
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
+// 时间选择相关事件处理
+const handleTimeSelectionChange = (data: any) => {
+  // 更新表单数据以保持兼容性
+  form.timeRangeType = data.timeRangeType
+  form.timeUnit = data.timeUnit
+  form.customTimeRange = data.customTimeRange
+  form.enableComparison = data.enableComparison
+
+  console.log('时间选择数据变化:', data)
+}
+
+const handleQueryParamsChange = (params: QueryParams) => {
+  currentQueryParams.value = params
+  console.log('查询参数变化:', params)
+}
+
+const handleTimeValidationChange = (result: ValidationResult) => {
+  timeValidationResult.value = result
+
+  // 根据验证结果显示消息
+  if (!result.isValid && result.level === 'error') {
+    ElMessage.error(result.message)
+  } else if (result.level === 'warning') {
+    ElMessage.warning(result.message)
+  }
+}
+
+const handleTimeSelectionError = (error: Error) => {
+  console.error('时间选择组件错误:', error)
+  ElMessage.error('时间选择组件发生错误，请刷新页面重试')
+}
+
+// 保留原有的处理函数以确保兼容性
 const handleTimeRangeTypeChange = (type: string) => {
   if (type === 'total') {
     form.timeUnit = ''
@@ -348,16 +1078,29 @@ const handleAddCondition = () => {
   const condition: any = {}
 
   // 收集所有非空条件
-  if (form.companies.length > 0) condition.companies = [...form.companies]
+  if (form.selectedCompanies.length > 0) {
+    condition.selectedCompanies = [...form.selectedCompanies]
+    // 为了兼容性，也提取企业名称和代码
+    condition.companyNames = form.selectedCompanies.map(c => c.name).filter(name => name.trim())
+    condition.companyCodes = form.selectedCompanies.map(c => c.code).filter(code => code.trim())
+  }
   if (form.vehicleModels.length > 0) condition.vehicleModels = [...form.vehicleModels]
   if (form.vehicleBrands.length > 0) condition.vehicleBrands = [...form.vehicleBrands]
   if (form.vehicleNames.length > 0) condition.vehicleNames = [...form.vehicleNames]
-  if (form.timeRangeType) {
-    condition.timeRangeType = form.timeRangeType
-    condition.timeUnit = form.timeUnit
-    if (form.customTimeRange) condition.customTimeRange = form.customTimeRange
+
+  // 使用新的时间选择数据
+  if (timeSelectionData.value.timeRangeType) {
+    condition.timeRangeType = timeSelectionData.value.timeRangeType
+    condition.timeUnit = timeSelectionData.value.timeUnit
+    if (timeSelectionData.value.customTimeRange) {
+      condition.customTimeRange = timeSelectionData.value.customTimeRange
+    }
+    // 添加查询参数信息
+    if (currentQueryParams.value) {
+      condition.queryParams = currentQueryParams.value
+    }
   }
-  if (form.enableComparison) condition.enableComparison = true
+  if (timeSelectionData.value.enableComparison) condition.enableComparison = true
   if (form.productionAddresses.length > 0) condition.productionAddresses = [...form.productionAddresses]
   if (form.productionProvinces.length > 0) condition.productionProvinces = [...form.productionProvinces]
   if (form.productionCities.length > 0) condition.productionCities = [...form.productionCities]
@@ -387,23 +1130,56 @@ const handleReset = () => {
     vehicleClass: [],
     excludeNonAnnouncement: true,
     showRanking: false,
-    companies: [],
+    selectedCompanies: [],
+    companyNameInput: '',
+    companyCodeInput: '',
     vehicleModels: [],
+    vehicleModelInput: '',
     vehicleBrands: [],
+    vehicleBrandInput: '',
     vehicleNames: [],
+    vehicleNameInput: '',
     timeRangeType: '',
     timeUnit: 'year',
     customTimeRange: null,
     enableComparison: false,
     productionAddresses: [],
+    productionAddressInput: '',
     productionProvinces: [],
     productionCities: [],
     sixCategories: [],
     commercialOrPassenger: '',
     fuelTypes: [],
+    fuelTypeInput: '',
     newEnergyCategories: [],
     isNewEnergy: ''
   })
+
+  // 重置时间选择数据
+  timeSelectionData.value = {
+    timeRangeType: '',
+    timeUnit: 'year',
+    customTimeRange: null,
+    enableComparison: false
+  }
+
+  // 清空查询参数和验证状态
+  currentQueryParams.value = null
+  timeValidationResult.value = null
+
+  // 重置所有建议
+  showCompanySuggestions.value = false
+  companySuggestions.value = []
+  showVehicleModelSuggestions.value = false
+  vehicleModelSuggestions.value = []
+  showVehicleBrandSuggestions.value = false
+  vehicleBrandSuggestions.value = []
+  showVehicleNameSuggestions.value = false
+  vehicleNameSuggestions.value = []
+  showProductionAddressSuggestions.value = false
+  productionAddressSuggestions.value = []
+  showFuelTypeSuggestions.value = false
+  fuelTypeSuggestions.value = []
 
   emit('reset')
   ElMessage.success('表单已重置')
@@ -447,5 +1223,238 @@ const handleReset = () => {
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid #ebeef5;
+}
+
+/* 企业选择样式 */
+.enterprise-selection {
+  position: relative;
+  width: 100%;
+}
+
+/* 车辆输入选择样式 */
+.vehicle-input-selection {
+  position: relative;
+  width: 100%;
+}
+
+.selected-companies {
+  margin-bottom: 12px;
+  min-height: 32px;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e4e7ed;
+}
+
+.company-tag {
+  margin-right: 8px;
+  margin-bottom: 4px;
+}
+
+.company-tag-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.company-name {
+  font-weight: 500;
+}
+
+.company-code {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.partial-match-hint {
+  font-size: 11px;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.enterprise-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.enterprise-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: white;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  margin-top: 2px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.suggestion-header {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #909399;
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.suggestion-list {
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+}
+
+.suggestion-item:hover {
+  background-color: #f5f7fa;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.company-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex: 1;
+}
+
+.suggestion-item .company-name {
+  font-size: 14px;
+  color: #303133;
+  font-weight: 500;
+}
+
+.suggestion-item .company-code {
+  font-size: 12px;
+  color: #909399;
+  background-color: #f0f2f5;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.add-icon {
+  color: #409eff;
+  font-size: 16px;
+  margin-left: 8px;
+}
+
+.loading-companies {
+  padding: 12px;
+  text-align: center;
+  color: #909399;
+  font-size: 14px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.loading-companies .el-icon {
+  margin-right: 8px;
+}
+
+/* 通用选择项样式 */
+.selected-items {
+  margin-bottom: 8px;
+  min-height: 28px;
+  padding: 6px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e4e7ed;
+}
+
+.item-tag {
+  margin-right: 6px;
+  margin-bottom: 4px;
+}
+
+.suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background: white;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  margin-top: 2px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.suggestion-header {
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #909399;
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.suggestion-list {
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  padding: 6px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.suggestion-item:hover {
+  background-color: #f5f7fa;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-text {
+  font-size: 14px;
+  color: #303133;
+  flex: 1;
+}
+
+.suggestion-item .add-icon {
+  color: #409eff;
+  font-size: 14px;
+  margin-left: 8px;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .enterprise-input-group {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .enterprise-input-group .el-input {
+    margin-left: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .enterprise-selection {
+    width: 100%;
+  }
+
+  .enterprise-input-group {
+    flex-direction: column;
+  }
 }
 </style>

@@ -35,11 +35,13 @@
       <el-form :model="searchForm" :inline="true" label-width="120px">
         <el-row :gutter="20">
           <el-col :span="8">
-            <company-selector
-              v-model="searchForm.company"
-              label="企业选择"
-              @change="handleCompanyChange"
-            />
+            <el-form-item label="企业选择">
+              <el-input
+                v-model="searchForm.companyName"
+                placeholder="请输入企业名称"
+                clearable
+              />
+            </el-form-item>
           </el-col>
           
           <el-col :span="8">
@@ -278,7 +280,7 @@ import { Search, Refresh } from '@element-plus/icons-vue'
 
 // 导入通用组件
 import TimeRangePicker from '../components/common/TimeRangePicker.vue'
-import CompanySelector from '../components/common/CompanySelector.vue'
+
 import ExportButton from '../components/common/ExportButton.vue'
 import HelpTooltip from '../components/common/HelpTooltip.vue'
 
@@ -295,7 +297,7 @@ const activeTab = ref('basic')
 
 // 搜索表单
 const searchForm = reactive<Partial<ProductAccessParams>>({
-  company: undefined,
+  companyName: '',
   vehicleModel: '',
   commonName: '',
   batchNumber: '',
