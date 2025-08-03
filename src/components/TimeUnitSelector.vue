@@ -1,7 +1,7 @@
 <template>
     <div class="time-unit-selector">
         <el-form-item label="时间单位" class="time-unit-form-item">
-            <el-radio-group v-model="selectedUnit" @change="handleUnitChange" class="time-unit-radio-group">
+            <el-radio-group v-model="selectedUnit" @change="(val: string) => handleUnitChange(val as TimeUnit)" class="time-unit-radio-group">
                 <el-radio v-for="unit in timeUnits" :key="unit.key" :value="unit.key" :disabled="disabled"
                     class="time-unit-radio">
                     {{ unit.label }}

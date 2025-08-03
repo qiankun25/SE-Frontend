@@ -36,7 +36,7 @@
 
         <!-- 跨年分组选项 -->
         <div v-if="showCrossYearGrouping" class="cross-year-grouping">
-            <el-checkbox v-model="enableYearlyGrouping" @change="handleYearlyGroupingChange">
+            <el-checkbox v-model="enableYearlyGrouping" @change="(val: boolean) => handleYearlyGroupingChange(val)">
                 按年度分组显示
             </el-checkbox>
             <span class="grouping-hint">

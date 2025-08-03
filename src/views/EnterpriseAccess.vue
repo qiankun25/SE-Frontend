@@ -326,9 +326,9 @@ import { ElMessage } from 'element-plus'
 import { Search, Refresh, List, Grid } from '@element-plus/icons-vue'
 
 // 导入通用组件
-import RegionSelector from '../components/common/RegionSelector.vue'
-import ExportButton from '../components/common/ExportButton.vue'
-import HelpTooltip from '../components/common/HelpTooltip.vue'
+import RegionSelector from '../components/RegionSelector.vue'
+import ExportButton from '../components/ExportButton.vue'
+import HelpTooltip from '../components/HelpTooltip.vue'
 
 // 导入类型定义
 import type { EnterpriseAccessParams, EnterpriseAccessItem } from '../types/api'
@@ -426,15 +426,15 @@ const handleQuickSearch = (type: string) => {
 }
 
 const handleRegisteredRegionChange = (value: any) => {
-  console.log('注册地址变化:', value)
+  // 注册地址变化处理
 }
 
 const handleProductionRegionChange = (value: any) => {
-  console.log('生产地址变化:', value)
+  // 生产地址变化处理
 }
 
 const handleSortChange = ({ prop, order }: any) => {
-  console.log('排序变化:', prop, order)
+  // 排序变化处理
 }
 
 const handleSelectionChange = (selection: EnterpriseAccessItem[]) => {
@@ -466,7 +466,7 @@ const handleSizeChange = (size: number) => {
 }
 
 const handleExport = (config: any) => {
-  console.log('导出配置:', config)
+  // 导出配置处理
   ElMessage.success('导出成功')
 }
 

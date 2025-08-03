@@ -18,8 +18,7 @@
 import { computed, watch, ref, nextTick } from 'vue'
 import type {
     TimeRange,
-    ValidationResult,
-    TimeSelectionState
+    ValidationResult
 } from '../types/time-selection'
 import { validateComparisonRange } from '../utils/time-selection-validation'
 import ValidationStatus from './ValidationStatus.vue'

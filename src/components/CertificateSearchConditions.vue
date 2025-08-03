@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>查询条件设置</span>
-          <el-button type="text" @click="showPresetConditions = !showPresetConditions">
+          <el-button link @click="showPresetConditions = !showPresetConditions">
             {{ showPresetConditions ? '隐藏' : '显示' }}前提条件
           </el-button>
         </div>
@@ -51,7 +51,7 @@
                     <span class="company-tag-content">
                       <span class="company-name">{{ company.name }}</span>
                       <span v-if="company.code && !company.isPartialMatch" class="company-code">({{ company.code
-                      }})</span>
+                        }})</span>
                       <span v-if="company.isPartialMatch" class="partial-match-hint">(部分匹配)</span>
                     </span>
                   </el-tag>
@@ -91,7 +91,7 @@
                 <div class="enterprise-suggestions" v-else-if="showCompanySuggestions && companySuggestions.length > 0">
                   <div class="suggestion-header">
                     匹配的企业（点击添加）：
-                    <el-button type="text" size="small" @click="addAllSuggestions">
+                    <el-button link size="small" @click="addAllSuggestions">
                       全部添加
                     </el-button>
                   </div>
@@ -240,16 +240,10 @@
           <!-- 时间范围选择 -->
           <el-col :span="16">
             <el-form-item label="时间范围">
-              <TimeSelectionAdapter
-                v-model="timeSelectionData"
-                :size="'default'"
-                :disabled="false"
-                :show-debug-info="isDevelopment"
-                @change="handleTimeSelectionChange"
-                @query-params-change="handleQueryParamsChange"
-                @validation-change="handleTimeValidationChange"
-                @error="handleTimeSelectionError"
-              />
+              <TimeSelectionAdapter v-model="timeSelectionData" :size="'default'" :disabled="false"
+                :show-debug-info="isDevelopment" @change="handleTimeSelectionChange"
+                @query-params-change="handleQueryParamsChange" @validation-change="handleTimeValidationChange"
+                @error="handleTimeSelectionError" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -392,7 +386,7 @@
             <el-form-item label="新能源类别">
               <el-select v-model="form.newEnergyCategories" multiple placeholder="请选择新能源类别" style="width: 100%">
                 <el-option label="纯电动" value="纯电动" />
-                <el-option label="插电式" value="插电式" />
+                <el-option label="插电式混合动力" value="插电式混合动力" />
                 <el-option label="燃料电池" value="燃料电池" />
               </el-select>
             </el-form-item>
@@ -579,17 +573,36 @@ const fetchCompanies = async () => {
   }
 }
 
+// 获取省份列表
+const fetchProvinces = async () => {
+  try {
+    const { commonApi } = await import('../services/api')
+    const response = await commonApi.getRegions()
+
+    if (response.code === 200) {
+      // 提取省份名称，使用数据库中的格式（不带省字）
+      const provinces = response.data.map(region => region.name)
+      provinceOptions.value = provinces
+      console.log(`✅ 成功加载 ${provinces.length} 个省份信息`)
+    } else {
+      console.warn('获取省份列表失败，使用默认列表')
+    }
+  } catch (error) {
+    console.warn('获取省份列表出错，使用默认列表:', error)
+  }
+}
+
 // 选项数据
 const vehicleModelOptions = ref(['Model S', 'Model 3', 'Model X', 'Model Y', 'H9', '汉EV'])
 const vehicleBrandOptions = ref(['特斯拉', '比亚迪', '红旗', '奥迪', '宝马', '奔驰'])
 const vehicleNameOptions = ref(['电动轿车', '混合动力SUV', '纯电动客车', '燃油货车'])
 const productionAddressOptions = ref(['上海临港', '深圳坪山', '长春一汽', '北京亦庄'])
 const provinceOptions = ref([
-  '北京市', '上海市', '天津市', '重庆市', '河北省', '山西省', '辽宁省', '吉林省',
-  '黑龙江省', '江苏省', '浙江省', '安徽省', '福建省', '江西省', '山东省', '河南省',
-  '湖北省', '湖南省', '广东省', '海南省', '四川省', '贵州省', '云南省', '陕西省',
-  '甘肃省', '青海省', '台湾省', '内蒙古自治区', '广西壮族自治区', '西藏自治区',
-  '宁夏回族自治区', '新疆维吾尔自治区', '香港特别行政区', '澳门特别行政区'
+  '北京', '上海', '天津', '重庆', '河北', '山西', '辽宁', '吉林',
+  '黑龙江', '江苏', '浙江', '安徽', '福建', '江西', '山东', '河南',
+  '湖北', '湖南', '广东', '海南', '四川', '贵州', '云南', '陕西',
+  '甘肃', '青海', '台湾', '内蒙古', '广西', '西藏',
+  '宁夏', '新疆', '香港', '澳门'
 ])
 const cityOptions = computed(() => {
   // 根据选择的省份动态生成城市选项
@@ -996,23 +1009,12 @@ onMounted(() => {
   // 获取企业列表数据
   fetchCompanies()
 
-  // 开发环境下运行企业选择功能测试
+  // 获取省份列表数据
+  fetchProvinces()
+
+  // 开发环境下的初始化逻辑
   if (import.meta.env.DEV) {
-    import('../utils/company-selection-test').then(({ runCompanySelectionTests }) => {
-      runCompanySelectionTests()
-    })
-
-    // 运行修复测试
-    import('../utils/company-selection-fix-test').then(({ testCompanySelectionFix }) => {
-      testCompanySelectionFix()
-    })
-
-    // 运行快速输入功能测试
-    import('../utils/quick-input-test').then(({ testQuickInputFeature, testKeyboardEvents, testUXImprovements }) => {
-      testQuickInputFeature()
-      testKeyboardEvents()
-      testUXImprovements()
-    })
+    // 开发环境特定的初始化代码
   }
 })
 

@@ -118,7 +118,7 @@ const handleValidationChange = (isValid: boolean, message: string, level: Valida
 
 // 监听外部值变化
 watch(() => props.modelValue, (newValue) => {
-    timeRange.value = newValue
+    timeRange.value = newValue || null
 }, { immediate: true })
 
 // 监听时间单位变化，清空当前选择

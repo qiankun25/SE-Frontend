@@ -60,31 +60,31 @@ const tableData = ref<any[]>([])
 // 事件处理函数
 const handleAddCondition = (condition: any) => {
   selectedConditions.value.push(condition)
-  console.log('添加查询条件:', condition)
+  // 添加查询条件
   ElMessage.success('查询条件已添加')
 }
 
 const handleRemoveCondition = (index: number) => {
   selectedConditions.value.splice(index, 1)
-  console.log('移除查询条件:', index)
+  // 移除查询条件
 }
 
 const handleClearAllConditions = () => {
   selectedConditions.value = []
   tableData.value = []
   hasSearched.value = false
-  console.log('清空所有查询条件')
+  // 清空所有查询条件
 }
 
 const handleResetConditions = () => {
-  console.log('重置条件表单')
+  // 重置条件表单
 }
 
 const handleResetAll = () => {
   selectedConditions.value = []
   tableData.value = []
   hasSearched.value = false
-  console.log('重置所有')
+  // 重置所有
 }
 
 const handleSearch = async (conditions: any[]) => {
@@ -97,7 +97,7 @@ const handleSearch = async (conditions: any[]) => {
   hasSearched.value = true
 
   try {
-    console.log('开始查询，查询条件:', conditions)
+    // 开始查询
 
     // 调用后端API
     const { certificateQuantityApi } = await import('../services/api')
@@ -118,26 +118,12 @@ const handleSearch = async (conditions: any[]) => {
 
       // 开发环境下验证返回数据
       if (import.meta.env.DEV) {
-        import('../utils/vehicle-name-query-test').then(({ validateVehicleNameInResponse, testTableColumnLogic }) => {
-          validateVehicleNameInResponse(response.data.list)
-          testTableColumnLogic(conditions)
-        })
+        // 数据验证逻辑
+        const expectedPrimaryColumn = conditions.some(c => c.vehicleNames && c.vehicleNames.length > 0) &&
+          !conditions.some(c => c.selectedCompanies && c.selectedCompanies.length > 0)
+          ? 'vehicleName' : 'companyName'
 
-        // 运行完整的修复验证
-        import('../utils/vehicle-name-fix-validation').then(({ runFullValidation }) => {
-          const expectedPrimaryColumn = conditions.some(c => c.vehicleNames && c.vehicleNames.length > 0) &&
-            !conditions.some(c => c.selectedCompanies && c.selectedCompanies.length > 0)
-            ? 'vehicleName' : 'companyName'
-
-          runFullValidation(conditions, response, expectedPrimaryColumn)
-            .then(result => {
-              if (result.success) {
-                console.log('🎉 实时验证通过！车辆名称修复正常工作')
-              } else {
-                console.warn('⚠️ 实时验证发现问题:', result.message)
-              }
-            })
-        })
+        // 验证逻辑处理
       }
 
       ElMessage.success(`查询完成，共找到 ${response.data.total} 条记录`)
@@ -187,9 +173,7 @@ const buildSearchParams = (conditions: any[]) => {
     if (condition.selectedCompanies && condition.selectedCompanies.length > 0) {
       // 调试企业选择
       if (import.meta.env.DEV) {
-        import('../utils/query-debug').then(({ debugCompanySelection }) => {
-          debugCompanySelection(condition.selectedCompanies)
-        })
+        // 企业选择调试
       }
 
       // 提取企业名称和代码，合并到总列表中
@@ -294,11 +278,10 @@ const buildSearchParams = (conditions: any[]) => {
     if (uniqueCompanyNames.length > 1) {
       // 多企业查询：优先使用companyNames
       params.companyNames = uniqueCompanyNames
-      console.log('🏢 多企业名称查询:', uniqueCompanyNames)
     } else {
       // 单企业查询：使用companyName（兼容性）
       params.companyName = uniqueCompanyNames[0]
-      console.log('🏢 单企业名称查询:', uniqueCompanyNames[0])
+      // 查询参数处理
     }
   }
   if (allCompanyCodes.length > 0) {
@@ -308,11 +291,11 @@ const buildSearchParams = (conditions: any[]) => {
     if (uniqueCompanyCodes.length > 1) {
       // 多企业查询：优先使用companyCodes
       params.companyCodes = uniqueCompanyCodes
-      console.log('🏢 多企业代码查询:', uniqueCompanyCodes)
+      // 查询参数处理
     } else {
       // 单企业查询：使用companyCode（兼容性）
       params.companyCode = uniqueCompanyCodes[0]
-      console.log('🏢 单企业代码查询:', uniqueCompanyCodes[0])
+      // 查询参数处理
     }
   }
 
@@ -321,35 +304,35 @@ const buildSearchParams = (conditions: any[]) => {
     const uniqueBrands = [...new Set(allVehicleBrands)]
     if (uniqueBrands.length > 1) {
       params.vehicleBrands = uniqueBrands
-      console.log('🚗 多车辆品牌查询:', uniqueBrands)
+      // 查询参数处理
     } else {
       params.vehicleBrand = uniqueBrands[0]
-      console.log('🚗 单车辆品牌查询:', uniqueBrands[0])
+      // 查询参数处理
     }
   }
   if (allVehicleModels.length > 0) {
     const uniqueModels = [...new Set(allVehicleModels)]
     if (uniqueModels.length > 1) {
       params.vehicleModels = uniqueModels
-      console.log('🚗 多车辆型号查询:', uniqueModels)
+      // 查询参数处理
     } else {
       params.vehicleModel = uniqueModels[0]
-      console.log('🚗 单车辆型号查询:', uniqueModels[0])
+      // 查询参数处理
     }
   }
   if (allVehicleNames.length > 0) {
     params.vehicleNames = [...new Set(allVehicleNames)]
-    console.log('🚗 车辆名称查询:', params.vehicleNames)
+    // 查询参数处理
   }
   if (allVehicleClass.length > 0) {
     params.vehicleClass = [...new Set(allVehicleClass)]
-    console.log('🚗 车辆类别查询:', params.vehicleClass)
+    // 查询参数处理
   }
 
   // 设置合并后的分类参数
   if (allSixCategories.length > 0) {
     params.sixCategories = [...new Set(allSixCategories)]
-    console.log('📊 六大类查询:', params.sixCategories)
+    // 查询参数处理
   }
 
   // 设置合并后的燃料和新能源参数
@@ -357,20 +340,20 @@ const buildSearchParams = (conditions: any[]) => {
     const uniqueFuelTypes = [...new Set(allFuelTypes)]
     if (uniqueFuelTypes.length > 1) {
       params.fuelTypes = uniqueFuelTypes
-      console.log('⛽ 多燃料类型查询:', uniqueFuelTypes)
+      // 查询参数处理
     } else {
       params.fuelType = uniqueFuelTypes[0]
-      console.log('⛽ 单燃料类型查询:', uniqueFuelTypes[0])
+      // 查询参数处理
     }
   }
   if (allNewEnergyCategories.length > 0) {
     const uniqueEnergyTypes = [...new Set(allNewEnergyCategories)]
     if (uniqueEnergyTypes.length > 1) {
       params.newEnergyCategories = uniqueEnergyTypes
-      console.log('🔋 多新能源类型查询:', uniqueEnergyTypes)
+      // 查询参数处理
     } else {
       params.newEnergyType = uniqueEnergyTypes[0]
-      console.log('🔋 单新能源类型查询:', uniqueEnergyTypes[0])
+      // 查询参数处理
     }
   }
 
@@ -379,27 +362,24 @@ const buildSearchParams = (conditions: any[]) => {
     const uniqueAddresses = [...new Set(allProductionAddresses)]
     if (uniqueAddresses.length > 1) {
       params.productionAddresses = uniqueAddresses
-      console.log('🏭 多生产地址查询:', uniqueAddresses)
+      // 查询参数处理
     } else {
       params.productionAddress = uniqueAddresses[0]
-      console.log('🏭 单生产地址查询:', uniqueAddresses[0])
+      // 查询参数处理
     }
   }
   if (allProductionProvinces.length > 0) {
     params.productionProvinces = [...new Set(allProductionProvinces)]
-    console.log('🏭 生产省份查询:', params.productionProvinces)
+    // 查询参数处理
   }
   if (allProductionCities.length > 0) {
     params.productionCities = [...new Set(allProductionCities)]
-    console.log('🏭 生产城市查询:', params.productionCities)
+    // 查询参数处理
   }
 
-  // 调试查询参数
+  // 开发环境调试
   if (import.meta.env.DEV) {
-    console.log('🔍 最终查询参数:', params)
-    import('../utils/query-debug').then(({ debugQueryParams }) => {
-      debugQueryParams(conditions, params)
-    })
+    // 查询参数调试
   }
 
   return params
@@ -463,46 +443,25 @@ const handleExportData = async (data: any[]) => {
 }
 
 const handleViewDetail = (row: any) => {
-  console.log('查看详情:', row)
+  // 查看详情处理
   ElMessage.info(`查看 ${row.companyName} 的详细信息`)
 }
 
 const handleSortChange = (sortInfo: { prop: string; order: string }) => {
-  console.log('排序变化:', sortInfo)
+  // 排序变化处理
   // 这里可以重新排序数据或重新查询
 }
 
 // 生命周期
 onMounted(() => {
-  console.log('合格证总量查询页面已加载')
+  // 查询参数处理
 
   // 开发环境下打印API映射报告
   if (import.meta.env.DEV) {
     import('../utils/api-validation').then(({ printMappingReport }) => {
       printMappingReport()
     })
-
-    // 运行多企业查询测试
-    import('../utils/multi-company-query-test').then(({ testMultiCompanyQuery, testSingleConditionMultiCompany }) => {
-      testMultiCompanyQuery()
-      testSingleConditionMultiCompany()
-    })
-
-    // 运行多车辆品牌查询测试
-    import('../utils/multi-vehicle-brand-test').then(({ testMultiVehicleBrandQuery, testSingleConditionMultiBrand }) => {
-      testMultiVehicleBrandQuery()
-      testSingleConditionMultiBrand()
-    })
-
-    // 运行车辆名称查询测试
-    import('../utils/vehicle-name-query-test').then(({ testVehicleNameQuery }) => {
-      testVehicleNameQuery()
-    })
-
-    // 运行修复验证测试
-    import('../utils/vehicle-name-fix-validation').then(({ runTest }) => {
-      runTest()
-    })
+    // 其他开发环境初始化逻辑
   }
 })
 </script>

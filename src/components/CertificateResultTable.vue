@@ -289,10 +289,35 @@ const dynamicColumns = computed(() => {
       })
     }
 
-    // 生产地址列
-    if (hasLocationCondition) {
+    // 地址相关列 - 根据查询条件动态显示
+    const hasProvinceCondition = conditions.some(c => c.productionProvinces && c.productionProvinces.length > 0)
+    const hasCityCondition = conditions.some(c => c.productionCities && c.productionCities.length > 0)
+    const hasAddressCondition = conditions.some(c => c.productionAddresses && c.productionAddresses.length > 0)
+
+    // 省份列 - 当查询条件包含省份时显示
+    if (hasProvinceCondition) {
       columns.push({
-        key: 'productionLocation',
+        key: 'productionProvince',
+        label: '生产省份',
+        width: 100,
+        showTooltip: true
+      })
+    }
+
+    // 城市列 - 当查询条件包含城市时显示
+    if (hasCityCondition) {
+      columns.push({
+        key: 'productionCity',
+        label: '生产城市',
+        width: 100,
+        showTooltip: true
+      })
+    }
+
+    // 生产地址列 - 当查询条件包含生产地址时显示
+    if (hasAddressCondition) {
+      columns.push({
+        key: 'productionAddress',
         label: '生产地址',
         minWidth: 150,
         showTooltip: true
@@ -367,6 +392,17 @@ const dynamicColumns = computed(() => {
       })
     }
 
+    // 六大类列 - 当选择六大类或商用车/乘用车时显示
+    const hasSixCategoryCondition = conditions.some(c => c.sixCategories && c.sixCategories.length > 0)
+    const hasCommercialOrPassengerCondition = conditions.some(c => c.commercialOrPassenger && c.commercialOrPassenger !== '')
+    if (hasSixCategoryCondition || hasCommercialOrPassengerCondition) {
+      columns.push({
+        key: 'sixCategory',
+        label: '六大类',
+        width: 100
+      })
+    }
+
     // 燃料种类列
     const hasFuelCondition = conditions.some(c => c.fuelTypes && c.fuelTypes.length > 0)
     if (hasFuelCondition) {
@@ -383,7 +419,7 @@ const dynamicColumns = computed(() => {
     )
     if (hasNewEnergyCondition) {
       columns.push({
-        key: 'newEnergyCategory',
+        key: 'newEnergyType',
         label: '新能源类别',
         width: 120
       })

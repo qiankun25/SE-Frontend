@@ -301,9 +301,9 @@ import { ElMessage } from 'element-plus'
 import { Search, Refresh, Grid, TrendCharts } from '@element-plus/icons-vue'
 
 // 导入通用组件
-import TimeRangePicker from '../components/common/TimeRangePicker.vue'
-import ExportButton from '../components/common/ExportButton.vue'
-import HelpTooltip from '../components/common/HelpTooltip.vue'
+import TimeRangePicker from '../components/TimeRangePicker.vue'
+import ExportButton from '../components/ExportButton.vue'
+import HelpTooltip from '../components/HelpTooltip.vue'
 
 // 导入类型定义
 import type { TaxDeclarationParams, TaxDeclarationItem } from '../types/api'
@@ -425,11 +425,11 @@ const handleQuickSearch = (type: string) => {
 }
 
 const handleTimeRangeChange = (value: any) => {
-  console.log('时间范围变化:', value)
+  // 时间范围变化处理
 }
 
 const handleSortChange = ({ prop, order }: any) => {
-  console.log('排序变化:', prop, order)
+  // 排序变化处理
 }
 
 const handleSelectionChange = (selection: TaxDeclarationItem[]) => {
@@ -456,7 +456,7 @@ const handleSizeChange = (size: number) => {
 }
 
 const handleExport = (config: any) => {
-  console.log('导出配置:', config)
+  // 导出配置处理
   ElMessage.success('导出成功')
 }
 

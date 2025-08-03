@@ -48,7 +48,7 @@
         <!-- 同期比验证器 -->
         <div v-if="config.showComparison" class="selection-section">
             <div class="comparison-section">
-                <el-checkbox v-model="state.comparisonEnabled" :disabled="disabled" @change="handleComparisonToggle">
+                <el-checkbox v-model="state.comparisonEnabled" :disabled="disabled" @change="(val: boolean) => handleComparisonToggle(val)">
                     启用同期比分析
                 </el-checkbox>
 
