@@ -75,8 +75,8 @@ export interface CertificateQuantityParams
 
   // 时间相关
   timeRange?: TimeRangeParams;
-  timeRangeType?: string; // 时间范围类型
-  timeUnit?: string; // 时间单位
+  quickTimeRange?: string; // 快捷时间选择
+  viewDimension?: string; // 查看维度
   enableComparison?: boolean; // 启用同期比
 
   // 其他选项
@@ -89,12 +89,27 @@ export interface CertificateQuantityItem {
   companyName: string;
   vehicleBrand?: string;
   vehicleModel?: string;
+  vehicleName?: string;
   vehicleCategory?: string;
+  sixCategory?: string;
   fuelType?: string;
   newEnergyType?: string;
+  productionAddress?: string;
+  productionProvince?: string;
+  productionCity?: string;
   certificateCount: number;
   uploadYear?: number;
   uploadMonth?: number;
+  uploadDay?: number;
+  date?: string;
+  year?: number;
+  month?: number;
+
+  // 同期比相关字段
+  currentPeriodCount?: number;
+  previousPeriodCount?: number;
+  comparisonRatio?: number;
+
   ranking?: number;
 }
 

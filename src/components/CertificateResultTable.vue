@@ -194,22 +194,16 @@ const dynamicColumns = computed(() => {
     const columns: any[] = []
     const conditions = props.searchConditions || []
 
-    // 首先定义所有条件检查变量
-    const hasCompanyCondition = conditions.some(c => c.companies && c.companies.length > 0)
+    // 检查各种查询条件
     const hasVehicleModelCondition = conditions.some(c => c.vehicleModels && c.vehicleModels.length > 0)
     const hasVehicleBrandCondition = conditions.some(c => c.vehicleBrands && c.vehicleBrands.length > 0)
     const hasVehicleNameCondition = conditions.some(c => c.vehicleNames && c.vehicleNames.length > 0)
     const hasVehicleClassCondition = conditions.some(c => c.vehicleClass && c.vehicleClass.length > 0)
-    const hasTimeCondition = conditions.some(c => c.timeRangeType)
+    const hasTimeCondition = conditions.some(c => c.timeRange || c.quickTimeRange)
     const hasComparisonCondition = conditions.some(c => c.enableComparison)
-    const hasLocationCondition = conditions.some(c =>
-      (c.productionAddresses && c.productionAddresses.length > 0) ||
-      (c.productionProvinces && c.productionProvinces.length > 0) ||
-      (c.productionCities && c.productionCities.length > 0)
-    )
+    const hasViewDimensionCondition = conditions.some(c => c.viewDimension && c.viewDimension !== 'total')
 
     // 基础列 - 根据查询条件决定优先显示的列
-    // 如果只查询车辆名称而没有选择企业，优先显示车辆名称
     const hasSelectedCompanies = conditions.some(c =>
       (c.selectedCompanies && c.selectedCompanies.length > 0) ||
       c.companyName ||
@@ -235,8 +229,6 @@ const dynamicColumns = computed(() => {
         showTooltip: true
       })
     }
-
-    // 变量已在函数开头定义
 
     // 车辆品牌列
     if (hasVehicleBrandCondition) {
@@ -280,7 +272,7 @@ const dynamicColumns = computed(() => {
       })
     }
 
-    // 车辆类别列 - 只有当前提条件中选择了车辆类别时才显示
+    // 车辆类别列
     if (hasVehicleClassCondition) {
       columns.push({
         key: 'vehicleCategory',
@@ -289,12 +281,11 @@ const dynamicColumns = computed(() => {
       })
     }
 
-    // 地址相关列 - 根据查询条件动态显示
+    // 地址相关列
     const hasProvinceCondition = conditions.some(c => c.productionProvinces && c.productionProvinces.length > 0)
     const hasCityCondition = conditions.some(c => c.productionCities && c.productionCities.length > 0)
     const hasAddressCondition = conditions.some(c => c.productionAddresses && c.productionAddresses.length > 0)
 
-    // 省份列 - 当查询条件包含省份时显示
     if (hasProvinceCondition) {
       columns.push({
         key: 'productionProvince',
@@ -304,7 +295,6 @@ const dynamicColumns = computed(() => {
       })
     }
 
-    // 城市列 - 当查询条件包含城市时显示
     if (hasCityCondition) {
       columns.push({
         key: 'productionCity',
@@ -314,7 +304,6 @@ const dynamicColumns = computed(() => {
       })
     }
 
-    // 生产地址列 - 当查询条件包含生产地址时显示
     if (hasAddressCondition) {
       columns.push({
         key: 'productionAddress',
@@ -324,64 +313,80 @@ const dynamicColumns = computed(() => {
       })
     }
 
-    // 时间相关列
-    if (hasTimeCondition) {
-      const timeCondition = conditions.find(c => c.timeRangeType)
+    // 时间维度列 - 根据查看维度显示不同的时间列
+    if (hasViewDimensionCondition) {
+      const viewDimension = conditions.find(c => c.viewDimension)?.viewDimension
 
-      if (hasComparisonCondition) {
-        // 同期比模式 - 显示多个时间段的数据
-        columns.push({
-          key: 'currentPeriodCount',
-          label: '当期数量',
-          width: 120,
-          sortable: 'custom',
-          align: 'right',
-          formatter: (value: number) => `<span class="certificate-count">${formatNumber(value)}</span>`
-        })
-
-        columns.push({
-          key: 'previousPeriodCount',
-          label: '同期数量',
-          width: 120,
-          sortable: 'custom',
-          align: 'right',
-          formatter: (value: number) => `<span class="certificate-count">${formatNumber(value)}</span>`
-        })
-
-        columns.push({
-          key: 'comparisonRatio',
-          label: '同期比',
-          width: 100,
-          align: 'center',
-          formatter: (value: number) => {
-            const color = value > 0 ? '#67c23a' : value < 0 ? '#f56c6c' : '#909399'
-            const symbol = value > 0 ? '+' : ''
-            return `<span style="color: ${color}; font-weight: 600;">${symbol}${(value * 100).toFixed(1)}%</span>`
-          }
-        })
-      } else {
-        // 普通时间模式
-        columns.push({
-          key: 'certificateCount',
-          label: '合格证数量',
-          width: 120,
-          sortable: 'custom',
-          align: 'right',
-          formatter: (value: number) => `<span class="certificate-count">${formatNumber(value)}</span>`
-        })
+      switch (viewDimension) {
+        case 'yearly':
+          columns.push({
+            key: 'year',
+            label: '年份',
+            width: 100,
+            align: 'center',
+            sortable: 'custom'
+          })
+          break
+        case 'monthly':
+          columns.push({
+            key: 'year',
+            label: '年份',
+            width: 80,
+            align: 'center'
+          })
+          columns.push({
+            key: 'month',
+            label: '月份',
+            width: 80,
+            align: 'center',
+            sortable: 'custom'
+          })
+          break
+        case 'daily':
+          columns.push({
+            key: 'date',
+            label: '日期',
+            width: 120,
+            align: 'center',
+            sortable: 'custom'
+          })
+          break
       }
+    }
 
-      // 时间段列
-      if (timeCondition?.timeUnit !== 'total') {
-        columns.push({
-          key: 'timePeriod',
-          label: '时间段',
-          width: 100,
-          align: 'center'
-        })
-      }
+    // 数量相关列 - 根据是否开启同期比显示不同的列
+    if (hasComparisonCondition) {
+      columns.push({
+        key: 'currentPeriodCount',
+        label: '当期数量',
+        width: 120,
+        sortable: 'custom',
+        align: 'right',
+        formatter: (value: number) => `<span class="certificate-count">${formatNumber(value)}</span>`
+      })
+
+      columns.push({
+        key: 'previousPeriodCount',
+        label: '同期数量',
+        width: 120,
+        sortable: 'custom',
+        align: 'right',
+        formatter: (value: number) => `<span class="certificate-count">${formatNumber(value)}</span>`
+      })
+
+      columns.push({
+        key: 'comparisonRatio',
+        label: '同期比',
+        width: 100,
+        align: 'center',
+        formatter: (value: number) => {
+          if (value == null || isNaN(value)) return '-'
+          const color = value > 0 ? '#67c23a' : value < 0 ? '#f56c6c' : '#909399'
+          const symbol = value > 0 ? '+' : ''
+          return `<span style="color: ${color}; font-weight: 600;">${symbol}${(value * 100).toFixed(1)}%</span>`
+        }
+      })
     } else {
-      // 默认合格证数量列
       columns.push({
         key: 'certificateCount',
         label: '合格证数量',
@@ -392,7 +397,7 @@ const dynamicColumns = computed(() => {
       })
     }
 
-    // 六大类列 - 当选择六大类或商用车/乘用车时显示
+    // 六大类列
     const hasSixCategoryCondition = conditions.some(c => c.sixCategories && c.sixCategories.length > 0)
     const hasCommercialOrPassengerCondition = conditions.some(c => c.commercialOrPassenger && c.commercialOrPassenger !== '')
     if (hasSixCategoryCondition || hasCommercialOrPassengerCondition) {
@@ -414,9 +419,7 @@ const dynamicColumns = computed(() => {
     }
 
     // 新能源类别列
-    const hasNewEnergyCondition = conditions.some(c =>
-      c.newEnergyCategories && c.newEnergyCategories.length > 0
-    )
+    const hasNewEnergyCondition = conditions.some(c => c.newEnergyCategories && c.newEnergyCategories.length > 0)
     if (hasNewEnergyCondition) {
       columns.push({
         key: 'newEnergyType',
@@ -425,7 +428,7 @@ const dynamicColumns = computed(() => {
       })
     }
 
-    // 排名列 - 只在启用排行时显示
+    // 排名列
     const hasRankingCondition = conditions.some(c => c.showRanking)
     if (hasRankingCondition) {
       columns.push({
@@ -527,13 +530,34 @@ const handleSizeChange = (size: number) => {
   pagination.value.page = 1
 }
 
+// 获取当前显示的列字段
+const getDisplayFields = () => {
+  const fields: string[] = []
+
+  // 添加动态列的字段
+  dynamicColumns.value.forEach(column => {
+    if (column && column.key) {
+      fields.push(column.key)
+    }
+  })
+
+  return fields
+}
+
 const handleExport = () => {
   if (!hasData.value) {
     ElMessage.warning('没有可导出的数据')
     return
   }
 
-  emit('export', selectedRows.value.length > 0 ? selectedRows.value : filteredData.value)
+  // 获取当前显示的字段
+  const displayFields = getDisplayFields()
+
+  // 传递数据和字段信息
+  emit('export', {
+    data: selectedRows.value.length > 0 ? selectedRows.value : filteredData.value,
+    fields: displayFields
+  })
 }
 
 const handleViewDetail = (row: any) => {

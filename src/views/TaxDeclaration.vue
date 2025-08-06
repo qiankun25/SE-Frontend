@@ -9,14 +9,8 @@
         </p>
       </div>
       <div class="header-right">
-        <export-button
-          :data="tableData"
-          :total-count="total"
-          :fields="exportFields"
-          default-filename="财税申报信息"
-          @export="handleExport"
-          @download-template="handleDownloadTemplate"
-        />
+        <export-button :data="tableData" :total-count="total" :fields="exportFields" default-filename="财税申报信息"
+          @export="handleExport" @download-template="handleDownloadTemplate" />
       </div>
     </div>
 
@@ -25,10 +19,7 @@
       <template #header>
         <div class="card-header">
           <span>查询条件</span>
-          <help-tooltip
-            content="支持按申报类型、车辆类型、时间范围等条件查询财税申报信息"
-            title="财税申报查询帮助"
-          />
+          <help-tooltip content="支持按申报类型、车辆类型、时间范围等条件查询财税申报信息" title="财税申报查询帮助" />
         </div>
       </template>
 
@@ -36,11 +27,7 @@
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="申报类型">
-              <el-select
-                v-model="searchForm.declarationType"
-                placeholder="请选择申报类型"
-                clearable
-              >
+              <el-select v-model="searchForm.declarationType" placeholder="请选择申报类型" clearable>
                 <el-option label="减免购置税" value="减免购置税" />
                 <el-option label="新车船税" value="新车船税" />
                 <el-option label="商务部交换数据" value="商务部交换数据" />
@@ -48,14 +35,10 @@
               </el-select>
             </el-form-item>
           </el-col>
-          
+
           <el-col :span="8">
             <el-form-item label="车辆类型">
-              <el-select
-                v-model="searchForm.vehicleType"
-                placeholder="请选择车辆类型"
-                clearable
-              >
+              <el-select v-model="searchForm.vehicleType" placeholder="请选择车辆类型" clearable>
                 <el-option label="乘用车" value="乘用车" />
                 <el-option label="客车" value="客车" />
                 <el-option label="货车" value="货车" />
@@ -66,11 +49,11 @@
           </el-col>
 
           <el-col :span="8">
-            <time-range-picker
-              v-model="searchForm.timeRange"
-              label="申报时间"
-              @change="handleTimeRangeChange"
-            />
+            <el-form-item label="申报时间">
+              <el-date-picker v-model="searchForm.timeRange" type="daterange" range-separator="至"
+                start-placeholder="开始日期" end-placeholder="结束日期" format="YYYY-MM-DD" value-format="YYYY-MM-DD"
+                @change="handleTimeRangeChange" />
+            </el-form-item>
           </el-col>
         </el-row>
 
@@ -78,11 +61,15 @@
           <el-col :span="24">
             <div class="search-actions">
               <el-button type="primary" @click="handleSearch" :loading="loading">
-                <el-icon><Search /></el-icon>
+                <el-icon>
+                  <Search />
+                </el-icon>
                 查询
               </el-button>
               <el-button @click="handleReset">
-                <el-icon><Refresh /></el-icon>
+                <el-icon>
+                  <Refresh />
+                </el-icon>
                 重置
               </el-button>
               <el-button type="info" plain @click="handleQuickQuery">
@@ -150,18 +137,16 @@
           <span>查询结果</span>
           <div class="result-actions">
             <el-button-group>
-              <el-button
-                :type="viewMode === 'table' ? 'primary' : 'default'"
-                @click="viewMode = 'table'"
-              >
-                <el-icon><Grid /></el-icon>
+              <el-button :type="viewMode === 'table' ? 'primary' : 'default'" @click="viewMode = 'table'">
+                <el-icon>
+                  <Grid />
+                </el-icon>
                 表格视图
               </el-button>
-              <el-button
-                :type="viewMode === 'chart' ? 'primary' : 'default'"
-                @click="viewMode = 'chart'"
-              >
-                <el-icon><TrendCharts /></el-icon>
+              <el-button :type="viewMode === 'chart' ? 'primary' : 'default'" @click="viewMode = 'chart'">
+                <el-icon>
+                  <TrendCharts />
+                </el-icon>
                 图表视图
               </el-button>
             </el-button-group>
@@ -171,94 +156,45 @@
 
       <!-- 表格视图 -->
       <div v-show="viewMode === 'table'">
-        <el-table
-          :data="tableData"
-          v-loading="loading"
-          stripe
-          border
-          height="500"
-          @sort-change="handleSortChange"
-          @selection-change="handleSelectionChange"
-        >
+        <el-table :data="tableData" v-loading="loading" stripe border height="500" @sort-change="handleSortChange"
+          @selection-change="handleSelectionChange">
           <el-table-column type="selection" width="55" />
           <el-table-column type="index" label="序号" width="60" />
-          
-          <el-table-column
-            prop="declarationType"
-            label="申报类型"
-            width="150"
-            align="center"
-          >
+
+          <el-table-column prop="declarationType" label="申报类型" width="150" align="center">
             <template #default="{ row }">
               <el-tag :type="getDeclarationTypeTag(row.declarationType)">
                 {{ row.declarationType }}
               </el-tag>
             </template>
           </el-table-column>
-          
-          <el-table-column
-            prop="vehicleType"
-            label="车辆类型"
-            width="120"
-            align="center"
-          />
-          
-          <el-table-column
-            prop="companyName"
-            label="企业名称"
-            min-width="200"
-            show-overflow-tooltip
-          />
-          
-          <el-table-column
-            prop="vehicleModel"
-            label="车辆型号"
-            width="150"
-            show-overflow-tooltip
-          />
-          
-          <el-table-column
-            prop="quantity"
-            label="申报数量"
-            width="120"
-            align="right"
-            sortable="custom"
-          >
+
+          <el-table-column prop="vehicleType" label="车辆类型" width="120" align="center" />
+
+          <el-table-column prop="companyName" label="企业名称" min-width="200" show-overflow-tooltip />
+
+          <el-table-column prop="vehicleModel" label="车辆型号" width="150" show-overflow-tooltip />
+
+          <el-table-column prop="quantity" label="申报数量" width="120" align="right" sortable="custom">
             <template #default="{ row }">
               <span class="quantity-value">{{ formatNumber(row.quantity) }}</span>
             </template>
           </el-table-column>
-          
-          <el-table-column
-            prop="amount"
-            label="涉及金额(万元)"
-            width="150"
-            align="right"
-            sortable="custom"
-          >
+
+          <el-table-column prop="amount" label="涉及金额(万元)" width="150" align="right" sortable="custom">
             <template #default="{ row }">
               <span class="amount-value">{{ formatCurrency(row.amount) }}</span>
             </template>
           </el-table-column>
-          
-          <el-table-column
-            prop="exchangeDate"
-            label="交换日期"
-            width="120"
-            align="center"
-          />
-          
-          <el-table-column
-            prop="cumulativeTotal"
-            label="累计总量"
-            width="120"
-            align="right"
-          >
+
+          <el-table-column prop="exchangeDate" label="交换日期" width="120" align="center" />
+
+          <el-table-column prop="cumulativeTotal" label="累计总量" width="120" align="right">
             <template #default="{ row }">
               <span class="cumulative-value">{{ formatNumber(row.cumulativeTotal) }}</span>
             </template>
           </el-table-column>
-          
+
           <el-table-column label="操作" width="150" fixed="right">
             <template #default="{ row }">
               <el-button type="primary" link @click="handleViewDetail(row)">
@@ -273,15 +209,9 @@
 
         <!-- 分页 -->
         <div class="pagination-wrapper">
-          <el-pagination
-            v-model:current-page="pagination.page"
-            v-model:page-size="pagination.pageSize"
-            :total="total"
-            :page-sizes="[10, 20, 50, 100]"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handlePageChange"
-          />
+          <el-pagination v-model:current-page="pagination.page" v-model:page-size="pagination.pageSize" :total="total"
+            :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper"
+            @size-change="handleSizeChange" @current-change="handlePageChange" />
         </div>
       </div>
 
@@ -301,7 +231,6 @@ import { ElMessage } from 'element-plus'
 import { Search, Refresh, Grid, TrendCharts } from '@element-plus/icons-vue'
 
 // 导入通用组件
-import TimeRangePicker from '../components/TimeRangePicker.vue'
 import ExportButton from '../components/ExportButton.vue'
 import HelpTooltip from '../components/HelpTooltip.vue'
 
@@ -356,11 +285,11 @@ const exportFields = [
 const handleSearch = async () => {
   loading.value = true
   hasSearched.value = true
-  
+
   try {
     // 模拟API调用
     await new Promise(resolve => setTimeout(resolve, 1000))
-    
+
     // 模拟数据
     const mockData: TaxDeclarationItem[] = [
       {
@@ -386,16 +315,16 @@ const handleSearch = async () => {
         cumulativeTotal: 15600
       }
     ]
-    
+
     tableData.value = mockData
     total.value = 50
-    
+
     // 更新统计数据
     stats.totalDeclarations = mockData.reduce((sum, item) => sum + item.quantity, 0)
     stats.totalAmount = mockData.reduce((sum, item) => sum + (item.amount || 0), 0)
     stats.totalCompanies = new Set(mockData.map(item => item.companyName)).size
     stats.timeRange = '2023年全年'
-    
+
     ElMessage.success('查询完成')
   } catch (error) {
     console.error('查询失败:', error)

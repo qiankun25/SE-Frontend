@@ -35,14 +35,18 @@
               <!-- 主要条件 -->
               <div class="main-conditions">
                 <!-- 企业选择 -->
-                <div v-if="condition.companies && condition.companies.length > 0" class="condition-item">
+                <div v-if="condition.selectedCompanies && condition.selectedCompanies.length > 0"
+                  class="condition-item">
                   <span class="condition-label">企业:</span>
-                  <el-tag v-for="company in condition.companies.slice(0, 3)" :key="company.id" size="small"
-                    class="condition-tag">
+                  <el-tag v-for="company in condition.selectedCompanies.slice(0, 3)" :key="company.code || company.name"
+                    size="small" class="condition-tag" :type="company.isPartialMatch ? 'warning' : 'primary'">
                     {{ company.name }}
+                    <span v-if="company.code && !company.isPartialMatch" style="font-size: 10px; opacity: 0.8;">
+                      ({{ company.code }})
+                    </span>
                   </el-tag>
-                  <el-tag v-if="condition.companies.length > 3" type="info" size="small" class="condition-tag">
-                    +{{ condition.companies.length - 3 }}个
+                  <el-tag v-if="condition.selectedCompanies.length > 3" type="info" size="small" class="condition-tag">
+                    +{{ condition.selectedCompanies.length - 3 }}个
                   </el-tag>
                 </div>
 
@@ -83,13 +87,26 @@
                 </div>
 
                 <!-- 时间范围 -->
-                <div v-if="condition.timeRangeType" class="condition-item">
+                <div v-if="condition.timeRange || condition.quickTimeRange" class="condition-item">
                   <span class="condition-label">时间范围:</span>
                   <el-tag size="small" class="condition-tag">
                     {{ formatTimeRange(condition) }}
                   </el-tag>
-                  <el-tag v-if="condition.enableComparison" type="warning" size="small" class="condition-tag">
-                    同期比
+                </div>
+
+                <!-- 查看维度 -->
+                <div v-if="condition.viewDimension && condition.viewDimension !== 'total'" class="condition-item">
+                  <span class="condition-label">查看维度:</span>
+                  <el-tag size="small" class="condition-tag" type="info">
+                    {{ formatViewDimension(condition.viewDimension) }}
+                  </el-tag>
+                </div>
+
+                <!-- 同期比 -->
+                <div v-if="condition.enableComparison" class="condition-item">
+                  <span class="condition-label">同期比:</span>
+                  <el-tag size="small" class="condition-tag" type="success">
+                    已开启
                   </el-tag>
                 </div>
 
@@ -233,32 +250,41 @@ const emit = defineEmits<Emits>()
 
 // 格式化时间范围显示
 const formatTimeRange = (condition: any) => {
-  const typeMap: Record<string, string> = {
-    total: '总量',
-    recent2years: '近两年',
-    recent6months: '近六月',
-    thisYear: '今年',
-    lastYear: '去年',
-    custom: '自定义'
-  }
-
-  let result = typeMap[condition.timeRangeType] || condition.timeRangeType
-
-  if (condition.timeUnit) {
-    const unitMap: Record<string, string> = {
-      year: '年',
-      month: '月',
-      day: '日'
+  // 优先显示快捷时间选择的标签
+  if (condition.quickTimeRange) {
+    const quickTimeLabels: Record<string, string> = {
+      '3months': '近三个月',
+      '6months': '近六个月',
+      '1year': '近一年',
+      '2years': '近两年',
+      '3years': '近三年',
+      'custom': '自定义'
     }
-    result += `(${unitMap[condition.timeUnit]})`
+    return quickTimeLabels[condition.quickTimeRange] || condition.quickTimeRange
   }
 
-  if (condition.customTimeRange) {
-    const [start, end] = condition.customTimeRange
-    result += ` ${start.toLocaleDateString()} - ${end.toLocaleDateString()}`
+  // 显示具体的时间范围
+  if (condition.timeRange) {
+    if (condition.timeRange.startDate && condition.timeRange.endDate) {
+      return `${condition.timeRange.startDate} - ${condition.timeRange.endDate}`
+    }
+    if (Array.isArray(condition.timeRange)) {
+      return `${condition.timeRange[0]} - ${condition.timeRange[1]}`
+    }
   }
 
-  return result
+  return '时间范围'
+}
+
+// 格式化查看维度显示
+const formatViewDimension = (dimension: string) => {
+  const dimensionLabels: Record<string, string> = {
+    'total': '总量',
+    'yearly': '分年度',
+    'monthly': '分月份',
+    'daily': '分天数'
+  }
+  return dimensionLabels[dimension] || dimension
 }
 
 // 移除单个条件

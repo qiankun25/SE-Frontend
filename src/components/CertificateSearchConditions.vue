@@ -51,7 +51,7 @@
                     <span class="company-tag-content">
                       <span class="company-name">{{ company.name }}</span>
                       <span v-if="company.code && !company.isPartialMatch" class="company-code">({{ company.code
-                        }})</span>
+                      }})</span>
                       <span v-if="company.isPartialMatch" class="partial-match-hint">(部分匹配)</span>
                     </span>
                   </el-tag>
@@ -240,10 +240,53 @@
           <!-- 时间范围选择 -->
           <el-col :span="16">
             <el-form-item label="时间范围">
-              <TimeSelectionAdapter v-model="timeSelectionData" :size="'default'" :disabled="false"
-                :show-debug-info="isDevelopment" @change="handleTimeSelectionChange"
-                @query-params-change="handleQueryParamsChange" @validation-change="handleTimeValidationChange"
-                @error="handleTimeSelectionError" />
+              <div class="time-range-container">
+                <!-- 快捷时间选择 -->
+                <el-select v-model="form.quickTimeRange" placeholder="选择时间范围" style="width: 200px"
+                  @change="handleQuickTimeRangeChange">
+                  <el-option label="近三个月" value="3months" />
+                  <el-option label="近六个月" value="6months" />
+                  <el-option label="近一年" value="1year" />
+                  <el-option label="近两年" value="2years" />
+                  <el-option label="近三年" value="3years" />
+                  <el-option label="自定义" value="custom" />
+                </el-select>
+
+                <!-- 自定义时间范围 -->
+                <el-date-picker v-if="form.quickTimeRange === 'custom'" v-model="timeRange" type="daterange"
+                  range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" format="YYYY-MM-DD"
+                  value-format="YYYY-MM-DD" @change="handleTimeRangeChange" style="margin-left: 10px" />
+
+                <!-- 查看维度选择 -->
+                <el-select v-model="form.viewDimension" placeholder="查看维度" style="width: 150px; margin-left: 10px">
+                  <el-option label="总量" value="total">
+                    <el-icon>
+                      <TrendCharts />
+                    </el-icon>
+                    <span style="margin-left: 8px">总量</span>
+                  </el-option>
+                  <el-option label="分年度" value="yearly">
+                    <span style="margin-left: 8px">年 分年度</span>
+                  </el-option>
+                  <el-option label="分月份" value="monthly">
+                    <span style="margin-left: 8px">月 分月份</span>
+                  </el-option>
+                  <el-option label="分天数" value="daily">
+                    <span style="margin-left: 8px">日 分天数</span>
+                  </el-option>
+                </el-select>
+
+                <!-- 同期比开关 -->
+                <el-switch v-model="form.enableComparison" active-text="同期比" inactive-text="同期比"
+                  style="margin-left: 15px" :active-color="form.enableComparison ? '#409eff' : '#dcdfe6'"
+                  @change="handleComparisonToggle">
+                  <template #active-action>
+                    <el-icon :style="{ color: form.enableComparison ? '#409eff' : '#909399' }">
+                      <TrendCharts />
+                    </el-icon>
+                  </template>
+                </el-switch>
+              </div>
             </el-form-item>
           </el-col>
         </el-row>
@@ -432,9 +475,7 @@
 <script lang="ts" setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Plus, Loading } from '@element-plus/icons-vue'
-import TimeSelectionAdapter from './TimeSelectionAdapter.vue'
-import type { QueryParams, ValidationResult } from '../types/time-selection'
+import { Plus, Loading, TrendCharts } from '@element-plus/icons-vue'
 
 
 interface SearchForm {
@@ -452,10 +493,12 @@ interface SearchForm {
   vehicleBrandInput: string         // 车辆品牌输入框
   vehicleNames: string[]
   vehicleNameInput: string          // 车辆名称输入框
-  timeRangeType: string
-  timeUnit: string
-  customTimeRange: [Date, Date] | null
-  enableComparison: boolean
+
+  // 时间范围选择
+  quickTimeRange: string            // 快捷时间选择
+  viewDimension: string             // 查看维度
+  enableComparison: boolean         // 同期比开关
+
   productionAddresses: string[]
   productionAddressInput: string    // 生产地址输入框
   productionProvinces: string[]
@@ -510,10 +553,12 @@ const form = reactive<SearchForm>({
   vehicleBrandInput: '',
   vehicleNames: [],
   vehicleNameInput: '',
-  timeRangeType: '',
-  timeUnit: 'year',
-  customTimeRange: null,
+
+  // 时间范围选择初始化
+  quickTimeRange: '',
+  viewDimension: 'total',
   enableComparison: false,
+
   productionAddresses: [],
   productionAddressInput: '',
   productionProvinces: [],
@@ -530,19 +575,51 @@ const form = reactive<SearchForm>({
 const companyDatabase = ref<CompanyInfo[]>([])
 const loadingCompanies = ref(false)
 
-// 时间选择相关数据
-const timeSelectionData = ref({
-  timeRangeType: '',
-  timeUnit: 'year',
-  customTimeRange: null,
-  enableComparison: false
-})
+// 时间范围选择
+const timeRange = ref<[string, string] | null>(null)
 
-// 查询参数
-const currentQueryParams = ref<QueryParams | null>(null)
+// 时间范围处理方法
+const handleQuickTimeRangeChange = (value: string) => {
+  if (value === 'custom') {
+    // 自定义时间范围，不设置默认值
+    timeRange.value = null
+    return
+  }
 
-// 时间验证状态
-const timeValidationResult = ref<ValidationResult | null>(null)
+  const now = new Date()
+  const endDate = now.toISOString().split('T')[0]
+  let startDate: string
+
+  switch (value) {
+    case '3months':
+      startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()).toISOString().split('T')[0]
+      break
+    case '6months':
+      startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()).toISOString().split('T')[0]
+      break
+    case '1year':
+      startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split('T')[0]
+      break
+    case '2years':
+      startDate = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate()).toISOString().split('T')[0]
+      break
+    case '3years':
+      startDate = new Date(now.getFullYear() - 3, now.getMonth(), now.getDate()).toISOString().split('T')[0]
+      break
+    default:
+      return
+  }
+
+  timeRange.value = [startDate, endDate]
+}
+
+const handleComparisonToggle = (value: boolean) => {
+  if (value) {
+    ElMessage.info('已开启同期比分析，将与去年同期进行对比')
+  } else {
+    ElMessage.info('已关闭同期比分析')
+  }
+}
 
 // 开发环境标识
 const isDevelopment = computed(() => import.meta.env.DEV)
@@ -1022,58 +1099,13 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 
-// 时间选择相关事件处理
-const handleTimeSelectionChange = (data: any) => {
-  // 更新表单数据以保持兼容性
-  form.timeRangeType = data.timeRangeType
-  form.timeUnit = data.timeUnit
-  form.customTimeRange = data.customTimeRange
-  form.enableComparison = data.enableComparison
-
-  console.log('时间选择数据变化:', data)
+// 时间范围选择事件处理
+const handleTimeRangeChange = (value: [string, string] | null) => {
+  timeRange.value = value
+  console.log('时间范围变化:', value)
 }
 
-const handleQueryParamsChange = (params: QueryParams) => {
-  currentQueryParams.value = params
-  console.log('查询参数变化:', params)
-}
-
-const handleTimeValidationChange = (result: ValidationResult) => {
-  timeValidationResult.value = result
-
-  // 根据验证结果显示消息
-  if (!result.isValid && result.level === 'error') {
-    ElMessage.error(result.message)
-  } else if (result.level === 'warning') {
-    ElMessage.warning(result.message)
-  }
-}
-
-const handleTimeSelectionError = (error: Error) => {
-  console.error('时间选择组件错误:', error)
-  ElMessage.error('时间选择组件发生错误，请刷新页面重试')
-}
-
-// 保留原有的处理函数以确保兼容性
-const handleTimeRangeTypeChange = (type: string) => {
-  if (type === 'total') {
-    form.timeUnit = ''
-    form.customTimeRange = null
-  }
-
-  // 如果启用了同期比但没有选择时间范围，禁用同期比
-  if (!type && form.enableComparison) {
-    form.enableComparison = false
-    ElMessage.warning('请先选择时间范围才能启用同期比')
-  }
-}
-
-const handleComparisonChange = (enabled: boolean) => {
-  if (enabled && !form.timeRangeType) {
-    form.enableComparison = false
-    ElMessage.warning('请先选择时间范围才能启用同期比')
-  }
-}
+// 移除复杂的时间处理函数
 
 const handleAddCondition = () => {
   // 验证必要条件
@@ -1090,19 +1122,16 @@ const handleAddCondition = () => {
   if (form.vehicleBrands.length > 0) condition.vehicleBrands = [...form.vehicleBrands]
   if (form.vehicleNames.length > 0) condition.vehicleNames = [...form.vehicleNames]
 
-  // 使用新的时间选择数据
-  if (timeSelectionData.value.timeRangeType) {
-    condition.timeRangeType = timeSelectionData.value.timeRangeType
-    condition.timeUnit = timeSelectionData.value.timeUnit
-    if (timeSelectionData.value.customTimeRange) {
-      condition.customTimeRange = timeSelectionData.value.customTimeRange
-    }
-    // 添加查询参数信息
-    if (currentQueryParams.value) {
-      condition.queryParams = currentQueryParams.value
+  // 时间范围相关参数
+  if (timeRange.value) {
+    condition.timeRange = {
+      startDate: timeRange.value[0],
+      endDate: timeRange.value[1]
     }
   }
-  if (timeSelectionData.value.enableComparison) condition.enableComparison = true
+  if (form.quickTimeRange) condition.quickTimeRange = form.quickTimeRange
+  if (form.viewDimension) condition.viewDimension = form.viewDimension
+  if (form.enableComparison) condition.enableComparison = form.enableComparison
   if (form.productionAddresses.length > 0) condition.productionAddresses = [...form.productionAddresses]
   if (form.productionProvinces.length > 0) condition.productionProvinces = [...form.productionProvinces]
   if (form.productionCities.length > 0) condition.productionCities = [...form.productionCities]
@@ -1117,8 +1146,17 @@ const handleAddCondition = () => {
   condition.vehicleClass = [...form.vehicleClass]
   condition.excludeNonAnnouncement = form.excludeNonAnnouncement
 
-  if (Object.keys(condition).length <= 2) { // 只有前提条件
-    ElMessage.warning('请至少选择一个查询条件')
+  // 检查是否有有效的查询条件（排除前提条件）
+  const hasValidCondition = Object.keys(condition).some(key =>
+    !['vehicleClass', 'excludeNonAnnouncement'].includes(key) &&
+    condition[key] !== undefined &&
+    condition[key] !== '' &&
+    condition[key] !== false &&
+    (Array.isArray(condition[key]) ? condition[key].length > 0 : true)
+  )
+
+  if (!hasValidCondition) {
+    ElMessage.warning('请至少选择一个查询条件（企业、车辆信息、时间范围等）')
     return
   }
 
@@ -1141,10 +1179,12 @@ const handleReset = () => {
     vehicleBrandInput: '',
     vehicleNames: [],
     vehicleNameInput: '',
-    timeRangeType: '',
-    timeUnit: 'year',
-    customTimeRange: null,
+
+    // 时间范围选择重置
+    quickTimeRange: '',
+    viewDimension: 'total',
     enableComparison: false,
+
     productionAddresses: [],
     productionAddressInput: '',
     productionProvinces: [],
@@ -1157,17 +1197,8 @@ const handleReset = () => {
     isNewEnergy: ''
   })
 
-  // 重置时间选择数据
-  timeSelectionData.value = {
-    timeRangeType: '',
-    timeUnit: 'year',
-    customTimeRange: null,
-    enableComparison: false
-  }
-
-  // 清空查询参数和验证状态
-  currentQueryParams.value = null
-  timeValidationResult.value = null
+  // 重置时间范围
+  timeRange.value = null
 
   // 重置所有建议
   showCompanySuggestions.value = false
@@ -1457,6 +1488,205 @@ const handleReset = () => {
 
   .enterprise-input-group {
     flex-direction: column;
+  }
+}
+</style>
+
+<style scoped>
+.certificate-search-conditions {
+  margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.preset-conditions {
+  margin-bottom: 20px;
+}
+
+.enterprise-selection {
+  width: 100%;
+}
+
+.selected-companies {
+  margin-bottom: 10px;
+}
+
+.company-tag {
+  margin-right: 8px;
+  margin-bottom: 4px;
+}
+
+.company-tag-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.company-name {
+  font-weight: 500;
+}
+
+.company-code {
+  font-size: 12px;
+  color: #909399;
+}
+
+.partial-match-hint {
+  font-size: 11px;
+  color: #e6a23c;
+}
+
+.enterprise-input-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.loading-companies {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #909399;
+  font-size: 14px;
+  padding: 10px 0;
+}
+
+.enterprise-suggestions,
+.suggestions {
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.suggestion-header {
+  padding: 8px 12px;
+  background: #f5f7fa;
+  border-bottom: 1px solid #e4e7ed;
+  font-size: 12px;
+  color: #606266;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.suggestion-list {
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.suggestion-item:hover {
+  background: #f5f7fa;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.company-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.company-info .company-name {
+  font-size: 14px;
+  color: #303133;
+}
+
+.company-info .company-code {
+  font-size: 12px;
+  color: #909399;
+}
+
+.suggestion-text {
+  font-size: 14px;
+  color: #303133;
+}
+
+.add-icon {
+  color: #409eff;
+  font-size: 16px;
+}
+
+.vehicle-input-selection {
+  width: 100%;
+}
+
+.selected-items {
+  margin-bottom: 8px;
+}
+
+.item-tag {
+  margin-right: 6px;
+  margin-bottom: 4px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  padding-top: 20px;
+  border-top: 1px solid #ebeef5;
+}
+
+/* 时间范围选择样式 */
+.time-range-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.time-range-container .el-select,
+.time-range-container .el-date-editor {
+  flex-shrink: 0;
+}
+
+.time-range-container .el-switch {
+  flex-shrink: 0;
+}
+
+.time-range-container .el-switch .el-switch__label {
+  font-size: 12px;
+  color: #606266;
+}
+
+.time-range-container .el-switch.is-checked .el-switch__label {
+  color: #409eff;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .enterprise-input-group {
+    flex-direction: column;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .time-range-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 }
 </style>

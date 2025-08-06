@@ -57,8 +57,11 @@
           </el-col>
 
           <el-col :span="8">
-            <time-range-picker v-model="searchForm.timeRange" label="制造日期" :show-quick-select="false"
-              @change="handleTimeRangeChange" />
+            <el-form-item label="制造日期">
+              <el-date-picker v-model="searchForm.timeRange" type="daterange" range-separator="至"
+                start-placeholder="开始日期" end-placeholder="结束日期" format="YYYY-MM-DD" value-format="YYYY-MM-DD"
+                @change="handleTimeRangeChange" />
+            </el-form-item>
           </el-col>
 
           <el-col :span="8">
@@ -235,7 +238,6 @@ import { ElMessage } from 'element-plus'
 import { Search, Refresh, Grid, Document } from '@element-plus/icons-vue'
 
 // 导入通用组件
-import TimeRangePicker from '../components/TimeRangePicker.vue'
 import ExportButton from '../components/ExportButton.vue'
 import HelpTooltip from '../components/HelpTooltip.vue'
 

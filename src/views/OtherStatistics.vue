@@ -9,14 +9,8 @@
         </p>
       </div>
       <div class="header-right">
-        <export-button
-          :data="tableData"
-          :total-count="total"
-          :fields="exportFields"
-          default-filename="其他统计信息"
-          @export="handleExport"
-          @download-template="handleDownloadTemplate"
-        />
+        <export-button :data="tableData" :total-count="total" :fields="exportFields" default-filename="其他统计信息"
+          @export="handleExport" @download-template="handleDownloadTemplate" />
       </div>
     </div>
 
@@ -25,10 +19,7 @@
       <template #header>
         <div class="card-header">
           <span>查询条件</span>
-          <help-tooltip
-            content="支持按统计类型、时间范围等条件查询各类统计信息"
-            title="其他统计查询帮助"
-          />
+          <help-tooltip content="支持按统计类型、时间范围等条件查询各类统计信息" title="其他统计查询帮助" />
         </div>
       </template>
 
@@ -36,11 +27,7 @@
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="统计类型">
-              <el-select
-                v-model="searchForm.statisticsType"
-                placeholder="请选择统计类型"
-                clearable
-              >
+              <el-select v-model="searchForm.statisticsType" placeholder="请选择统计类型" clearable>
                 <el-option label="网站访问量" value="网站访问量" />
                 <el-option label="系统办件数量" value="系统办件数量" />
                 <el-option label="用户活跃度" value="用户活跃度" />
@@ -51,21 +38,25 @@
           </el-col>
 
           <el-col :span="12">
-            <time-range-picker
-              v-model="searchForm.timeRange"
-              label="统计时间"
-              @change="handleTimeRangeChange"
-            />
+            <el-form-item label="统计时间">
+              <el-date-picker v-model="searchForm.timeRange" type="daterange" range-separator="至"
+                start-placeholder="开始日期" end-placeholder="结束日期" format="YYYY-MM-DD" value-format="YYYY-MM-DD"
+                @change="handleTimeRangeChange" />
+            </el-form-item>
           </el-col>
 
           <el-col :span="4">
             <div class="search-actions">
               <el-button type="primary" @click="handleSearch" :loading="loading">
-                <el-icon><Search /></el-icon>
+                <el-icon>
+                  <Search />
+                </el-icon>
                 查询
               </el-button>
               <el-button @click="handleReset">
-                <el-icon><Refresh /></el-icon>
+                <el-icon>
+                  <Refresh />
+                </el-icon>
                 重置
               </el-button>
             </div>
@@ -106,18 +97,16 @@
           <span>统计详情</span>
           <div class="result-actions">
             <el-button-group>
-              <el-button
-                :type="viewMode === 'table' ? 'primary' : 'default'"
-                @click="viewMode = 'table'"
-              >
-                <el-icon><Grid /></el-icon>
+              <el-button :type="viewMode === 'table' ? 'primary' : 'default'" @click="viewMode = 'table'">
+                <el-icon>
+                  <Grid />
+                </el-icon>
                 表格视图
               </el-button>
-              <el-button
-                :type="viewMode === 'chart' ? 'primary' : 'default'"
-                @click="viewMode = 'chart'"
-              >
-                <el-icon><TrendCharts /></el-icon>
+              <el-button :type="viewMode === 'chart' ? 'primary' : 'default'" @click="viewMode = 'chart'">
+                <el-icon>
+                  <TrendCharts />
+                </el-icon>
                 图表视图
               </el-button>
             </el-button-group>
@@ -127,71 +116,33 @@
 
       <!-- 表格视图 -->
       <div v-show="viewMode === 'table'">
-        <el-table
-          :data="tableData"
-          v-loading="loading"
-          stripe
-          border
-          height="400"
-          @sort-change="handleSortChange"
-          @selection-change="handleSelectionChange"
-        >
+        <el-table :data="tableData" v-loading="loading" stripe border height="400" @sort-change="handleSortChange"
+          @selection-change="handleSelectionChange">
           <el-table-column type="selection" width="55" />
           <el-table-column type="index" label="序号" width="60" />
-          
-          <el-table-column
-            prop="statisticsType"
-            label="统计类型"
-            width="150"
-            align="center"
-          >
+
+          <el-table-column prop="statisticsType" label="统计类型" width="150" align="center">
             <template #default="{ row }">
               <el-tag :type="getStatisticsTypeTag(row.statisticsType)">
                 {{ row.statisticsType }}
               </el-tag>
             </template>
           </el-table-column>
-          
-          <el-table-column
-            prop="title"
-            label="统计项目"
-            min-width="200"
-            show-overflow-tooltip
-          />
-          
-          <el-table-column
-            prop="value"
-            label="统计值"
-            width="120"
-            align="right"
-            sortable="custom"
-          >
+
+          <el-table-column prop="title" label="统计项目" min-width="200" show-overflow-tooltip />
+
+          <el-table-column prop="value" label="统计值" width="120" align="right" sortable="custom">
             <template #default="{ row }">
               <span class="stats-value-cell">{{ formatNumber(row.value) }}</span>
             </template>
           </el-table-column>
-          
-          <el-table-column
-            prop="unit"
-            label="单位"
-            width="80"
-            align="center"
-          />
-          
-          <el-table-column
-            prop="description"
-            label="说明"
-            min-width="200"
-            show-overflow-tooltip
-          />
-          
-          <el-table-column
-            prop="updateTime"
-            label="更新时间"
-            width="180"
-            align="center"
-          />
-          
+
+          <el-table-column prop="unit" label="单位" width="80" align="center" />
+
+          <el-table-column prop="description" label="说明" min-width="200" show-overflow-tooltip />
+
+          <el-table-column prop="updateTime" label="更新时间" width="180" align="center" />
+
           <el-table-column label="操作" width="120" fixed="right">
             <template #default="{ row }">
               <el-button type="primary" link @click="handleViewDetail(row)">
@@ -203,15 +154,9 @@
 
         <!-- 分页 -->
         <div class="pagination-wrapper">
-          <el-pagination
-            v-model:current-page="pagination.page"
-            v-model:page-size="pagination.pageSize"
-            :total="total"
-            :page-sizes="[10, 20, 50, 100]"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handlePageChange"
-          />
+          <el-pagination v-model:current-page="pagination.page" v-model:page-size="pagination.pageSize" :total="total"
+            :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper"
+            @size-change="handleSizeChange" @current-change="handlePageChange" />
         </div>
       </div>
 
@@ -224,12 +169,8 @@
     </el-card>
 
     <!-- 详情对话框 -->
-    <el-dialog
-      v-model="showDetailDialog"
-      :title="`${selectedItem?.title} - 统计详情`"
-      width="60%"
-      @close="closeDetailDialog"
-    >
+    <el-dialog v-model="showDetailDialog" :title="`${selectedItem?.title} - 统计详情`" width="60%"
+      @close="closeDetailDialog">
       <div v-if="selectedItem" class="statistics-detail">
         <el-descriptions :column="2" border>
           <el-descriptions-item label="统计类型">{{ selectedItem.statisticsType }}</el-descriptions-item>
@@ -240,7 +181,7 @@
           <el-descriptions-item label="说明" :span="2">{{ selectedItem.description }}</el-descriptions-item>
         </el-descriptions>
       </div>
-      
+
       <template #footer>
         <el-button @click="closeDetailDialog">关闭</el-button>
         <el-button type="primary" @click="handleExportDetail">导出详情</el-button>
@@ -252,11 +193,11 @@
 <script lang="ts" setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { 
-  Search, 
-  Refresh, 
-  Grid, 
-  TrendCharts, 
+import {
+  Search,
+  Refresh,
+  Grid,
+  TrendCharts,
   Bottom,
   View,
   Document,
@@ -266,7 +207,6 @@ import {
 } from '@element-plus/icons-vue'
 
 // 导入通用组件
-import TimeRangePicker from '../components/TimeRangePicker.vue'
 import ExportButton from '../components/ExportButton.vue'
 import HelpTooltip from '../components/HelpTooltip.vue'
 
@@ -355,11 +295,11 @@ const exportFields = [
 const handleSearch = async () => {
   loading.value = true
   hasSearched.value = true
-  
+
   try {
     // 模拟API调用
     await new Promise(resolve => setTimeout(resolve, 1000))
-    
+
     // 模拟数据
     const mockData: OtherStatisticsItem[] = [
       {
@@ -390,10 +330,10 @@ const handleSearch = async () => {
         updateTime: '2023-12-15 08:20:00'
       }
     ]
-    
+
     tableData.value = mockData
     total.value = 50
-    
+
     ElMessage.success('查询完成')
   } catch (error) {
     console.error('查询失败:', error)

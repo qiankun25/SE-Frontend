@@ -14,10 +14,7 @@ const FRONTEND_FORM_FIELDS = [
   "vehicleModels",
   "vehicleBrands",
   "vehicleNames",
-  "timeRangeType",
-  "timeUnit",
-  "customTimeRange",
-  "enableComparison",
+  // 移除复杂的时间选择字段
   "productionAddresses",
   "productionProvinces",
   "productionCities",
@@ -54,9 +51,7 @@ const API_PARAM_FIELDS: (keyof CertificateQuantityParams)[] = [
   "productionProvinces",
   "productionCities",
   "timeRange",
-  "timeRangeType",
-  "timeUnit",
-  "enableComparison",
+  // 移除复杂的时间选择字段
   "excludeNonAnnouncement",
   "showRanking",
 ];
@@ -101,7 +96,7 @@ function checkIndirectMapping(field: string, value: any): boolean {
     fuelTypes: ["fuelType"],
     newEnergyCategories: ["newEnergyType"],
     productionAddresses: ["productionAddress"],
-    customTimeRange: ["timeRange"],
+    // 移除复杂的时间选择字段映射
   };
 
   return field in indirectMappings;

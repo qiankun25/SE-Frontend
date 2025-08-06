@@ -9,14 +9,8 @@
         </p>
       </div>
       <div class="header-right">
-        <export-button
-          :data="tableData"
-          :total-count="total"
-          :fields="exportFields"
-          default-filename="产品准入信息"
-          @export="handleExport"
-          @download-template="handleDownloadTemplate"
-        />
+        <export-button :data="tableData" :total-count="total" :fields="exportFields" default-filename="产品准入信息"
+          @export="handleExport" @download-template="handleDownloadTemplate" />
       </div>
     </div>
 
@@ -25,10 +19,7 @@
       <template #header>
         <div class="card-header">
           <span>查询条件</span>
-          <help-tooltip
-            content="支持按企业、车型、批次、参数关键词等多维度查询产品准入信息"
-            title="产品准入查询帮助"
-          />
+          <help-tooltip content="支持按企业、车型、批次、参数关键词等多维度查询产品准入信息" title="产品准入查询帮助" />
         </div>
       </template>
 
@@ -36,31 +27,19 @@
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="企业选择">
-              <el-input
-                v-model="searchForm.companyName"
-                placeholder="请输入企业名称"
-                clearable
-              />
+              <el-input v-model="searchForm.companyName" placeholder="请输入企业名称" clearable />
             </el-form-item>
           </el-col>
-          
+
           <el-col :span="8">
             <el-form-item label="车辆型号">
-              <el-input
-                v-model="searchForm.vehicleModel"
-                placeholder="请输入车辆型号"
-                clearable
-              />
+              <el-input v-model="searchForm.vehicleModel" placeholder="请输入车辆型号" clearable />
             </el-form-item>
           </el-col>
 
           <el-col :span="8">
             <el-form-item label="通用名称">
-              <el-input
-                v-model="searchForm.commonName"
-                placeholder="请输入通用名称"
-                clearable
-              />
+              <el-input v-model="searchForm.commonName" placeholder="请输入通用名称" clearable />
             </el-form-item>
           </el-col>
         </el-row>
@@ -68,30 +47,22 @@
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="批次号">
-              <el-input
-                v-model="searchForm.batchNumber"
-                placeholder="如：第379批、380-390"
-                clearable
-              />
+              <el-input v-model="searchForm.batchNumber" placeholder="如：第379批、380-390" clearable />
             </el-form-item>
           </el-col>
 
           <el-col :span="8">
             <el-form-item label="参数关键词">
-              <el-input
-                v-model="searchForm.parameterKeyword"
-                placeholder="如：颗粒捕集器、OTA、辅助驾驶"
-                clearable
-              />
+              <el-input v-model="searchForm.parameterKeyword" placeholder="如：颗粒捕集器、OTA、辅助驾驶" clearable />
             </el-form-item>
           </el-col>
 
           <el-col :span="8">
-            <time-range-picker
-              v-model="searchForm.timeRange"
-              label="公告时间"
-              @change="handleTimeRangeChange"
-            />
+            <el-form-item label="公告时间">
+              <el-date-picker v-model="searchForm.timeRange" type="daterange" range-separator="至"
+                start-placeholder="开始日期" end-placeholder="结束日期" format="YYYY-MM-DD" value-format="YYYY-MM-DD"
+                @change="handleTimeRangeChange" />
+            </el-form-item>
           </el-col>
         </el-row>
 
@@ -99,11 +70,15 @@
           <el-col :span="24">
             <div class="search-actions">
               <el-button type="primary" @click="handleSearch" :loading="loading">
-                <el-icon><Search /></el-icon>
+                <el-icon>
+                  <Search />
+                </el-icon>
                 查询
               </el-button>
               <el-button @click="handleReset">
-                <el-icon><Refresh /></el-icon>
+                <el-icon>
+                  <Refresh />
+                </el-icon>
                 重置
               </el-button>
               <el-button type="info" plain @click="handleAdvancedSearch">
@@ -122,22 +97,13 @@
           <span>查询结果</span>
           <div class="result-actions">
             <el-button-group>
-              <el-button
-                :type="viewMode === 'basic' ? 'primary' : 'default'"
-                @click="viewMode = 'basic'"
-              >
+              <el-button :type="viewMode === 'basic' ? 'primary' : 'default'" @click="viewMode = 'basic'">
                 基本信息
               </el-button>
-              <el-button
-                :type="viewMode === 'technical' ? 'primary' : 'default'"
-                @click="viewMode = 'technical'"
-              >
+              <el-button :type="viewMode === 'technical' ? 'primary' : 'default'" @click="viewMode = 'technical'">
                 技术参数
               </el-button>
-              <el-button
-                :type="viewMode === 'filing' ? 'primary' : 'default'"
-                @click="viewMode = 'filing'"
-              >
+              <el-button :type="viewMode === 'filing' ? 'primary' : 'default'" @click="viewMode = 'filing'">
                 备案参数
               </el-button>
             </el-button-group>
@@ -145,61 +111,23 @@
         </div>
       </template>
 
-      <el-table
-        :data="tableData"
-        v-loading="loading"
-        stripe
-        border
-        height="500"
-        @sort-change="handleSortChange"
-        @selection-change="handleSelectionChange"
-      >
+      <el-table :data="tableData" v-loading="loading" stripe border height="500" @sort-change="handleSortChange"
+        @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" />
         <el-table-column type="index" label="序号" width="60" />
-        
-        <el-table-column
-          prop="companyName"
-          label="企业名称"
-          min-width="200"
-          show-overflow-tooltip
-        />
-        
-        <el-table-column
-          prop="vehicleModel"
-          label="车辆型号"
-          width="150"
-          show-overflow-tooltip
-        />
-        
-        <el-table-column
-          prop="commonName"
-          label="通用名称"
-          width="150"
-          show-overflow-tooltip
-        />
-        
-        <el-table-column
-          prop="batchNumber"
-          label="批次号"
-          width="100"
-          align="center"
-        />
-        
-        <el-table-column
-          prop="certificateCount"
-          label="合格证数量"
-          width="120"
-          align="right"
-          sortable="custom"
-        />
-        
-        <el-table-column
-          prop="testingInstitution"
-          label="检测机构"
-          width="150"
-          show-overflow-tooltip
-        />
-        
+
+        <el-table-column prop="companyName" label="企业名称" min-width="200" show-overflow-tooltip />
+
+        <el-table-column prop="vehicleModel" label="车辆型号" width="150" show-overflow-tooltip />
+
+        <el-table-column prop="commonName" label="通用名称" width="150" show-overflow-tooltip />
+
+        <el-table-column prop="batchNumber" label="批次号" width="100" align="center" />
+
+        <el-table-column prop="certificateCount" label="合格证数量" width="120" align="right" sortable="custom" />
+
+        <el-table-column prop="testingInstitution" label="检测机构" width="150" show-overflow-tooltip />
+
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleViewDetail(row)">
@@ -217,25 +145,15 @@
 
       <!-- 分页 -->
       <div class="pagination-wrapper">
-        <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handlePageChange"
-        />
+        <el-pagination v-model:current-page="pagination.page" v-model:page-size="pagination.pageSize" :total="total"
+          :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange" @current-change="handlePageChange" />
       </div>
     </el-card>
 
     <!-- 详情对话框 -->
-    <el-dialog
-      v-model="showDetailDialog"
-      :title="`${selectedProduct?.vehicleModel} - 产品详情`"
-      width="80%"
-      @close="closeDetailDialog"
-    >
+    <el-dialog v-model="showDetailDialog" :title="`${selectedProduct?.vehicleModel} - 产品详情`" width="80%"
+      @close="closeDetailDialog">
       <div v-if="selectedProduct" class="product-detail">
         <el-tabs v-model="activeTab">
           <el-tab-pane label="基本信息" name="basic">
@@ -250,13 +168,13 @@
               </el-descriptions>
             </div>
           </el-tab-pane>
-          
+
           <el-tab-pane label="技术参数" name="technical">
             <div class="detail-content">
               <el-empty description="技术参数详情开发中..." />
             </div>
           </el-tab-pane>
-          
+
           <el-tab-pane label="备案参数" name="filing">
             <div class="detail-content">
               <el-empty description="备案参数详情开发中..." />
@@ -264,7 +182,7 @@
           </el-tab-pane>
         </el-tabs>
       </div>
-      
+
       <template #footer>
         <el-button @click="closeDetailDialog">关闭</el-button>
         <el-button type="primary" @click="handleExportDetail">导出详情</el-button>
@@ -279,7 +197,6 @@ import { ElMessage } from 'element-plus'
 import { Search, Refresh } from '@element-plus/icons-vue'
 
 // 导入通用组件
-import TimeRangePicker from '../components/TimeRangePicker.vue'
 import ExportButton from '../components/ExportButton.vue'
 import HelpTooltip from '../components/HelpTooltip.vue'
 
@@ -329,11 +246,11 @@ const exportFields = [
 // 事件处理函数
 const handleSearch = async () => {
   loading.value = true
-  
+
   try {
     // 模拟API调用
     await new Promise(resolve => setTimeout(resolve, 1000))
-    
+
     // 模拟数据
     const mockData: ProductAccessItem[] = [
       {
@@ -351,10 +268,10 @@ const handleSearch = async () => {
         cpno: 'CP2023001234'
       }
     ]
-    
+
     tableData.value = mockData
     total.value = 50
-    
+
     ElMessage.success('查询完成')
   } catch (error) {
     console.error('查询失败:', error)

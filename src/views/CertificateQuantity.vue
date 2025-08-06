@@ -9,12 +9,33 @@
         </p>
       </div>
       <div class="header-right">
-        <el-button type="primary" @click="handleExport" :disabled="!hasSearched">
-          <el-icon>
-            <Download />
-          </el-icon>
-          导出数据
-        </el-button>
+        <el-dropdown @command="handleExportCommand" :disabled="!hasSearched">
+          <el-button type="primary">
+            <el-icon>
+              <Download />
+            </el-icon>
+            导出数据
+            <el-icon class="el-icon--right">
+              <arrow-down />
+            </el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="current">
+                <el-icon>
+                  <Document />
+                </el-icon>
+                导出当前页 ({{ tableData.length }}条)
+              </el-dropdown-item>
+              <el-dropdown-item command="all">
+                <el-icon>
+                  <FolderOpened />
+                </el-icon>
+                导出全部数据
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
         <el-button @click="handleReset">
           <el-icon>
             <Refresh />
@@ -43,8 +64,8 @@
 
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Download, Refresh } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Download, Refresh, ArrowDown, Document, FolderOpened } from '@element-plus/icons-vue'
 
 // 导入新的组件
 import CertificateSearchConditions from '../components/CertificateSearchConditions.vue'
@@ -251,13 +272,15 @@ const buildSearchParams = (conditions: any[]) => {
         endDate: condition.timeRange.endDate
       }
     }
-    if (condition.timeRangeType) {
-      params.timeRangeType = condition.timeRangeType
+
+    // 新增的时间范围参数
+    if (condition.quickTimeRange) {
+      params.quickTimeRange = condition.quickTimeRange
     }
-    if (condition.timeUnit) {
-      params.timeUnit = condition.timeUnit
+    if (condition.viewDimension) {
+      params.viewDimension = condition.viewDimension
     }
-    if (condition.enableComparison) {
+    if (condition.enableComparison !== undefined) {
       params.enableComparison = condition.enableComparison
     }
 
@@ -392,50 +415,121 @@ const handleReset = () => {
   ElMessage.success('已重置所有条件')
 }
 
+// 存储当前显示的字段
+const currentDisplayFields = ref<string[]>([])
+
+// 导出当前页数据（默认行为，安全）
 const handleExport = async () => {
   if (!hasSearched.value || tableData.value.length === 0) {
-    ElMessage.warning('没有可导出的数据')
+    ElMessage.warning('当前页没有可导出的数据')
     return
   }
 
   try {
     const { certificateQuantityApi, exportUtils } = await import('../services/api')
 
-    // 构建导出参数
+    // 构建导出参数 - 只导出当前页数据
     const params = {
       ...buildSearchParams(selectedConditions.value),
-      field: 'certificateCount', // 添加必需的排序字段
+      page: 1, // 当前页码
+      pageSize: 100, // 当前页大小
+      field: 'certificateCount',
       order: 'desc' as const,
       format: 'excel' as const,
-      filename: '合格证总量统计'
+      filename: '合格证总量统计_当前页',
+      export_range: 'current', // 明确指定导出范围
+      fields: currentDisplayFields.value // 只导出显示的字段
     }
 
     const blob = await certificateQuantityApi.export(params)
-    exportUtils.downloadFile(blob, exportUtils.generateFilename('合格证总量统计'))
+    exportUtils.downloadFile(blob, exportUtils.generateFilename('合格证总量统计_当前页'))
 
-    ElMessage.success('数据导出成功')
+    ElMessage.success(`当前页数据导出成功（${tableData.value.length}条记录）`)
   } catch (error) {
     console.error('导出失败:', error)
     ElMessage.error('导出失败，请重试')
   }
 }
 
-const handleExportData = async (data: any[]) => {
+// 导出全部数据（需要用户确认）
+const handleExportAll = async () => {
+  if (!hasSearched.value) {
+    ElMessage.warning('请先执行查询')
+    return
+  }
+
   try {
+    await ElMessageBox.confirm(
+      '确定要导出全部符合条件的数据吗？这可能包含大量记录。',
+      '确认导出全部数据',
+      {
+        confirmButtonText: '确定导出',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+
     const { certificateQuantityApi, exportUtils } = await import('../services/api')
 
     const params = {
       ...buildSearchParams(selectedConditions.value),
-      field: 'certificateCount', // 添加必需的排序字段
+      field: 'certificateCount',
       order: 'desc' as const,
       format: 'excel' as const,
-      filename: '合格证总量统计_选中数据'
+      filename: '合格证总量统计_全部数据',
+      export_range: 'all', // 导出全部数据
+      fields: currentDisplayFields.value // 只导出显示的字段
+    }
+
+    const blob = await certificateQuantityApi.export(params)
+    exportUtils.downloadFile(blob, exportUtils.generateFilename('合格证总量统计_全部'))
+
+    ElMessage.success('全部数据导出成功')
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('导出失败:', error)
+      ElMessage.error('导出失败，请重试')
+    }
+  }
+}
+
+// 导出选中数据
+const handleExportData = async (exportData: any) => {
+  // 处理新的数据结构
+  const selectedRows = Array.isArray(exportData) ? exportData : exportData.data
+  const fields = exportData.fields || currentDisplayFields.value
+
+  if (!selectedRows || selectedRows.length === 0) {
+    ElMessage.warning('请先选择要导出的数据')
+    return
+  }
+
+  // 更新当前显示字段
+  if (fields && fields.length > 0) {
+    currentDisplayFields.value = fields
+  }
+
+  try {
+    const { certificateQuantityApi, exportUtils } = await import('../services/api')
+
+    // 提取选中数据的ID
+    const selectedIds = selectedRows.map(row => row.companyId || row.id || `${row.companyName}_${row.vehicleModel}`)
+
+    const params = {
+      ...buildSearchParams(selectedConditions.value),
+      field: 'certificateCount',
+      order: 'desc' as const,
+      format: 'excel' as const,
+      filename: '合格证总量统计_选中数据',
+      export_range: 'selected', // 导出选中数据
+      selected_ids: selectedIds,
+      fields: currentDisplayFields.value // 只导出显示的字段
     }
 
     const blob = await certificateQuantityApi.export(params)
     exportUtils.downloadFile(blob, exportUtils.generateFilename('合格证总量统计_选中'))
 
-    ElMessage.success('选中数据导出成功')
+    ElMessage.success(`选中的${selectedRows.length}条数据导出成功`)
   } catch (error) {
     console.error('导出失败:', error)
     ElMessage.error('导出失败，请重试')
