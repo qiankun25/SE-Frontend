@@ -5,7 +5,7 @@
         <div class="card-header">
           <span>已选择的查询条件 ({{ selectedConditions.length }})</span>
           <div class="header-actions">
-            <el-button type="text" @click="handleClearAll" :disabled="selectedConditions.length === 0">
+            <el-button type="link" @click="handleClearAll" :disabled="selectedConditions.length === 0">
               清空所有
             </el-button>
           </div>
@@ -197,7 +197,7 @@
 
             <!-- 删除按钮 -->
             <div class="condition-actions">
-              <el-button type="text" size="small" @click="handleRemoveCondition(index)" class="remove-btn">
+              <el-button type="link" size="small" @click="handleRemoveCondition(index)" class="remove-btn">
                 <el-icon>
                   <Close />
                 </el-icon>

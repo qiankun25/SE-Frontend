@@ -546,6 +546,15 @@ const handleSortChange = (sortInfo: { prop: string; order: string }) => {
   // 这里可以重新排序数据或重新查询
 }
 
+// 添加缺失的导出命令处理方法
+const handleExportCommand = (command: string) => {
+  if (command === 'current') {
+    handleExport()
+  } else if (command === 'all') {
+    handleExportAll()
+  }
+}
+
 // 生命周期
 onMounted(() => {
   // 查询参数处理

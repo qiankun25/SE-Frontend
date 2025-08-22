@@ -11,10 +11,12 @@ const FRONTEND_FORM_FIELDS = [
   "excludeNonAnnouncement",
   "companyName",
   "companyCode",
+  "companyNames",
+  "companyCodes",
+  "selectedCompanies",
   "vehicleModels",
   "vehicleBrands",
   "vehicleNames",
-  // 移除复杂的时间选择字段
   "productionAddresses",
   "productionProvinces",
   "productionCities",
@@ -24,13 +26,19 @@ const FRONTEND_FORM_FIELDS = [
   "newEnergyCategories",
   "isNewEnergy",
   "showRanking",
+  "quickTimeRange",
+  "viewDimension",
+  "enableComparison",
+  "timeRange",
 ] as const;
 
 // API参数字段列表
 const API_PARAM_FIELDS: (keyof CertificateQuantityParams)[] = [
   "companyName",
+  "companyNames",
   "companyId",
   "companyCode",
+  "companyCodes",
   "vehicleBrand",
   "vehicleBrands",
   "vehicleModel",
@@ -51,7 +59,9 @@ const API_PARAM_FIELDS: (keyof CertificateQuantityParams)[] = [
   "productionProvinces",
   "productionCities",
   "timeRange",
-  // 移除复杂的时间选择字段
+  "quickTimeRange",
+  "viewDimension",
+  "enableComparison",
   "excludeNonAnnouncement",
   "showRanking",
 ];
@@ -96,7 +106,11 @@ function checkIndirectMapping(field: string, value: any): boolean {
     fuelTypes: ["fuelType"],
     newEnergyCategories: ["newEnergyType"],
     productionAddresses: ["productionAddress"],
-    // 移除复杂的时间选择字段映射
+    selectedCompanies: ["companyNames", "companyCodes"],
+    companyNames: ["companyName"],
+    companyCodes: ["companyCode"],
+    quickTimeRange: ["timeRange"],
+    viewDimension: ["viewDimension"],
   };
 
   return field in indirectMappings;

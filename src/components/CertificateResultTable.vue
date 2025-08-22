@@ -5,20 +5,6 @@
         <div class="card-header">
           <span>查询结果</span>
           <div class="header-actions">
-            <el-button-group>
-              <el-button :type="viewMode === 'table' ? 'primary' : 'default'" @click="viewMode = 'table'" size="small">
-                <el-icon>
-                  <Grid />
-                </el-icon>
-                表格视图
-              </el-button>
-              <el-button :type="viewMode === 'chart' ? 'primary' : 'default'" @click="viewMode = 'chart'" size="small">
-                <el-icon>
-                  <TrendCharts />
-                </el-icon>
-                图表视图
-              </el-button>
-            </el-button-group>
             <el-button type="primary" size="small" @click="handleExport" :disabled="!hasData">
               <el-icon>
                 <Download />
@@ -29,38 +15,10 @@
         </div>
       </template>
 
-      <!-- 统计概览 -->
-      <div v-if="hasData" class="stats-overview">
-        <el-row :gutter="20">
-          <el-col :span="6">
-            <div class="stats-item">
-              <div class="stats-value">{{ formatNumber(stats.totalCertificates || 0) }}</div>
-              <div class="stats-label">合格证总数</div>
-            </div>
-          </el-col>
-          <el-col :span="6">
-            <div class="stats-item">
-              <div class="stats-value">{{ formatNumber(stats.totalCompanies || 0) }}</div>
-              <div class="stats-label">涉及企业数</div>
-            </div>
-          </el-col>
-          <el-col :span="6">
-            <div class="stats-item">
-              <div class="stats-value">{{ formatNumber(stats.totalModels || 0) }}</div>
-              <div class="stats-label">涉及车型数</div>
-            </div>
-          </el-col>
-          <el-col :span="6">
-            <div class="stats-item">
-              <div class="stats-value">{{ stats.timeRange || '全部时间' }}</div>
-              <div class="stats-label">统计时间段</div>
-            </div>
-          </el-col>
-        </el-row>
-      </div>
 
-      <!-- 表格视图 -->
-      <div v-show="viewMode === 'table'">
+
+      <!-- 数据表格 -->
+      <div>
         <!-- 空状态 -->
         <div v-if="!hasData && !loading" class="empty-state">
           <el-empty description="暂无查询结果">
@@ -317,6 +275,15 @@ const dynamicColumns = computed(() => {
     if (hasViewDimensionCondition) {
       const viewDimension = conditions.find(c => c.viewDimension)?.viewDimension
 
+      // 调试信息 - 开发环境下显示
+      if (import.meta.env.DEV) {
+        console.log('🔍 查看维度检测:', {
+          hasViewDimensionCondition,
+          viewDimension,
+          conditions: conditions.map(c => ({ viewDimension: c.viewDimension }))
+        })
+      }
+
       switch (viewDimension) {
         case 'yearly':
           columns.push({
@@ -324,7 +291,10 @@ const dynamicColumns = computed(() => {
             label: '年份',
             width: 100,
             align: 'center',
-            sortable: 'custom'
+            sortable: 'custom',
+            formatter: (value: number) => {
+              return value ? `${value}年` : '-'
+            }
           })
           break
         case 'monthly':
@@ -332,14 +302,20 @@ const dynamicColumns = computed(() => {
             key: 'year',
             label: '年份',
             width: 80,
-            align: 'center'
+            align: 'center',
+            formatter: (value: number) => {
+              return value ? `${value}年` : '-'
+            }
           })
           columns.push({
             key: 'month',
             label: '月份',
             width: 80,
             align: 'center',
-            sortable: 'custom'
+            sortable: 'custom',
+            formatter: (value: number) => {
+              return value ? `${value}月` : '-'
+            }
           })
           break
         case 'daily':
@@ -348,10 +324,46 @@ const dynamicColumns = computed(() => {
             label: '日期',
             width: 120,
             align: 'center',
-            sortable: 'custom'
+            sortable: 'custom',
+            formatter: (value: string) => {
+              return value || '-'
+            }
           })
           break
       }
+    } else if (hasTimeCondition) {
+      // 如果有时间条件但是总量查看，显示时间范围信息
+      const timeCondition = conditions.find(c => c.timeRange || c.quickTimeRange)
+      
+      columns.push({
+        key: 'timeRange',
+        label: '时间范围',
+        width: 120,
+        align: 'center',
+        formatter: (value: any, row: any) => {
+          // 根据查询条件显示时间范围
+          if (timeCondition) {
+            if (timeCondition.quickTimeRange) {
+              // 快捷时间选择的显示
+              const quickTimeLabels = {
+                '3months': '近三个月',
+                '6months': '近六个月', 
+                '1year': '近一年',
+                '2years': '近两年',
+                '3years': '近三年'
+              }
+              return quickTimeLabels[timeCondition.quickTimeRange] || '总量'
+            } else if (timeCondition.timeRange) {
+              // 自定义时间范围的显示
+              const { startDate, endDate } = timeCondition.timeRange
+              if (startDate && endDate) {
+                return `${startDate} 至 ${endDate}`
+              }
+            }
+          }
+          return '总量'
+        }
+      })
     }
 
     // 数量相关列 - 根据是否开启同期比显示不同的列
@@ -469,41 +481,7 @@ const dynamicColumns = computed(() => {
   }
 })
 
-// 统计数据 - 从后端获取
-const stats = ref({
-  totalCertificates: 0,
-  totalCompanies: 0,
-  totalModels: 0,
-  timeRange: '全部时间'
-})
 
-// 获取统计数据
-const fetchStats = async () => {
-  if (!hasData.value) return
-
-  try {
-    const { certificateQuantityApi } = await import('../services/api')
-
-    // 构建统计查询参数，基于当前的查询条件
-    const statsParams = {}
-
-    // 这里可以根据需要添加过滤条件，目前使用空参数获取全局统计
-    const response = await certificateQuantityApi.getStats(statsParams)
-
-    if (response.code === 200) {
-      stats.value = response.data
-    }
-  } catch (error) {
-    console.error('获取统计数据失败:', error)
-    // 如果统计数据获取失败，使用默认值
-    stats.value = {
-      totalCertificates: props.data.reduce((sum, item) => sum + (item.certificateCount || 0), 0),
-      totalCompanies: new Set(props.data.map(item => item.companyId)).size,
-      totalModels: new Set(props.data.map(item => item.vehicleModel)).size,
-      timeRange: '当前查询结果'
-    }
-  }
-}
 
 // 方法
 const formatNumber = (num: number | null | undefined) => {
@@ -564,10 +542,9 @@ const handleViewDetail = (row: any) => {
   emit('view-detail', row)
 }
 
-// 监听数据变化，重置分页并获取统计数据
+// 监听数据变化，重置分页
 watch(() => props.data, () => {
   pagination.value.page = 1
-  fetchStats()
 }, { immediate: true })
 </script>
 
@@ -589,29 +566,7 @@ watch(() => props.data, () => {
   align-items: center;
 }
 
-.stats-overview {
-  margin-bottom: 20px;
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 6px;
-}
 
-.stats-item {
-  text-align: center;
-  padding: 10px 0;
-}
-
-.stats-value {
-  font-size: 28px;
-  font-weight: bold;
-  color: #409eff;
-  margin-bottom: 5px;
-}
-
-.stats-label {
-  font-size: 14px;
-  color: #606266;
-}
 
 .empty-state {
   padding: 40px 20px;
@@ -646,10 +601,6 @@ watch(() => props.data, () => {
   .header-actions {
     flex-direction: column;
     gap: 8px;
-  }
-
-  .stats-overview .el-col {
-    margin-bottom: 10px;
   }
 }
 </style>

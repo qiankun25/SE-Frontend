@@ -70,21 +70,6 @@ export const certificateQuantityApi = {
     return response.blob();
   },
 
-  // 获取统计概览
-  async getStats(params: Partial<CertificateQuantityParams>): Promise<
-    ApiResponse<{
-      totalCertificates: number;
-      totalCompanies: number;
-      totalModels: number;
-      timeRange: string;
-    }>
-  > {
-    return request("/certificate-quantity/stats", {
-      method: "POST",
-      body: JSON.stringify(params),
-    });
-  },
-
   // 获取企业列表
   async getCompaniesList(): Promise<
     ApiResponse<
