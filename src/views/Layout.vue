@@ -8,7 +8,9 @@
       <div class="header-right">
         <el-dropdown @command="handleCommand">
           <span class="user-info">
-            <el-icon><User /></el-icon>
+            <el-icon>
+              <User />
+            </el-icon>
             {{ currentUser }}
             <el-icon class="el-icon--right"><arrow-down /></el-icon>
           </span>
@@ -24,17 +26,8 @@
     <el-container class="main-container">
       <!-- 侧边导航菜单 -->
       <el-aside class="sidebar" width="250px">
-        <el-menu
-          :default-active="$route.path"
-          class="sidebar-menu"
-          router
-          :collapse="false"
-        >
-          <el-menu-item
-            v-for="route in menuRoutes"
-            :key="route.path"
-            :index="route.path"
-          >
+        <el-menu :default-active="$route.path" class="sidebar-menu" router :collapse="false">
+          <el-menu-item v-for="route in menuRoutes" :key="route.path" :index="route.path">
             <el-icon>
               <component :is="route.meta.icon" />
             </el-icon>
@@ -51,7 +44,7 @@
             <el-breadcrumb-item>{{ currentPageTitle }}</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
-        
+
         <div class="page-content">
           <router-view />
         </div>

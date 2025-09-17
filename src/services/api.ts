@@ -302,6 +302,75 @@ export const otherStatisticsApi = {
   },
 };
 
+// 操作日志API
+export const operationLogApi = {
+  // 获取用户操作日志
+  async getOperationLogs(params: {
+    operation_type?: string;
+    module?: string;
+    start_date?: string;
+    end_date?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<ApiResponse<any>> {
+    return request("/user/logs/operations", {
+      method: "GET",
+      params,
+    });
+  },
+
+  // 获取用户下载日志
+  async getDownloadLogs(params: {
+    status_filter?: string;
+    data_source?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<ApiResponse<any>> {
+    return request("/user/logs/downloads", {
+      method: "GET",
+      params,
+    });
+  },
+
+  // 获取操作统计
+  async getOperationStatistics(params: {
+    start_date?: string;
+    end_date?: string;
+  }): Promise<ApiResponse<any>> {
+    return request("/user/statistics/operations", {
+      method: "GET",
+      params,
+    });
+  },
+
+  // 管理员获取所有操作日志
+  async getAllOperationLogs(params: {
+    user_id?: number;
+    operation_type?: string;
+    module?: string;
+    start_date?: string;
+    end_date?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<ApiResponse<any>> {
+    return request("/user/admin/logs/all", {
+      method: "GET",
+      params,
+    });
+  },
+
+  // 管理员获取系统统计
+  async getSystemStatistics(params: {
+    start_date?: string;
+    end_date?: string;
+  }): Promise<ApiResponse<any>> {
+    return request("/user/admin/statistics/system", {
+      method: "GET",
+      params,
+    });
+  },
+};
+
 // 通用API
 export const commonApi = {
   // 获取地区数据
