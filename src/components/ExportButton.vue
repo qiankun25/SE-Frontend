@@ -1,21 +1,74 @@
 <template>
   <div class="export-button">
-    <el-dropdown @command="handleExportCommand" :disabled="disabled">
-      <el-button type="primary" :loading="exporting">
+    <!-- 导出配额显示 -->
+    <div class="export-quota-info" v-if="showQuotaInfo && quotaInfo">
+      <el-text size="small" type="info">
+        今日已导出: {{ quotaInfo.used }}/{{ quotaInfo.limit }} 次
+        <el-text v-if="quotaInfo.remaining <= 3" type="warning">
+          (剩余 {{ quotaInfo.remaining }} 次)
+        </el-text>
+      </el-text>
+    </div>
+
+    <el-dropdown @command="handleExportCommand" :disabled="disabled || isQuotaExceeded">
+      <el-button
+        type="primary"
+        :loading="exporting"
+        :disabled="isQuotaExceeded"
+      >
         <el-icon><Download /></el-icon>
         {{ buttonText }}
         <el-icon class="el-icon--right"><arrow-down /></el-icon>
       </el-button>
       <template #dropdown>
         <el-dropdown-menu>
-          <el-dropdown-item command="current">导出当前页</el-dropdown-item>
-          <el-dropdown-item command="all">导出全部数据</el-dropdown-item>
-          <el-dropdown-item command="selected" v-if="allowSelectExport">导出选中数据</el-dropdown-item>
+          <el-dropdown-item
+            command="current"
+            :disabled="!canExport('current')"
+          >
+            导出当前页
+            <el-tag v-if="!canExport('current')" size="small" type="danger">
+              配额不足
+            </el-tag>
+          </el-dropdown-item>
+          <el-dropdown-item
+            command="all"
+            :disabled="!canExport('all')"
+          >
+            导出全部数据
+            <el-tag v-if="!canExport('all')" size="small" type="danger">
+              配额不足
+            </el-tag>
+          </el-dropdown-item>
+          <el-dropdown-item
+            command="selected"
+            v-if="allowSelectExport"
+            :disabled="!canExport('selected')"
+          >
+            导出选中数据
+            <el-tag v-if="!canExport('selected')" size="small" type="danger">
+              配额不足
+            </el-tag>
+          </el-dropdown-item>
           <el-dropdown-item divided command="template">下载模板</el-dropdown-item>
           <el-dropdown-item command="config">导出配置</el-dropdown-item>
         </el-dropdown-menu>
       </template>
     </el-dropdown>
+
+    <!-- 配额不足提示 -->
+    <el-alert
+      v-if="isQuotaExceeded"
+      title="导出配额已用完"
+      type="warning"
+      :closable="false"
+      show-icon
+      class="quota-alert"
+    >
+      <template #default>
+        您今日的导出配额已用完，请明日再试或联系管理员增加配额。
+      </template>
+    </el-alert>
 
     <!-- 导出配置对话框 -->
     <el-dialog
@@ -83,10 +136,12 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, computed, watch, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, ArrowDown } from '@element-plus/icons-vue'
 import type { ExportParams } from '../../types/api'
+import { exportLimitApi, exportUtils, type QuotaInfo } from '../services/exportLimitApi'
+import { useAuth } from '../composables/useAuth'
 
 interface FieldOption {
   key: string
@@ -113,6 +168,8 @@ interface Props {
   buttonText?: string
   disabled?: boolean
   allowSelectExport?: boolean
+  showQuotaInfo?: boolean
+  module?: string
 }
 
 interface Emits {
@@ -128,14 +185,20 @@ const props = withDefaults(defineProps<Props>(), {
   defaultFilename: '导出数据',
   buttonText: '导出数据',
   disabled: false,
-  allowSelectExport: false
+  allowSelectExport: false,
+  showQuotaInfo: true,
+  module: 'default'
 })
 
 const emit = defineEmits<Emits>()
 
+// 获取用户认证信息
+const { user } = useAuth()
+
 // 响应式数据
 const exporting = ref(false)
 const showConfigDialog = ref(false)
+const quotaInfo = ref<QuotaInfo | null>(null)
 const exportConfig = ref<ExportConfig>({
   filename: '',
   format: 'excel',
@@ -155,6 +218,16 @@ const availableFields = computed(() => {
   ]
 })
 
+// 配额相关计算属性
+const isQuotaExceeded = computed(() => {
+  return exportUtils.isQuotaExceeded(quotaInfo.value)
+})
+
+// 检查是否可以执行特定类型的导出
+const canExport = (exportType: string): boolean => {
+  return exportUtils.canExport(quotaInfo.value, exportType)
+}
+
 // 全选状态
 const selectAllFields = ref(false)
 const isIndeterminate = computed(() => {
@@ -162,6 +235,20 @@ const isIndeterminate = computed(() => {
   const totalCount = availableFields.value.length
   return selectedCount > 0 && selectedCount < totalCount
 })
+
+// 获取用户导出配额信息
+const fetchQuotaInfo = async () => {
+  try {
+    if (!user.value || !props.showQuotaInfo) return
+
+    const response = await exportLimitApi.getCurrentUserQuota()
+    if (response.code === 200) {
+      quotaInfo.value = response.data
+    }
+  } catch (error) {
+    console.error('获取导出配额失败:', error)
+  }
+}
 
 // 监听字段变化
 watch(() => props.fields, (newFields) => {
@@ -178,25 +265,44 @@ watch(() => props.defaultFilename, (newFilename) => {
   exportConfig.value.filename = newFilename
 }, { immediate: true })
 
-// 处理导出命令
+// 处理导出命令（增强版）
 const handleExportCommand = async (command: string) => {
-  switch (command) {
-    case 'current':
-      await executeQuickExport('current')
-      break
-    case 'all':
-      await executeQuickExport('all')
-      break
-    case 'selected':
-      await executeQuickExport('selected')
-      break
-    case 'template':
-      handleDownloadTemplate()
-      break
-    case 'config':
-      showConfigDialog.value = true
-      break
+  // 模板下载和配置不需要检查配额
+  if (command === 'template') {
+    handleDownloadTemplate()
+    return
   }
+
+  if (command === 'config') {
+    showConfigDialog.value = true
+    return
+  }
+
+  // 1. 检查配额
+  if (!canExport(command)) {
+    ElMessage.warning('导出配额不足，无法执行此操作')
+    return
+  }
+
+  // 2. 对于大数据量导出，显示确认对话框
+  if (command === 'all' && quotaInfo.value && quotaInfo.value.remaining <= 5) {
+    try {
+      await ElMessageBox.confirm(
+        `导出全部数据将消耗${exportUtils.getQuotaCost('all')}个配额，您当前剩余${quotaInfo.value.remaining}个配额。确定继续吗？`,
+        '配额提醒',
+        {
+          confirmButtonText: '确定导出',
+          cancelButtonText: '取消',
+          type: 'warning',
+        }
+      )
+    } catch {
+      return // 用户取消
+    }
+  }
+
+  // 3. 执行导出
+  await executeQuickExport(command)
 }
 
 // 快速导出
@@ -222,11 +328,21 @@ const executeQuickExport = async (command: string) => {
     }
 
     emit('export', config)
-    
+
+    // 刷新配额信息
+    await fetchQuotaInfo()
+
     ElMessage.success('导出成功')
   } catch (error) {
     console.error('导出失败:', error)
-    ElMessage.error('导出失败，请重试')
+
+    // 处理配额相关错误
+    if (error?.response?.status === 429) {
+      ElMessage.error('导出配额已用完，请明日再试')
+      await fetchQuotaInfo() // 刷新配额信息
+    } else {
+      ElMessage.error('导出失败，请重试')
+    }
   } finally {
     exporting.value = false
   }
@@ -288,11 +404,39 @@ watch(() => exportConfig.value.selectedFields, (newFields) => {
   const totalCount = availableFields.value.length
   selectAllFields.value = newFields.length === totalCount
 }, { deep: true })
+
+// 组件挂载时获取配额信息
+onMounted(() => {
+  if (props.showQuotaInfo) {
+    fetchQuotaInfo()
+  }
+})
+
+// 监听用户变化
+watch(() => user.value, () => {
+  if (props.showQuotaInfo && user.value) {
+    fetchQuotaInfo()
+  }
+})
 </script>
 
 <style scoped>
 .export-button {
   display: inline-block;
+}
+
+.export-quota-info {
+  margin-bottom: 8px;
+  text-align: right;
+}
+
+.quota-alert {
+  margin-top: 8px;
+}
+
+.el-dropdown-menu__item:disabled {
+  color: #c0c4cc;
+  cursor: not-allowed;
 }
 
 .field-selection {

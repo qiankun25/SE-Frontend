@@ -8,6 +8,24 @@ export interface ApiResponse<T = any> {
   total?: number;
 }
 
+// 用户认证相关接口
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface UserInfo {
+  id: string;
+  username: string;
+  name: string;
+  permissions: string[];
+}
+
+export interface LoginResponse {
+  token: string;
+  user: UserInfo;
+}
+
 // 分页参数
 export interface PaginationParams {
   page: number;

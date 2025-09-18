@@ -26,11 +26,20 @@ async function request<T>(
   url: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
+  // 获取token并自动添加Authorization头
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...options.headers as Record<string, string>,
+  };
+
+  // 如果有token且不是登录接口，自动添加Authorization头
+  if (token && !url.includes('/auth/login')) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${BASE_URL}${url}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
+    headers,
     ...options,
   });
 
