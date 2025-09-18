@@ -153,6 +153,10 @@
       </el-col>
     </el-row>
 
+    <!-- 显示字段选择组件 -->
+    <certificate-display-fields v-if="hasSearched" :initial-fields="displayFields" mode="detail"
+      @fields-change="handleDisplayFieldsChange" />
+
     <!-- 结果展示区域 -->
     <el-card class="result-card" shadow="never">
       <template #header>
@@ -184,21 +188,19 @@
           <el-table-column type="selection" width="55" />
           <el-table-column type="index" label="序号" width="60" />
 
-          <el-table-column prop="certificateNumber" label="合格证编号" width="180" show-overflow-tooltip />
-
-          <el-table-column prop="vin" label="车架号(VIN)" width="180" show-overflow-tooltip />
-
-          <el-table-column prop="companyName" label="制造企业" min-width="200" show-overflow-tooltip />
-
-          <el-table-column prop="vehicleBrand" label="车辆品牌" width="120" />
-
-          <el-table-column prop="vehicleModel" label="车辆型号" width="150" show-overflow-tooltip />
-
-          <el-table-column prop="vehicleColor" label="车身颜色" width="100" />
-
-          <el-table-column prop="manufactureDate" label="制造日期" width="120" align="center" />
-
-          <el-table-column prop="issueDate" label="发证日期" width="120" align="center" />
+          <!-- 动态列 -->
+          <template v-for="column in dynamicColumns" :key="column.key">
+            <el-table-column v-if="column && column.key" :prop="column.key" :label="column.label || ''"
+              :width="column.width" :min-width="column.minWidth" :sortable="column.sortable"
+              :align="column.align || 'left'" :show-overflow-tooltip="column.showTooltip">
+              <template #default="{ row }" v-if="column.formatter">
+                <span v-html="column.formatter(row[column.key] || '', row) || ''"></span>
+              </template>
+              <template #default="{ row }" v-else>
+                <span>{{ row[column.key] || '' }}</span>
+              </template>
+            </el-table-column>
+          </template>
 
           <el-table-column label="操作" width="150" fixed="right">
             <template #default="{ row }">
@@ -240,6 +242,7 @@ import { Search, Refresh, Grid, Document } from '@element-plus/icons-vue'
 // 导入通用组件
 import ExportButton from '../components/ExportButton.vue'
 import HelpTooltip from '../components/HelpTooltip.vue'
+import CertificateDisplayFields from '../components/CertificateDisplayFields.vue'
 
 // 导入帮助模板
 import { helpTemplates } from '../utils/helpTemplates'
@@ -254,6 +257,7 @@ const viewMode = ref<'table' | 'detail'>('table')
 const selectedRows = ref<CertificateDetailItem[]>([])
 const selectedCertificate = ref<CertificateDetailItem | null>(null)
 const batchInput = ref('')
+const displayFields = ref<string[]>([]) // 用户选择的显示字段
 
 // 搜索表单
 const searchForm = reactive<Partial<CertificateDetailParams> & { queryMode: 'single' | 'batch' }>({
@@ -465,10 +469,76 @@ const handleFileUpload = (file: any) => {
   ElMessage.info('文件上传功能待实现')
 }
 
+const handleDisplayFieldsChange = (fields: string[]) => {
+  displayFields.value = fields
+  // 显示字段变化时，如果已经有查询结果，可以考虑重新渲染表格
+  // 这里不需要重新查询数据，只需要更新显示字段即可
+}
+
 // 计算属性
 const formatNumber = (num: number) => {
   return num.toLocaleString()
 }
+
+// 动态列生成
+const dynamicColumns = computed(() => {
+  const fields = displayFields.value
+  if (fields.length === 0) {
+    // 默认显示的列
+    return [
+      { key: 'certificateNumber', label: '合格证编号', width: 180, showTooltip: true },
+      { key: 'vin', label: '车架号(VIN)', width: 180, showTooltip: true },
+      { key: 'companyName', label: '制造企业', minWidth: 200, showTooltip: true },
+      { key: 'vehicleBrand', label: '车辆品牌', width: 120 },
+      { key: 'vehicleModel', label: '车辆型号', width: 150, showTooltip: true },
+      { key: 'vehicleColor', label: '车身颜色', width: 100 },
+      { key: 'manufactureDate', label: '制造日期', width: 120, align: 'center' },
+      { key: 'issueDate', label: '发证日期', width: 120, align: 'center' }
+    ]
+  }
+
+  // 字段映射配置
+  const fieldMapping: Record<string, any> = {
+    'QYDM': { key: 'companyCode', label: '合格证企业代码', width: 150, showTooltip: true },
+    'CLZZQYMC': { key: 'companyName', label: '车辆制造企业名称', minWidth: 200, showTooltip: true },
+    'CLZT': { key: 'vehicleCategory', label: '车辆类别', width: 100 },
+    'CLXH': { key: 'vehicleModel', label: '车辆型号', width: 150, showTooltip: true },
+    'CLLX': { key: 'vehicleType', label: '车辆类型', width: 120, showTooltip: true },
+    'CLPP': { key: 'vehicleBrand', label: '车辆品牌', width: 120 },
+    'CLMC': { key: 'vehicleName', label: '车辆名称', minWidth: 200, showTooltip: true },
+    'RLZL': { key: 'fuelType', label: '燃料种类', width: 100 },
+    'PL': { key: 'displacement', label: '排量', width: 80, align: 'right' },
+    'C': { key: 'length', label: '长', width: 80, align: 'right' },
+    'ZZL': { key: 'totalWeight', label: '总质量', width: 100, align: 'right' },
+    'ZBZL': { key: 'curbWeight', label: '整备质量', width: 100, align: 'right' },
+    'ZJ': { key: 'wheelbase', label: '轴距', width: 80, align: 'right' },
+    'UPD': { key: 'uploadTime', label: '上传时间', width: 160, align: 'center' },
+    'SL': { key: 'quantity', label: '数量', width: 120, align: 'right' },
+    'SCDZ': { key: 'productionAddress', label: '生产地址', minWidth: 150, showTooltip: true },
+    'SF': { key: 'productionProvince', label: '省份', width: 100 },
+    'CS': { key: 'productionCity', label: '城市', width: 100 },
+    'QX': { key: 'district', label: '区县', width: 100 },
+    'G50': { key: 'sixCategory', label: '六大类', width: 100 },
+    'XNYBJ': { key: 'newEnergyMark', label: '新能源标记', width: 120, align: 'center' },
+    'XNYLB': { key: 'newEnergyType', label: '新能源类别', width: 120 },
+    'QYID': { key: 'announcementCompanyId', label: '公告企业ID', width: 150, showTooltip: true },
+    'GXSJ': { key: 'updateTime', label: '更新时间', width: 160, align: 'center' },
+    'JT': { key: 'group', label: '集团', width: 120, showTooltip: true },
+    'UPY': { key: 'uploadYear', label: '上传年', width: 80, align: 'center' },
+    'UPM': { key: 'uploadMonth', label: '上传月', width: 80, align: 'center' }
+  }
+
+  // 根据用户选择的字段生成列
+  const columns: any[] = []
+  fields.forEach(fieldKey => {
+    const fieldConfig = fieldMapping[fieldKey]
+    if (fieldConfig) {
+      columns.push(fieldConfig)
+    }
+  })
+
+  return columns
+})
 
 // 生命周期
 onMounted(() => {

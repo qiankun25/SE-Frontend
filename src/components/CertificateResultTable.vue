@@ -80,16 +80,17 @@
 <script lang="ts" setup>
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Grid, TrendCharts, Download, Search } from '@element-plus/icons-vue'
+import { Download, Search } from '@element-plus/icons-vue'
 
 interface Props {
   data: any[]
   loading: boolean
   searchConditions: any[]
+  displayFields?: string[]
 }
 
 interface Emits {
-  (e: 'export', data: any[]): void
+  (e: 'export', data: { data: any[]; fields: string[] }): void
   (e: 'view-detail', row: any): void
   (e: 'sort-change', sortInfo: { prop: string; order: string }): void
 }
@@ -97,7 +98,8 @@ interface Emits {
 const props = withDefaults(defineProps<Props>(), {
   data: () => [],
   loading: false,
-  searchConditions: () => []
+  searchConditions: () => [],
+  displayFields: () => []
 })
 
 const emit = defineEmits<Emits>()
@@ -146,340 +148,511 @@ const paginatedData = computed(() => {
   }
 })
 
-// 根据查询条件动态生成表格列
+// 根据用户选择的显示字段和查询条件动态生成表格列
 const dynamicColumns = computed(() => {
   try {
     const columns: any[] = []
     const conditions = props.searchConditions || []
+    const displayFields = props.displayFields || []
 
-    // 检查各种查询条件
-    const hasVehicleModelCondition = conditions.some(c => c.vehicleModels && c.vehicleModels.length > 0)
-    const hasVehicleBrandCondition = conditions.some(c => c.vehicleBrands && c.vehicleBrands.length > 0)
-    const hasVehicleNameCondition = conditions.some(c => c.vehicleNames && c.vehicleNames.length > 0)
-    const hasVehicleClassCondition = conditions.some(c => c.vehicleClass && c.vehicleClass.length > 0)
-    const hasTimeCondition = conditions.some(c => c.timeRange || c.quickTimeRange)
-    const hasComparisonCondition = conditions.some(c => c.enableComparison)
-    const hasViewDimensionCondition = conditions.some(c => c.viewDimension && c.viewDimension !== 'total')
-
-    // 基础列 - 根据查询条件决定优先显示的列
-    const hasSelectedCompanies = conditions.some(c =>
-      (c.selectedCompanies && c.selectedCompanies.length > 0) ||
-      c.companyName ||
-      c.companyCode
-    )
-
-    if (hasVehicleNameCondition && !hasSelectedCompanies) {
-      // 优先显示车辆名称
-      columns.push({
-        key: 'vehicleName',
-        label: '车辆名称',
-        minWidth: 200,
-        sortable: 'custom',
-        showTooltip: true
-      })
-    } else {
-      // 默认显示企业名称
-      columns.push({
-        key: 'companyName',
-        label: '企业名称',
-        minWidth: 200,
-        sortable: 'custom',
-        showTooltip: true
-      })
+    // 如果没有选择显示字段，使用默认逻辑
+    if (displayFields.length === 0) {
+      return getDefaultColumns(conditions)
     }
 
-    // 车辆品牌列
-    if (hasVehicleBrandCondition) {
-      columns.push({
-        key: 'vehicleBrand',
-        label: '车辆品牌',
-        width: 120,
-        sortable: 'custom'
-      })
-    }
-
-    // 车辆型号列
-    if (hasVehicleModelCondition) {
-      columns.push({
-        key: 'vehicleModel',
-        label: '车辆型号',
+    // 字段映射配置
+    const fieldMapping: Record<string, any> = {
+      'QYDM': {
+        key: 'companyId',
+        label: '合格证企业代码',
         width: 150,
         showTooltip: true
-      })
-    }
-
-    // 车辆名称列 - 当查询条件中包含车辆名称且已经选择了企业时，作为辅助列显示
-    if (hasVehicleNameCondition && hasSelectedCompanies) {
-      columns.push({
-        key: 'vehicleName',
-        label: '车辆名称',
-        width: 120,
-        sortable: 'custom',
-        showTooltip: true
-      })
-    }
-
-    // 企业名称列 - 当优先显示车辆名称时，企业名称作为辅助列显示
-    if (hasVehicleNameCondition && !hasSelectedCompanies) {
-      columns.push({
+      },
+      'CLZZQYMC': {
         key: 'companyName',
-        label: '企业名称',
-        width: 180,
-        sortable: 'custom',
-        showTooltip: true
-      })
-    }
-
-    // 车辆类别列
-    if (hasVehicleClassCondition) {
-      columns.push({
-        key: 'vehicleCategory',
-        label: '车辆类别',
-        width: 100
-      })
-    }
-
-    // 地址相关列
-    const hasProvinceCondition = conditions.some(c => c.productionProvinces && c.productionProvinces.length > 0)
-    const hasCityCondition = conditions.some(c => c.productionCities && c.productionCities.length > 0)
-    const hasAddressCondition = conditions.some(c => c.productionAddresses && c.productionAddresses.length > 0)
-
-    if (hasProvinceCondition) {
-      columns.push({
-        key: 'productionProvince',
-        label: '生产省份',
-        width: 100,
-        showTooltip: true
-      })
-    }
-
-    if (hasCityCondition) {
-      columns.push({
-        key: 'productionCity',
-        label: '生产城市',
-        width: 100,
-        showTooltip: true
-      })
-    }
-
-    if (hasAddressCondition) {
-      columns.push({
-        key: 'productionAddress',
-        label: '生产地址',
-        minWidth: 150,
-        showTooltip: true
-      })
-    }
-
-    // 时间维度列 - 根据查看维度显示不同的时间列
-    if (hasViewDimensionCondition) {
-      const viewDimension = conditions.find(c => c.viewDimension)?.viewDimension
-
-      // 调试信息 - 开发环境下显示
-      if (import.meta.env.DEV) {
-        console.log('🔍 查看维度检测:', {
-          hasViewDimensionCondition,
-          viewDimension,
-          conditions: conditions.map(c => ({ viewDimension: c.viewDimension }))
-        })
-      }
-
-      switch (viewDimension) {
-        case 'yearly':
-          columns.push({
-            key: 'year',
-            label: '年份',
-            width: 100,
-            align: 'center',
-            sortable: 'custom',
-            formatter: (value: number) => {
-              return value ? `${value}年` : '-'
-            }
-          })
-          break
-        case 'monthly':
-          columns.push({
-            key: 'year',
-            label: '年份',
-            width: 80,
-            align: 'center',
-            formatter: (value: number) => {
-              return value ? `${value}年` : '-'
-            }
-          })
-          columns.push({
-            key: 'month',
-            label: '月份',
-            width: 80,
-            align: 'center',
-            sortable: 'custom',
-            formatter: (value: number) => {
-              return value ? `${value}月` : '-'
-            }
-          })
-          break
-        case 'daily':
-          columns.push({
-            key: 'date',
-            label: '日期',
-            width: 120,
-            align: 'center',
-            sortable: 'custom',
-            formatter: (value: string) => {
-              return value || '-'
-            }
-          })
-          break
-      }
-    } else if (hasTimeCondition) {
-      // 如果有时间条件但是总量查看，显示时间范围信息
-      const timeCondition = conditions.find(c => c.timeRange || c.quickTimeRange)
-      
-      columns.push({
-        key: 'timeRange',
-        label: '时间范围',
-        width: 120,
-        align: 'center',
-        formatter: (value: any, row: any) => {
-          // 根据查询条件显示时间范围
-          if (timeCondition) {
-            if (timeCondition.quickTimeRange) {
-              // 快捷时间选择的显示
-              const quickTimeLabels = {
-                '3months': '近三个月',
-                '6months': '近六个月', 
-                '1year': '近一年',
-                '2years': '近两年',
-                '3years': '近三年'
-              }
-              return quickTimeLabels[timeCondition.quickTimeRange] || '总量'
-            } else if (timeCondition.timeRange) {
-              // 自定义时间范围的显示
-              const { startDate, endDate } = timeCondition.timeRange
-              if (startDate && endDate) {
-                return `${startDate} 至 ${endDate}`
-              }
-            }
-          }
-          return '总量'
-        }
-      })
-    }
-
-    // 数量相关列 - 根据是否开启同期比显示不同的列
-    if (hasComparisonCondition) {
-      columns.push({
-        key: 'currentPeriodCount',
-        label: '当期数量',
-        width: 120,
-        sortable: 'custom',
-        align: 'right',
-        formatter: (value: number) => `<span class="certificate-count">${formatNumber(value)}</span>`
-      })
-
-      columns.push({
-        key: 'previousPeriodCount',
-        label: '同期数量',
-        width: 120,
-        sortable: 'custom',
-        align: 'right',
-        formatter: (value: number) => `<span class="certificate-count">${formatNumber(value)}</span>`
-      })
-
-      columns.push({
-        key: 'comparisonRatio',
-        label: '同期比',
-        width: 100,
-        align: 'center',
-        formatter: (value: number) => {
-          if (value == null || isNaN(value)) return '-'
-          const color = value > 0 ? '#67c23a' : value < 0 ? '#f56c6c' : '#909399'
-          const symbol = value > 0 ? '+' : ''
-          return `<span style="color: ${color}; font-weight: 600;">${symbol}${(value * 100).toFixed(1)}%</span>`
-        }
-      })
-    } else {
-      columns.push({
-        key: 'certificateCount',
-        label: '合格证数量',
-        width: 120,
-        sortable: 'custom',
-        align: 'right',
-        formatter: (value: number) => `<span class="certificate-count">${formatNumber(value)}</span>`
-      })
-    }
-
-    // 六大类列
-    const hasSixCategoryCondition = conditions.some(c => c.sixCategories && c.sixCategories.length > 0)
-    const hasCommercialOrPassengerCondition = conditions.some(c => c.commercialOrPassenger && c.commercialOrPassenger !== '')
-    if (hasSixCategoryCondition || hasCommercialOrPassengerCondition) {
-      columns.push({
-        key: 'sixCategory',
-        label: '六大类',
-        width: 100
-      })
-    }
-
-    // 燃料种类列
-    const hasFuelCondition = conditions.some(c => c.fuelTypes && c.fuelTypes.length > 0)
-    if (hasFuelCondition) {
-      columns.push({
-        key: 'fuelType',
-        label: '燃料种类',
-        width: 100
-      })
-    }
-
-    // 新能源类别列
-    const hasNewEnergyCondition = conditions.some(c => c.newEnergyCategories && c.newEnergyCategories.length > 0)
-    if (hasNewEnergyCondition) {
-      columns.push({
-        key: 'newEnergyType',
-        label: '新能源类别',
-        width: 120
-      })
-    }
-
-    // 排名列
-    const hasRankingCondition = conditions.some(c => c.showRanking)
-    if (hasRankingCondition) {
-      columns.push({
-        key: 'ranking',
-        label: '排名',
-        width: 80,
-        align: 'center',
-        formatter: (value: number) => {
-          if (value <= 3) {
-            const types = ['', 'danger', 'warning', 'success']
-            return `<el-tag type="${types[value]}" size="small">第${value}名</el-tag>`
-          }
-          return `第${value}名`
-        }
-      })
-    }
-
-    return columns
-  } catch (error) {
-    console.error('动态列生成失败:', error)
-    // 返回基础列作为后备
-    return [
-      {
-        key: 'companyName',
-        label: '企业名称',
+        label: '车辆制造企业名称',
         minWidth: 200,
         sortable: 'custom',
         showTooltip: true
       },
-      {
+      'CLZT': {
+        key: 'vehicleCategory',
+        label: '车辆类别',
+        width: 100
+      },
+      'CLXH': {
+        key: 'vehicleModel',
+        label: '车辆型号',
+        width: 150,
+        showTooltip: true
+      },
+      'CLLX': {
+        key: 'vehicleType',
+        label: '车辆类型',
+        width: 120,
+        showTooltip: true
+      },
+      'CLPP': {
+        key: 'vehicleBrand',
+        label: '车辆品牌',
+        width: 120,
+        sortable: 'custom'
+      },
+      'CLMC': {
+        key: 'vehicleName',
+        label: '车辆名称',
+        minWidth: 200,
+        sortable: 'custom',
+        showTooltip: true
+      },
+      'RLZL': {
+        key: 'fuelType',
+        label: '燃料种类',
+        width: 100
+      },
+      'PL': {
+        key: 'displacement',
+        label: '排量',
+        width: 80,
+        align: 'right'
+      },
+      'C': {
+        key: 'length',
+        label: '长',
+        width: 80,
+        align: 'right'
+      },
+      'ZZL': {
+        key: 'totalWeight',
+        label: '总质量',
+        width: 100,
+        align: 'right'
+      },
+      'ZBZL': {
+        key: 'curbWeight',
+        label: '整备质量',
+        width: 100,
+        align: 'right'
+      },
+      'ZJ': {
+        key: 'wheelbase',
+        label: '轴距',
+        width: 80,
+        align: 'right'
+      },
+      'UPD': {
+        key: 'uploadTime',
+        label: '上传时间',
+        width: 160,
+        align: 'center'
+      },
+      'SL': {
         key: 'certificateCount',
-        label: '合格证数量',
+        label: '数量',
         width: 120,
         sortable: 'custom',
-        align: 'right'
+        align: 'right',
+        formatter: (value: number) => `<span class="certificate-count">${formatNumber(value)}</span>`
+      },
+      'SCDZ': {
+        key: 'productionAddress',
+        label: '生产地址',
+        minWidth: 150,
+        showTooltip: true
+      },
+      'SF': {
+        key: 'productionProvince',
+        label: '省份',
+        width: 100,
+        showTooltip: true
+      },
+      'CS': {
+        key: 'productionCity',
+        label: '城市',
+        width: 100,
+        showTooltip: true
+      },
+      'QX': {
+        key: 'district',
+        label: '区县',
+        width: 100,
+        showTooltip: true
+      },
+      'G50': {
+        key: 'sixCategory',
+        label: '六大类',
+        width: 100
+      },
+      'XNYBJ': {
+        key: 'newEnergyMark',
+        label: '新能源标记',
+        width: 120,
+        align: 'center'
+      },
+      'XNYLB': {
+        key: 'newEnergyType',
+        label: '新能源类别',
+        width: 120
+      },
+      'QYID': {
+        key: 'announcementCompanyId',
+        label: '公告企业ID',
+        width: 150,
+        showTooltip: true
+      },
+      'GXSJ': {
+        key: 'updateTime',
+        label: '更新时间',
+        width: 160,
+        align: 'center'
+      },
+      'JT': {
+        key: 'group',
+        label: '集团',
+        width: 120,
+        showTooltip: true
+      },
+      'UPY': {
+        key: 'uploadYear',
+        label: '上传年',
+        width: 80,
+        align: 'center'
+      },
+      'UPM': {
+        key: 'uploadMonth',
+        label: '上传月',
+        width: 80,
+        align: 'center'
       }
-    ]
+    }
+
+    // 根据用户选择的字段生成列
+    displayFields.forEach(fieldKey => {
+      const fieldConfig = fieldMapping[fieldKey]
+      if (fieldConfig) {
+        columns.push(fieldConfig)
+      }
+    })
+
+    return columns
+  } catch (error) {
+    console.error('动态列生成失败:', error)
+    return getDefaultColumns(props.searchConditions || [])
   }
 })
+
+// 默认列生成逻辑（当没有选择显示字段时使用）
+const getDefaultColumns = (conditions: any[]) => {
+  const columns: any[] = []
+
+  // 检查各种查询条件
+  const hasVehicleModelCondition = conditions.some(c => c.vehicleModels && c.vehicleModels.length > 0)
+  const hasVehicleBrandCondition = conditions.some(c => c.vehicleBrands && c.vehicleBrands.length > 0)
+  const hasVehicleNameCondition = conditions.some(c => c.vehicleNames && c.vehicleNames.length > 0)
+  const hasVehicleClassCondition = conditions.some(c => c.vehicleClass && c.vehicleClass.length > 0)
+  const hasTimeCondition = conditions.some(c => c.timeRange || c.quickTimeRange)
+  const hasComparisonCondition = conditions.some(c => c.enableComparison)
+  const hasViewDimensionCondition = conditions.some(c => c.viewDimension && c.viewDimension !== 'total')
+
+  // 基础列 - 根据查询条件决定优先显示的列
+  const hasSelectedCompanies = conditions.some(c =>
+    (c.selectedCompanies && c.selectedCompanies.length > 0) ||
+    c.companyName ||
+    c.companyCode
+  )
+
+  if (hasVehicleNameCondition && !hasSelectedCompanies) {
+    // 优先显示车辆名称
+    columns.push({
+      key: 'vehicleName',
+      label: '车辆名称',
+      minWidth: 200,
+      sortable: 'custom',
+      showTooltip: true
+    })
+  } else {
+    // 默认显示企业名称
+    columns.push({
+      key: 'companyName',
+      label: '企业名称',
+      minWidth: 200,
+      sortable: 'custom',
+      showTooltip: true
+    })
+  }
+
+  // 车辆品牌列
+  if (hasVehicleBrandCondition) {
+    columns.push({
+      key: 'vehicleBrand',
+      label: '车辆品牌',
+      width: 120,
+      sortable: 'custom'
+    })
+  }
+
+  // 车辆型号列
+  if (hasVehicleModelCondition) {
+    columns.push({
+      key: 'vehicleModel',
+      label: '车辆型号',
+      width: 150,
+      showTooltip: true
+    })
+  }
+
+  // 车辆名称列 - 当查询条件中包含车辆名称且已经选择了企业时，作为辅助列显示
+  if (hasVehicleNameCondition && hasSelectedCompanies) {
+    columns.push({
+      key: 'vehicleName',
+      label: '车辆名称',
+      width: 120,
+      sortable: 'custom',
+      showTooltip: true
+    })
+  }
+
+  // 企业名称列 - 当优先显示车辆名称时，企业名称作为辅助列显示
+  if (hasVehicleNameCondition && !hasSelectedCompanies) {
+    columns.push({
+      key: 'companyName',
+      label: '企业名称',
+      width: 180,
+      sortable: 'custom',
+      showTooltip: true
+    })
+  }
+
+  // 车辆类别列
+  if (hasVehicleClassCondition) {
+    columns.push({
+      key: 'vehicleCategory',
+      label: '车辆类别',
+      width: 100
+    })
+  }
+
+  // 地址相关列
+  const hasProvinceCondition = conditions.some(c => c.productionProvinces && c.productionProvinces.length > 0)
+  const hasCityCondition = conditions.some(c => c.productionCities && c.productionCities.length > 0)
+  const hasAddressCondition = conditions.some(c => c.productionAddresses && c.productionAddresses.length > 0)
+
+  if (hasProvinceCondition) {
+    columns.push({
+      key: 'productionProvince',
+      label: '生产省份',
+      width: 100,
+      showTooltip: true
+    })
+  }
+
+  if (hasCityCondition) {
+    columns.push({
+      key: 'productionCity',
+      label: '生产城市',
+      width: 100,
+      showTooltip: true
+    })
+  }
+
+  if (hasAddressCondition) {
+    columns.push({
+      key: 'productionAddress',
+      label: '生产地址',
+      minWidth: 150,
+      showTooltip: true
+    })
+  }
+
+  // 时间维度列 - 根据查看维度显示不同的时间列
+  if (hasViewDimensionCondition) {
+    const viewDimension = conditions.find(c => c.viewDimension)?.viewDimension
+
+    // 调试信息 - 开发环境下显示
+    if (import.meta.env.DEV) {
+      console.log('🔍 查看维度检测:', {
+        hasViewDimensionCondition,
+        viewDimension,
+        conditions: conditions.map(c => ({ viewDimension: c.viewDimension }))
+      })
+    }
+
+    switch (viewDimension) {
+      case 'yearly':
+        columns.push({
+          key: 'year',
+          label: '年份',
+          width: 100,
+          align: 'center',
+          sortable: 'custom',
+          formatter: (value: number) => {
+            return value ? `${value}年` : '-'
+          }
+        })
+        break
+      case 'monthly':
+        columns.push({
+          key: 'year',
+          label: '年份',
+          width: 80,
+          align: 'center',
+          formatter: (value: number) => {
+            return value ? `${value}年` : '-'
+          }
+        })
+        columns.push({
+          key: 'month',
+          label: '月份',
+          width: 80,
+          align: 'center',
+          sortable: 'custom',
+          formatter: (value: number) => {
+            return value ? `${value}月` : '-'
+          }
+        })
+        break
+      case 'daily':
+        columns.push({
+          key: 'date',
+          label: '日期',
+          width: 120,
+          align: 'center',
+          sortable: 'custom',
+          formatter: (value: string) => {
+            return value || '-'
+          }
+        })
+        break
+    }
+  } else if (hasTimeCondition) {
+    // 如果有时间条件但是总量查看，显示时间范围信息
+    const timeCondition = conditions.find(c => c.timeRange || c.quickTimeRange)
+
+    columns.push({
+      key: 'timeRange',
+      label: '时间范围',
+      width: 120,
+      align: 'center',
+      formatter: (_value: any, _row: any) => {
+        // 根据查询条件显示时间范围
+        if (timeCondition) {
+          if (timeCondition.quickTimeRange) {
+            // 快捷时间选择的显示
+            const quickTimeLabels: Record<string, string> = {
+              '3months': '近三个月',
+              '6months': '近六个月',
+              '1year': '近一年',
+              '2years': '近两年',
+              '3years': '近三年'
+            }
+            return quickTimeLabels[timeCondition.quickTimeRange] || '总量'
+          } else if (timeCondition.timeRange) {
+            // 自定义时间范围的显示
+            const { startDate, endDate } = timeCondition.timeRange
+            if (startDate && endDate) {
+              return `${startDate} 至 ${endDate}`
+            }
+          }
+        }
+        return '总量'
+      }
+    })
+  }
+
+  // 数量相关列 - 根据是否开启同期比显示不同的列
+  if (hasComparisonCondition) {
+    columns.push({
+      key: 'currentPeriodCount',
+      label: '当期数量',
+      width: 120,
+      sortable: 'custom',
+      align: 'right',
+      formatter: (value: number) => `<span class="certificate-count">${formatNumber(value)}</span>`
+    })
+
+    columns.push({
+      key: 'previousPeriodCount',
+      label: '同期数量',
+      width: 120,
+      sortable: 'custom',
+      align: 'right',
+      formatter: (value: number) => `<span class="certificate-count">${formatNumber(value)}</span>`
+    })
+
+    columns.push({
+      key: 'comparisonRatio',
+      label: '同期比',
+      width: 100,
+      align: 'center',
+      formatter: (value: number) => {
+        if (value == null || isNaN(value)) return '-'
+        const color = value > 0 ? '#67c23a' : value < 0 ? '#f56c6c' : '#909399'
+        const symbol = value > 0 ? '+' : ''
+        return `<span style="color: ${color}; font-weight: 600;">${symbol}${(value * 100).toFixed(1)}%</span>`
+      }
+    })
+  } else {
+    columns.push({
+      key: 'certificateCount',
+      label: '合格证数量',
+      width: 120,
+      sortable: 'custom',
+      align: 'right',
+      formatter: (value: number) => `<span class="certificate-count">${formatNumber(value)}</span>`
+    })
+  }
+
+  // 六大类列
+  const hasSixCategoryCondition = conditions.some(c => c.sixCategories && c.sixCategories.length > 0)
+  const hasCommercialOrPassengerCondition = conditions.some(c => c.commercialOrPassenger && c.commercialOrPassenger !== '')
+  if (hasSixCategoryCondition || hasCommercialOrPassengerCondition) {
+    columns.push({
+      key: 'sixCategory',
+      label: '六大类',
+      width: 100
+    })
+  }
+
+  // 燃料种类列
+  const hasFuelCondition = conditions.some(c => c.fuelTypes && c.fuelTypes.length > 0)
+  if (hasFuelCondition) {
+    columns.push({
+      key: 'fuelType',
+      label: '燃料种类',
+      width: 100
+    })
+  }
+
+  // 新能源类别列
+  const hasNewEnergyCondition = conditions.some(c => c.newEnergyCategories && c.newEnergyCategories.length > 0)
+  if (hasNewEnergyCondition) {
+    columns.push({
+      key: 'newEnergyType',
+      label: '新能源类别',
+      width: 120
+    })
+  }
+
+  // 排名列
+  const hasRankingCondition = conditions.some(c => c.showRanking)
+  if (hasRankingCondition) {
+    columns.push({
+      key: 'ranking',
+      label: '排名',
+      width: 80,
+      align: 'center',
+      formatter: (value: number) => {
+        if (value <= 3) {
+          const types = ['', 'danger', 'warning', 'success']
+          return `<el-tag type="${types[value]}" size="small">第${value}名</el-tag>`
+        }
+        return `第${value}名`
+      }
+    })
+  }
+
+  return columns
+}
 
 
 

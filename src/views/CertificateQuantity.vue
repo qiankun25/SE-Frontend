@@ -45,7 +45,7 @@
       </div>
     </div>
 
-    <!-- 三个主要组件 -->
+    <!-- 四个主要组件 -->
     <div class="main-content">
       <!-- 查询条件设置组件 -->
       <certificate-search-conditions @add-condition="handleAddCondition" @reset="handleResetConditions" />
@@ -55,9 +55,14 @@
         @remove-condition="handleRemoveCondition" @clear-all="handleClearAllConditions" @search="handleSearch"
         @reset="handleResetAll" />
 
+      <!-- 显示字段选择组件 -->
+      <certificate-display-fields :initial-fields="displayFields" mode="quantity"
+        @fields-change="handleDisplayFieldsChange" />
+
       <!-- 查询结果表格组件 -->
       <certificate-result-table :data="tableData" :loading="loading" :search-conditions="selectedConditions"
-        @export="handleExportData" @view-detail="handleViewDetail" @sort-change="handleSortChange" />
+        :display-fields="displayFields" @export="handleExportData" @view-detail="handleViewDetail"
+        @sort-change="handleSortChange" />
     </div>
   </div>
 </template>
@@ -70,6 +75,7 @@ import { Download, Refresh, ArrowDown, Document, FolderOpened } from '@element-p
 // 导入新的组件
 import CertificateSearchConditions from '../components/CertificateSearchConditions.vue'
 import CertificateSelectedConditions from '../components/CertificateSelectedConditions.vue'
+import CertificateDisplayFields from '../components/CertificateDisplayFields.vue'
 import CertificateResultTable from '../components/CertificateResultTable.vue'
 
 // 响应式数据
@@ -77,6 +83,7 @@ const loading = ref(false)
 const hasSearched = ref(false)
 const selectedConditions = ref<any[]>([])
 const tableData = ref<any[]>([])
+const displayFields = ref<string[]>([]) // 用户选择的显示字段
 
 // 事件处理函数
 const handleAddCondition = (condition: any) => {
@@ -106,6 +113,12 @@ const handleResetAll = () => {
   tableData.value = []
   hasSearched.value = false
   // 重置所有
+}
+
+const handleDisplayFieldsChange = (fields: string[]) => {
+  displayFields.value = fields
+  // 显示字段变化时，如果已经有查询结果，可以考虑重新渲染表格
+  // 这里不需要重新查询数据，只需要更新显示字段即可
 }
 
 const handleSearch = async (conditions: any[]) => {
@@ -415,8 +428,8 @@ const handleReset = () => {
   ElMessage.success('已重置所有条件')
 }
 
-// 存储当前显示的字段
-const currentDisplayFields = ref<string[]>([])
+// 存储当前显示的字段 - 现在使用用户选择的字段
+// const currentDisplayFields = ref<string[]>([])
 
 // 导出当前页数据（默认行为，安全）
 const handleExport = async () => {
@@ -438,7 +451,7 @@ const handleExport = async () => {
       format: 'excel' as const,
       filename: '合格证总量统计_当前页',
       export_range: 'current', // 明确指定导出范围
-      fields: currentDisplayFields.value // 只导出显示的字段
+      fields: displayFields.value // 只导出用户选择的字段
     }
 
     const blob = await certificateQuantityApi.export(params)
@@ -478,7 +491,7 @@ const handleExportAll = async () => {
       format: 'excel' as const,
       filename: '合格证总量统计_全部数据',
       export_range: 'all', // 导出全部数据
-      fields: currentDisplayFields.value // 只导出显示的字段
+      fields: displayFields.value // 只导出用户选择的字段
     }
 
     const blob = await certificateQuantityApi.export(params)
@@ -497,23 +510,17 @@ const handleExportAll = async () => {
 const handleExportData = async (exportData: any) => {
   // 处理新的数据结构
   const selectedRows = Array.isArray(exportData) ? exportData : exportData.data
-  const fields = exportData.fields || currentDisplayFields.value
 
   if (!selectedRows || selectedRows.length === 0) {
     ElMessage.warning('请先选择要导出的数据')
     return
   }
 
-  // 更新当前显示字段
-  if (fields && fields.length > 0) {
-    currentDisplayFields.value = fields
-  }
-
   try {
     const { certificateQuantityApi, exportUtils } = await import('../services/api')
 
     // 提取选中数据的ID
-    const selectedIds = selectedRows.map(row => row.companyId || row.id || `${row.companyName}_${row.vehicleModel}`)
+    const selectedIds = selectedRows.map((row: any) => row.companyId || row.id || `${row.companyName}_${row.vehicleModel}`)
 
     const params = {
       ...buildSearchParams(selectedConditions.value),
@@ -523,7 +530,7 @@ const handleExportData = async (exportData: any) => {
       filename: '合格证总量统计_选中数据',
       export_range: 'selected', // 导出选中数据
       selected_ids: selectedIds,
-      fields: currentDisplayFields.value // 只导出显示的字段
+      fields: displayFields.value // 只导出用户选择的字段
     }
 
     const blob = await certificateQuantityApi.export(params)
@@ -543,6 +550,7 @@ const handleViewDetail = (row: any) => {
 
 const handleSortChange = (sortInfo: { prop: string; order: string }) => {
   // 排序变化处理
+  console.log('排序变化:', sortInfo)
   // 这里可以重新排序数据或重新查询
 }
 
