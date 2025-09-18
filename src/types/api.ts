@@ -224,6 +224,75 @@ export interface EnterpriseAccessItem {
   equity?: Record<string, any>;
 }
 
+// 集团查询相关接口
+export interface GroupSearchParams extends PaginationParams, SortParams {
+  group_name?: string;      // 集团名称
+  group_code?: string;      // 集团代码
+  region?: string;          // 所在地区
+  enterprise_type?: string; // 企业性质（合资/自主）
+  has_new_energy?: boolean; // 是否涉及新能源
+}
+
+export interface EnterpriseItem {
+  enterprise_id: string;
+  enterprise_name: string;
+  enterprise_code?: string;
+  province?: string;
+  city?: string;
+  enterprise_type?: string;
+  has_new_energy: boolean;
+  registered_address?: string;
+  production_address?: string;
+}
+
+export interface EnterpriseDetailInfo {
+  enterprise_id: string;
+  enterprise_name: string;
+  enterprise_code?: string;
+  province?: string;
+  city?: string;
+  district?: string;
+  registered_address?: string;
+  production_address?: string;
+  enterprise_type?: string;
+  has_new_energy: boolean;
+  product_brands?: string;
+  enterprise_qualifications?: string;
+  new_energy_qualifications?: string;
+  group_code?: string;
+  group_name?: string;
+}
+
+export interface GroupInfo {
+  group_code: string;           // 集团代码
+  group_name: string;           // 集团名称
+  enterprise_count: number;     // 下属企业数量
+  provinces: string[];          // 分布省份
+  new_energy_count: number;     // 新能源企业数量
+  joint_venture_count: number;  // 合资企业数量
+  main_region: string;          // 主要地区
+  new_energy_ratio: number;     // 新能源企业占比
+  joint_venture_ratio: number;  // 合资企业占比
+  enterprises?: EnterpriseItem[]; // 下属企业列表
+}
+
+export interface GroupDetailInfo {
+  group_code: string;
+  group_name: string;
+  enterprise_count: number;
+  total_provinces: number;
+  provinces: string[];
+  new_energy_count: number;
+  joint_venture_count: number;
+  autonomous_count: number;
+  main_region: string;
+  new_energy_ratio: number;
+  joint_venture_ratio: number;
+  enterprises: EnterpriseItem[];
+  province_distribution: Record<string, number>;
+  enterprise_type_distribution: Record<string, number>;
+}
+
 // 财税申报信息查询相关接口
 export interface TaxDeclarationParams extends PaginationParams, SortParams {
   declarationType?: string;

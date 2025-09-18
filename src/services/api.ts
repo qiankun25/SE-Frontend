@@ -15,6 +15,10 @@ import type {
   OtherStatisticsParams,
   OtherStatisticsItem,
   ExportParams,
+  GroupSearchParams,
+  GroupInfo,
+  GroupDetailInfo,
+  EnterpriseItem,
 } from "../types/api";
 
 // 基础请求配置
@@ -463,5 +467,114 @@ export const exportUtils = {
     const now = new Date();
     const timestamp = now.toISOString().slice(0, 19).replace(/[:-]/g, "");
     return `${prefix}_${timestamp}.${format}`;
+  },
+};
+
+// 集团信息查询相关API
+export const groupApi = {
+  // 查询集团信息
+  async search(params: GroupSearchParams): Promise<
+    ApiResponse<{
+      list: GroupInfo[];
+      total: number;
+    }>
+  > {
+    return request("/group/search", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  },
+
+  // 获取集团详细信息
+  async getDetail(groupCode: string): Promise<ApiResponse<GroupDetailInfo>> {
+    return request(`/group/detail/${groupCode}`);
+  },
+
+  // 获取集团下属企业列表
+  async getEnterprises(
+    groupCode: string,
+    page: number = 1,
+    pageSize: number = 20
+  ): Promise<
+    ApiResponse<{
+      list: EnterpriseItem[];
+      total: number;
+    }>
+  > {
+    return request(`/group/enterprises/${groupCode}?page=${page}&page_size=${pageSize}`);
+  },
+
+  // 导出集团信息
+  async export(
+    params: GroupSearchParams & ExportParams
+  ): Promise<Blob> {
+    const response = await fetch(`${BASE_URL}/group/export`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify(params),
+    });
+
+    if (!response.ok) {
+      throw new Error(`导出失败: ${response.statusText}`);
+    }
+
+    return response.blob();
+  },
+
+  // 获取集团统计信息
+  async getStatistics(): Promise<
+    ApiResponse<{
+      total_groups: number;
+      total_enterprises: number;
+      total_provinces: number;
+      new_energy_groups: number;
+      joint_venture_groups: number;
+      avg_enterprises: number;
+      size_distribution: Record<string, number>;
+      province_distribution: Record<string, number>;
+    }>
+  > {
+    return request("/group/statistics");
+  },
+
+  // 获取集团列表（用于下拉选择）
+  async getList(
+    q?: string,
+    limit: number = 50
+  ): Promise<
+    ApiResponse<
+      Array<{
+        code: string;
+        name: string;
+        enterprise_count: number;
+      }>
+    >
+  > {
+    const params = new URLSearchParams();
+    if (q) params.append("q", q);
+    params.append("limit", limit.toString());
+
+    return request(`/group/list?${params.toString()}`);
+  },
+
+  // 获取集团下属企业详细列表
+  async getEnterpriseDetailed(
+    groupCode: string,
+    page: number = 1,
+    pageSize: number = 20
+  ): Promise<ApiResponse<EnterpriseDetailInfo[]>> {
+    const params = new URLSearchParams();
+    params.append("page", page.toString());
+    params.append("page_size", pageSize.toString());
+
+    return request(`/group/enterprises/${groupCode}/detailed?${params.toString()}`);
+  },
+
+  // 获取单个企业详细信息
+  async getEnterpriseDetail(enterpriseId: string): Promise<ApiResponse<EnterpriseDetailInfo>> {
+    return request(`/group/enterprise/${enterpriseId}`);
   },
 };
