@@ -34,8 +34,8 @@ export interface PaginationParams {
 
 // 排序参数
 export interface SortParams {
-  field: string;
-  order: "asc" | "desc";
+  field?: string;
+  order?: "asc" | "desc";
 }
 
 // 时间范围参数
@@ -326,4 +326,100 @@ export interface OtherStatisticsItem {
   unit?: string;
   description?: string;
   updateTime: string;
+}
+
+// 企业基本信息查询相关类型
+export interface EnterpriseBasicParams extends PaginationParams, SortParams {
+  enterprise_id?: string;
+  enterprise_name?: string;
+  supervision_status?: string;
+  new_energy_flag?: string;
+  enterprise_type?: string;
+  social_credit_code?: string;
+  registered_address?: string;
+  production_address?: string;
+  product_brand?: string;
+  qualification?: string;
+}
+
+export interface EnterpriseBasicItem {
+  id: number;
+  enterprise_id?: string;
+  enterprise_name?: string;
+  catalog_number?: string;
+  vehicle_catalog?: string;
+  delete_flag?: string;
+  access_status?: string;
+  valid_flag?: string;
+  supervision_status?: string;
+  supervision_code?: string;
+  new_energy_flag?: string;
+  enterprise_type?: string;
+  registered_address?: string;
+  production_address?: string;
+  product_brand?: string;
+  qualification?: string;
+  equity?: string;
+  contact_person?: string;
+  contact_position?: string;
+  contact_phone?: string;
+  social_credit_code?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface BatchEnterpriseBasicParams {
+  queries: string[];
+  query_type: "enterprise_id" | "enterprise_name";
+  fields?: string[];
+}
+
+// 企业监管状态相关类型
+export interface EnterpriseSupervisionParams extends PaginationParams {
+  enterprise_id?: string;
+  enterprise_name?: string;
+  social_credit_code?: string;
+  supervision_status?: string;
+  supervision_code?: string;
+  access_status?: string;
+  valid_flag?: string;
+  enterprise_type?: string;
+  new_energy_flag?: string;
+  registered_address?: string;
+  production_address?: string;
+  fields?: string[];
+}
+
+export interface EnterpriseSupervisionItem {
+  id: number;
+  enterprise_id?: string;
+  enterprise_name?: string;
+  social_credit_code?: string;
+  supervision_status?: string;
+  supervision_code?: string;
+  access_status?: string;
+  valid_flag?: string;
+  enterprise_type?: string;
+  new_energy_flag?: string;
+  registered_address?: string;
+  production_address?: string;
+  product_brand?: string;
+  qualification?: string;
+  contact_person?: string;
+  contact_position?: string;
+  contact_phone?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface EnterpriseSupervisionExportParams extends EnterpriseSupervisionParams {
+  format: "excel" | "csv";
+  filename?: string;
+  fields?: string[];
+}
+
+export interface BatchEnterpriseSupervisionParams {
+  queries: string[];
+  query_type: "enterprise_id" | "enterprise_name";
+  fields?: string[];
 }

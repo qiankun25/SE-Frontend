@@ -578,3 +578,161 @@ export const groupApi = {
     return request(`/group/enterprise/${enterpriseId}`);
   },
 };
+
+// 企业监管状态查询相关API
+export const enterpriseSupervisionApi = {
+  // 查询企业监管状态
+  async search(params: EnterpriseSupervisionParams): Promise<
+    ApiResponse<{
+      list: EnterpriseSupervisionItem[];
+      total: number;
+    }>
+  > {
+    return request("/enterprise-supervision/search", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  },
+
+  // 批量查询企业监管状态
+  async batchSearch(params: BatchEnterpriseSupervisionParams): Promise<
+    ApiResponse<{
+      list: EnterpriseSupervisionItem[];
+      total: number;
+      validCount: number;
+      invalidCount: number;
+    }>
+  > {
+    return request("/enterprise-supervision/batch-search", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  },
+
+  // 导出企业监管状态
+  async export(params: EnterpriseSupervisionExportParams): Promise<Blob> {
+    const response = await fetch(`${BASE_URL}/enterprise-supervision/export`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify(params),
+    });
+
+    if (!response.ok) {
+      throw new Error(`导出失败: ${response.status}`);
+    }
+
+    return response.blob();
+  },
+
+  // 获取监管状态选项
+  async getSupervisionStatusOptions(): Promise<ApiResponse<string[]>> {
+    return request("/enterprise-supervision/supervision-status-options");
+  },
+
+  // 获取企业准入状态选项
+  async getAccessStatusOptions(): Promise<ApiResponse<string[]>> {
+    return request("/enterprise-supervision/access-status-options");
+  },
+
+  // 获取企业类型选项
+  async getEnterpriseTypeOptions(): Promise<ApiResponse<string[]>> {
+    return request("/enterprise-supervision/enterprise-type-options");
+  },
+
+  // 获取字段选项
+  async getFieldOptions(): Promise<
+    ApiResponse<Array<{
+      key: string;
+      label: string;
+      required?: boolean;
+    }>>
+  > {
+    return request("/enterprise-supervision/field-options");
+  },
+
+  // 下载批量查询模板
+  async downloadTemplate(): Promise<Blob> {
+    const response = await fetch(`${BASE_URL}/enterprise-supervision/template`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`下载模板失败: ${response.status}`);
+    }
+
+    return response.blob();
+  },
+};
+
+// 企业基本信息查询相关API
+export const enterpriseBasicApi = {
+  // 查询企业基本信息
+  async search(params: EnterpriseBasicParams): Promise<
+    ApiResponse<{
+      list: EnterpriseBasicItem[];
+      total: number;
+    }>
+  > {
+    return request("/enterprise-basic/search", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  },
+
+  // 批量查询企业基本信息
+  async batchSearch(params: BatchEnterpriseBasicParams): Promise<
+    ApiResponse<{
+      list: EnterpriseBasicItem[];
+      total: number;
+      validCount: number;
+      invalidCount: number;
+    }>
+  > {
+    return request("/enterprise-basic/batch-search", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  },
+
+  // 导出企业基本信息
+  async export(
+    params: EnterpriseBasicParams & ExportParams
+  ): Promise<Blob> {
+    const response = await fetch(`${BASE_URL}/enterprise-basic/export`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify(params),
+    });
+    return response.blob();
+  },
+
+  // 获取监管状态选项
+  async getSupervisionStatusOptions(): Promise<ApiResponse<string[]>> {
+    return request("/enterprise-basic/supervision-status-options");
+  },
+
+  // 获取企业类型选项
+  async getEnterpriseTypeOptions(): Promise<ApiResponse<string[]>> {
+    return request("/enterprise-basic/enterprise-type-options");
+  },
+
+  // 下载批量查询模板
+  async downloadTemplate(): Promise<Blob> {
+    const response = await fetch(`${BASE_URL}/enterprise-basic/template`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+    return response.blob();
+  },
+};

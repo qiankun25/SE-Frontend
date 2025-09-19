@@ -14,7 +14,7 @@
 import { ref, onMounted, watch } from 'vue'
 
 const props = defineProps<{
-    fieldType?: 'enterprise' | 'certificate'
+    fieldType?: 'enterprise' | 'certificate' | 'enterprise_supervision'
     initialFields?: string[]
 }>()
 
@@ -74,12 +74,40 @@ const certificateFields: Field[] = [
     { key: 'UPM', label: '上传月', selected: false }
 ]
 
+// 企业监管状态字段配置
+const enterpriseSupervisionFields: Field[] = [
+    { key: 'enterprise_id', label: '企业ID', selected: true },
+    { key: 'enterprise_name', label: '企业名称', selected: true },
+    { key: 'social_credit_code', label: '统一社会信用代码', selected: true },
+    { key: 'supervision_status', label: '监管状态', selected: true },
+    { key: 'supervision_code', label: '监管代码', selected: false },
+    { key: 'access_status', label: '企业准入状态', selected: true },
+    { key: 'valid_flag', label: '有效标记', selected: false },
+    { key: 'enterprise_type', label: '企业类型', selected: true },
+    { key: 'new_energy_flag', label: '新能源标记', selected: true },
+    { key: 'registered_address', label: '注册地址', selected: false },
+    { key: 'production_address', label: '生产地址', selected: false },
+    { key: 'product_brand', label: '产品商标', selected: false },
+    { key: 'qualification', label: '资质', selected: false },
+    { key: 'contact_person', label: '联系人', selected: false },
+    { key: 'contact_position', label: '联系人职务', selected: false },
+    { key: 'contact_phone', label: '联系人号码', selected: false },
+    { key: 'created_at', label: '创建时间', selected: false },
+    { key: 'updated_at', label: '更新时间', selected: false }
+]
+
 const fields = ref<Field[]>([])
 
 // 初始化字段
 const initializeFields = () => {
     const fieldType = props.fieldType || 'enterprise'
-    fields.value = fieldType === 'certificate' ? [...certificateFields] : [...enterpriseFields]
+    if (fieldType === 'certificate') {
+        fields.value = [...certificateFields]
+    } else if (fieldType === 'enterprise_supervision') {
+        fields.value = [...enterpriseSupervisionFields]
+    } else {
+        fields.value = [...enterpriseFields]
+    }
 
     // 如果有初始字段配置，应用它们
     if (props.initialFields && props.initialFields.length > 0) {
