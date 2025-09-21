@@ -39,9 +39,9 @@
 
           <el-col :span="8">
             <el-form-item label="监管状态">
-              <el-select v-model="searchForm.supervision_status" placeholder="请选择监管状态" clearable class="wide-select"
-                popper-class="wide-select-dropdown">
-                <el-option v-for="status in supervisionStatusOptions" :key="status" :label="status" :value="status" />
+              <el-select v-model="searchForm.supervision_status" placeholder="请选择监管状态" clearable filterable multiple
+                collapse-tags collapse-tags-tooltip class="wide-select" popper-class="wide-select-dropdown">
+                <el-option v-for="option in supervisionStatusOptions" :key="option" :label="option" :value="option" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -128,25 +128,13 @@
     </el-card>
 
     <!-- 字段选择区域 -->
-    <DisplayFields
-      field-type="enterprise_supervision"
-      :initial-fields="selectedFields"
-      @fields-change="handleFieldsChange"
-    />
+    <DisplayFields field-type="enterprise_supervision" :initial-fields="selectedFields"
+      @fields-change="handleFieldsChange" />
 
     <!-- 批量查询对话框 -->
-    <BatchQueryDialog
-      v-model="showBatchDialog"
-      title="批量查询企业基本信息"
-      :query-types="batchQueryTypes"
-      placeholder="请输入查询条件，每行一个（支持企业ID或企业名称）"
-      :max-queries="100"
-      :support-file-upload="true"
-      :loading="batchLoading"
-      @confirm="handleBatchSearch"
-      @download-template="handleDownloadTemplate"
-      @file-upload="handleBatchFileUpload"
-    />
+    <BatchQueryDialog v-model="showBatchDialog" title="批量查询企业基本信息" :query-types="batchQueryTypes"
+      placeholder="请输入查询条件，每行一个（支持企业ID或企业名称）" :max-queries="100" :support-file-upload="true" :loading="batchLoading"
+      @confirm="handleBatchSearch" @download-template="handleDownloadTemplate" @file-upload="handleBatchFileUpload" />
 
     <!-- 查询结果区域 -->
     <el-card class="result-card" shadow="never">
@@ -159,52 +147,33 @@
         </div>
       </template>
 
-      <el-table
-        :data="tableData"
-        v-loading="loading"
-        stripe
-        border
-        style="width: 100%"
-        row-key="id"
-        height="500"
-      >
+      <el-table :data="tableData" v-loading="loading" stripe border style="width: 100%" row-key="id" height="500">
         <!-- 动态生成表格列 -->
-        <el-table-column
-          v-for="field in visibleFields"
-          :key="field.key"
-          :prop="field.key"
-          :label="field.label"
-          :width="getColumnWidth(field.key)"
-          :sortable="field.sortable ? 'custom' : false"
-          :show-overflow-tooltip="true"
-        >
+        <el-table-column v-for="field in visibleFields" :key="field.key" :prop="field.key" :label="field.label"
+          :width="getColumnWidth(field.key)" :sortable="field.sortable ? 'custom' : false"
+          :show-overflow-tooltip="true">
           <template #default="scope">
             <span v-if="field.key === 'supervision_status'">
-              <el-tag
-                :type="getSupervisionStatusType(scope.row.supervision_status)"
-              >
-                {{ scope.row.supervision_status || '-' }}
+              <el-tag :type="getSupervisionStatusType(scope.row.supervision_status)">
+                {{ Array.isArray(scope.row.supervision_status) ? scope.row.supervision_status.join('、') :
+                  (scope.row.supervision_status || '-') }}
               </el-tag>
             </span>
             <span v-else-if="field.key === 'access_status'">
-              <el-tag
-                :type="getAccessStatusType(scope.row.access_status)"
-              >
+              <el-tag :type="getAccessStatusType(scope.row.access_status)">
                 {{ scope.row.access_status || '-' }}
               </el-tag>
             </span>
             <span v-else-if="field.key === 'valid_flag'">
-              <el-tag
-                :type="scope.row.valid_flag === '有效' ? 'success' : 'danger'"
-              >
+              <el-tag :type="scope.row.valid_flag === '有效' ? 'success' : 'danger'">
                 {{ scope.row.valid_flag || '-' }}
               </el-tag>
             </span>
             <span v-else-if="field.key === 'new_energy_flag'">
               <el-tag
-                :type="scope.row.new_energy_flag === '是' || scope.row.new_energy_flag === '1' ? 'success' : 'info'"
-              >
-                {{ scope.row.new_energy_flag === '1' ? '是' : scope.row.new_energy_flag === '2' ? '否' : scope.row.new_energy_flag || '-' }}
+                :type="scope.row.new_energy_flag === '是' || scope.row.new_energy_flag === '1' ? 'success' : 'info'">
+                {{ scope.row.new_energy_flag === '1' ? '是' : scope.row.new_energy_flag === '2' ? '否' :
+                  scope.row.new_energy_flag || '-' }}
               </el-tag>
             </span>
             <span v-else>
@@ -254,7 +223,7 @@ const enterpriseTypeOptions = ref<string[]>([])
 const searchForm = reactive<EnterpriseBasicParams>({
   enterprise_id: '',
   enterprise_name: '',
-  supervision_status: '',
+  supervision_status: [] as string[],
   new_energy_flag: '',
   enterprise_type: '',
   social_credit_code: '',
@@ -375,7 +344,7 @@ const handleReset = () => {
   Object.assign(searchForm, {
     enterprise_id: '',
     enterprise_name: '',
-    supervision_status: '',
+    supervision_status: [] as string[],
     new_energy_flag: '',
     enterprise_type: '',
     social_credit_code: '',
@@ -431,13 +400,34 @@ const getColumnWidth = (fieldKey: string): number => {
   return widthMap[fieldKey] || 150
 }
 
-// 获取监管状态标签类型
-const getSupervisionStatusType = (status: string): 'success' | 'warning' | 'danger' | 'info' => {
+// 获取监管状态标签类型（支持 string 或 string[]）
+const getSupervisionStatusType = (status: string | string[] | undefined): 'success' | 'warning' | 'danger' | 'info' => {
   if (!status) return 'info'
-  if (status.includes('正常')) return 'success'
-  if (status.includes('重点监管') || status.includes('责令整改')) return 'warning'
-  if (status.includes('暂停') || status.includes('停产')) return 'danger'
-  return 'info'
+  const check = (s: string) => {
+    if (s.includes('正常')) return 'success'
+    if (s.includes('重点监管') || s.includes('责令整改')) return 'warning'
+    if (s.includes('暂停') || s.includes('停产')) return 'danger'
+    return 'info'
+  }
+
+  if (Array.isArray(status)) {
+    let hasDanger = false
+    let hasWarning = false
+    let hasSuccess = false
+    for (const s of status) {
+      if (!s) continue
+      const t = check(s)
+      if (t === 'danger') { hasDanger = true; break }
+      if (t === 'warning') { hasWarning = true }
+      if (t === 'success') { hasSuccess = true }
+    }
+    if (hasDanger) return 'danger'
+    if (hasWarning) return 'warning'
+    if (hasSuccess) return 'success'
+    return 'info'
+  }
+
+  return check(status as string)
 }
 
 // 获取准入状态标签类型
@@ -664,4 +654,3 @@ onMounted(async () => {
   }
 }
 </style>
-

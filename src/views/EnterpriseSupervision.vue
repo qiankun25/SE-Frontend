@@ -9,15 +9,8 @@
         </p>
       </div>
       <div class="header-right">
-        <ExportButton
-          :data="tableData"
-          :total-count="total"
-          :fields="exportFields"
-          default-filename="企业监管状态信息"
-          module="enterprise_supervision"
-          @export="handleExport"
-          @download-template="handleDownloadTemplate"
-        />
+        <ExportButton :data="tableData" :total-count="total" :fields="exportFields" default-filename="企业监管状态信息"
+          module="enterprise_supervision" @export="handleExport" @download-template="handleDownloadTemplate" />
         <el-button @click="handleReset">
           <el-icon>
             <Refresh />
@@ -39,31 +32,19 @@
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="企业名称">
-              <el-input
-                v-model="searchForm.enterprise_name"
-                placeholder="请输入企业名称"
-                clearable
-              />
+              <el-input v-model="searchForm.enterprise_name" placeholder="请输入企业名称" clearable />
             </el-form-item>
           </el-col>
 
           <el-col :span="8">
             <el-form-item label="企业ID">
-              <el-input
-                v-model="searchForm.enterprise_id"
-                placeholder="请输入企业ID"
-                clearable
-              />
+              <el-input v-model="searchForm.enterprise_id" placeholder="请输入企业ID" clearable />
             </el-form-item>
           </el-col>
 
           <el-col :span="8">
             <el-form-item label="统一社会信用代码">
-              <el-input
-                v-model="searchForm.social_credit_code"
-                placeholder="请输入统一社会信用代码"
-                clearable
-              />
+              <el-input v-model="searchForm.social_credit_code" placeholder="请输入统一社会信用代码" clearable />
             </el-form-item>
           </el-col>
         </el-row>
@@ -71,54 +52,25 @@
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="监管状态">
-              <el-select
-                v-model="searchForm.supervision_status"
-                placeholder="请选择监管状态"
-                clearable
-                filterable
-              >
-                <el-option
-                  v-for="option in supervisionStatusOptions"
-                  :key="option"
-                  :label="option"
-                  :value="option"
-                />
+              <el-select v-model="searchForm.supervision_status" placeholder="请选择监管状态" clearable filterable multiple
+                collapse-tags collapse-tags-tooltip class="wide-select" popper-class="wide-select-dropdown">
+                <el-option v-for="option in supervisionStatusOptions" :key="option" :label="option" :value="option" />
               </el-select>
             </el-form-item>
           </el-col>
 
           <el-col :span="8">
             <el-form-item label="企业准入状态">
-              <el-select
-                v-model="searchForm.access_status"
-                placeholder="请选择企业准入状态"
-                clearable
-                filterable
-              >
-                <el-option
-                  v-for="option in accessStatusOptions"
-                  :key="option"
-                  :label="option"
-                  :value="option"
-                />
+              <el-select v-model="searchForm.access_status" placeholder="请选择企业准入状态" clearable filterable>
+                <el-option v-for="option in accessStatusOptions" :key="option" :label="option" :value="option" />
               </el-select>
             </el-form-item>
           </el-col>
 
           <el-col :span="8">
             <el-form-item label="企业类型">
-              <el-select
-                v-model="searchForm.enterprise_type"
-                placeholder="请选择企业类型"
-                clearable
-                filterable
-              >
-                <el-option
-                  v-for="option in enterpriseTypeOptions"
-                  :key="option"
-                  :label="option"
-                  :value="option"
-                />
+              <el-select v-model="searchForm.enterprise_type" placeholder="请选择企业类型" clearable filterable>
+                <el-option v-for="option in enterpriseTypeOptions" :key="option" :label="option" :value="option" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -127,11 +79,7 @@
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="新能源标记">
-              <el-select
-                v-model="searchForm.new_energy_flag"
-                placeholder="请选择新能源标记"
-                clearable
-              >
+              <el-select v-model="searchForm.new_energy_flag" placeholder="请选择新能源标记" clearable>
                 <el-option label="是" value="是" />
                 <el-option label="否" value="否" />
               </el-select>
@@ -140,11 +88,7 @@
 
           <el-col :span="8">
             <el-form-item label="有效标记">
-              <el-select
-                v-model="searchForm.valid_flag"
-                placeholder="请选择有效标记"
-                clearable
-              >
+              <el-select v-model="searchForm.valid_flag" placeholder="请选择有效标记" clearable>
                 <el-option label="有效" value="有效" />
                 <el-option label="无效" value="无效" />
               </el-select>
@@ -172,11 +116,8 @@
     </el-card>
 
     <!-- 字段选择区域 -->
-    <DisplayFields
-      field-type="enterprise_supervision"
-      :initial-fields="selectedFields"
-      @fields-change="handleFieldsChange"
-    />
+    <DisplayFields field-type="enterprise_supervision" :initial-fields="selectedFields"
+      @fields-change="handleFieldsChange" />
 
     <!-- 结果展示区域 -->
     <el-card class="result-card" shadow="never">
@@ -187,49 +128,29 @@
         </div>
       </template>
 
-      <el-table
-        :data="tableData"
-        v-loading="loading"
-        stripe
-        border
-        style="width: 100%"
-        row-key="id"
-      >
+      <el-table :data="tableData" v-loading="loading" stripe border style="width: 100%" row-key="id">
         <!-- 动态生成表格列 -->
-        <el-table-column
-          v-for="field in visibleFields"
-          :key="field.key"
-          :prop="field.key"
-          :label="field.label"
-          :width="getColumnWidth(field.key)"
-          :show-overflow-tooltip="true"
-        >
+        <el-table-column v-for="field in visibleFields" :key="field.key" :prop="field.key" :label="field.label"
+          :width="getColumnWidth(field.key)" :show-overflow-tooltip="true">
           <template #default="scope">
             <span v-if="field.key === 'supervision_status'">
-              <el-tag
-                :type="getSupervisionStatusType(scope.row.supervision_status)"
-              >
-                {{ scope.row.supervision_status || '-' }}
+              <el-tag :type="getSupervisionStatusType(scope.row.supervision_status)">
+                {{ Array.isArray(scope.row.supervision_status) ? scope.row.supervision_status.join('、') :
+                  (scope.row.supervision_status || '-') }}
               </el-tag>
             </span>
             <span v-else-if="field.key === 'access_status'">
-              <el-tag
-                :type="getAccessStatusType(scope.row.access_status)"
-              >
+              <el-tag :type="getAccessStatusType(scope.row.access_status)">
                 {{ scope.row.access_status || '-' }}
               </el-tag>
             </span>
             <span v-else-if="field.key === 'valid_flag'">
-              <el-tag
-                :type="scope.row.valid_flag === '有效' ? 'success' : 'danger'"
-              >
+              <el-tag :type="scope.row.valid_flag === '有效' ? 'success' : 'danger'">
                 {{ scope.row.valid_flag || '-' }}
               </el-tag>
             </span>
             <span v-else-if="field.key === 'new_energy_flag'">
-              <el-tag
-                :type="scope.row.new_energy_flag === '是' ? 'success' : 'info'"
-              >
+              <el-tag :type="scope.row.new_energy_flag === '是' ? 'success' : 'info'">
                 {{ scope.row.new_energy_flag || '-' }}
               </el-tag>
             </span>
@@ -251,15 +172,9 @@
 
       <!-- 分页 -->
       <div class="pagination-container">
-        <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.pageSize"
-          :page-sizes="[10, 20, 50, 100]"
-          :total="total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
+        <el-pagination v-model:current-page="pagination.page" v-model:page-size="pagination.pageSize"
+          :page-sizes="[10, 20, 50, 100]" :total="total" layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange" @current-change="handleCurrentChange" />
       </div>
     </el-card>
   </div>
@@ -293,7 +208,7 @@ const searchForm = reactive<EnterpriseSupervisionParams>({
   enterprise_id: '',
   enterprise_name: '',
   social_credit_code: '',
-  supervision_status: '',
+  supervision_status: [] as string[],
   supervision_code: '',
   access_status: '',
   valid_flag: '',
@@ -412,7 +327,7 @@ const handleReset = () => {
     enterprise_id: '',
     enterprise_name: '',
     social_credit_code: '',
-    supervision_status: '',
+    supervision_status: [] as string[],
     supervision_code: '',
     access_status: '',
     valid_flag: '',
@@ -461,13 +376,35 @@ const getColumnWidth = (fieldKey: string): number => {
   return widthMap[fieldKey] || 150
 }
 
-// 获取监管状态标签类型
-const getSupervisionStatusType = (status: string): string => {
+// 获取监管状态标签类型（支持 string 或 string[]）
+const getSupervisionStatusType = (status: string | string[] | undefined): string => {
   if (!status) return 'info'
-  if (status.includes('正常')) return 'success'
-  if (status.includes('重点监管') || status.includes('责令整改')) return 'warning'
-  if (status.includes('暂停') || status.includes('停产')) return 'danger'
-  return 'info'
+  const check = (s: string) => {
+    if (s.includes('正常')) return 'success'
+    if (s.includes('重点监管') || s.includes('责令整改')) return 'warning'
+    if (s.includes('暂停') || s.includes('停产')) return 'danger'
+    return 'info'
+  }
+
+  if (Array.isArray(status)) {
+    // 优先级：danger > warning > success > info
+    let hasDanger = false
+    let hasWarning = false
+    let hasSuccess = false
+    for (const s of status) {
+      if (!s) continue
+      const t = check(s)
+      if (t === 'danger') { hasDanger = true; break }
+      if (t === 'warning') { hasWarning = true }
+      if (t === 'success') { hasSuccess = true }
+    }
+    if (hasDanger) return 'danger'
+    if (hasWarning) return 'warning'
+    if (hasSuccess) return 'success'
+    return 'info'
+  }
+
+  return check(status as string)
 }
 
 // 获取准入状态标签类型
@@ -641,5 +578,14 @@ onMounted(async () => {
   display: flex;
   justify-content: center;
   margin-top: 20px;
+}
+
+/* 宽度选择器样式 */
+.wide-select {
+  width: 100%;
+}
+
+.wide-select-dropdown {
+  min-width: 200px;
 }
 </style>
