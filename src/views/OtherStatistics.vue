@@ -444,14 +444,14 @@ onMounted(() => {
 .header-left h2 {
   margin: 0 0 8px 0;
   color: #303133;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 600;
 }
 
 .page-description {
   margin: 0;
   color: #606266;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.5;
 }
 
@@ -500,20 +500,20 @@ onMounted(() => {
 }
 
 .stats-value {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: bold;
   color: #303133;
   margin-bottom: 5px;
 }
 
 .stats-label {
-  font-size: 14px;
+  font-size: 16px;
   color: #606266;
   margin-bottom: 5px;
 }
 
 .stats-change {
-  font-size: 12px;
+  font-size: 14px;
   display: flex;
   align-items: center;
   gap: 2px;

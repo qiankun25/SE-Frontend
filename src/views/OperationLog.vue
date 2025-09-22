@@ -608,14 +608,14 @@ onMounted(() => {
 .header-left h2 {
     margin: 0 0 8px 0;
     color: #303133;
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 600;
 }
 
 .page-description {
     margin: 0;
     color: #606266;
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1.5;
 }
 
@@ -650,14 +650,14 @@ onMounted(() => {
 }
 
 .stats-value {
-    font-size: 28px;
+    font-size: 30px;
     font-weight: bold;
     color: #409eff;
     margin-bottom: 5px;
 }
 
 .stats-label {
-    font-size: 14px;
+    font-size: 16px;
     color: #606266;
 }
 
@@ -684,7 +684,7 @@ onMounted(() => {
 .detail-section h4 {
     margin: 0 0 10px 0;
     color: #303133;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 600;
 }
 
@@ -694,7 +694,7 @@ onMounted(() => {
     border-radius: 4px;
     border: 1px solid #e4e7ed;
     overflow-x: auto;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 1.5;
 }
 

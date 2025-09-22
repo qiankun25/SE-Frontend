@@ -62,17 +62,17 @@ const router = createRouter({
             parentTitle: "常用业务查询",
           },
         },
-        {
-          path: "/business/certificate-detail",
-          name: "certificate-detail",
-          component: () => import("../views/CertificateDetail.vue"),
-          meta: {
-            requiresAuth: true,
-            title: "合格证单证信息",
-            icon: "Search",
-            parentTitle: "常用业务查询",
-          },
-        },
+        // {
+        //   path: "/business/certificate-detail",
+        //   name: "certificate-detail",
+        //   component: () => import("../views/CertificateDetail.vue"),
+        //   meta: {
+        //     requiresAuth: true,
+        //     title: "合格证单证信息",
+        //     icon: "Search",
+        //     parentTitle: "常用业务查询",
+        //   },
+        // },
         // 可视化图表
         {
           path: "/visualization/dashboard",

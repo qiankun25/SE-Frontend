@@ -343,14 +343,14 @@ onUnmounted(() => {
 .header-left h2 {
   margin: 0 0 8px 0;
   color: #303133;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
 }
 
 .page-description {
   margin: 0;
   color: #909399;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .header-right {
@@ -396,14 +396,14 @@ onUnmounted(() => {
 }
 
 .stat-value {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 600;
   color: #303133;
   margin-bottom: 4px;
 }
 
 .stat-label {
-  font-size: 14px;
+  font-size: 16px;
   color: #909399;
 }
 
@@ -433,11 +433,11 @@ onUnmounted(() => {
 
 .chart-placeholder p {
   margin: 8px 0;
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .placeholder-text {
-  font-size: 12px !important;
+  font-size: 14px !important;
   color: #C0C4CC !important;
 }
 

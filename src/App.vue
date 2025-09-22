@@ -42,7 +42,7 @@ body {
 }
 
 .el-table {
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .el-table th {
@@ -86,7 +86,7 @@ body {
 /* 响应式断点 */
 @media (max-width: 768px) {
   .el-table {
-    font-size: 12px;
+    font-size: 14px;
   }
 
   .el-card__body {

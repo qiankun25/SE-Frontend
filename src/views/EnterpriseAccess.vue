@@ -585,12 +585,12 @@ onMounted(() => {
 
 .company-name {
   font-weight: 600;
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .card-content p {
   margin: 8px 0;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.4;
 }
 

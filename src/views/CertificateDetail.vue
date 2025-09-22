@@ -753,14 +753,14 @@ onMounted(() => {
 }
 
 .stats-value {
-  font-size: 28px;
+  font-size: 30px;
   font-weight: bold;
   color: #409eff;
   margin-bottom: 5px;
 }
 
 .stats-label {
-  font-size: 14px;
+  font-size: 16px;
   color: #606266;
 }
 

@@ -271,7 +271,7 @@ const handleLogout = async () => {
 .header-left .system-title {
   margin: 0;
   color: #303133;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
 }
 
@@ -280,7 +280,7 @@ const handleLogout = async () => {
   align-items: center;
   cursor: pointer;
   color: #606266;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .header-right .user-info:hover {

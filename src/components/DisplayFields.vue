@@ -146,6 +146,7 @@ onMounted(() => {
     font-weight: bold;
     margin-bottom: 15px;
     color: #606266;
+    font-size: 16px;
 }
 
 .fields-container {
@@ -157,9 +158,21 @@ onMounted(() => {
 .field-tag {
     cursor: pointer;
     user-select: none;
+    font-size: 16px;
 }
 
 .field-tag:hover {
     opacity: 0.8;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .fields-title {
+        font-size: 14px;
+    }
+
+    .field-tag {
+        font-size: 14px;
+    }
 }
 </style>

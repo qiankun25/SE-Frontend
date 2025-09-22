@@ -240,7 +240,7 @@ onMounted(() => {
 .login-subtitle {
     margin: 0;
     color: #909399;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 400;
 }
 
@@ -283,11 +283,11 @@ onMounted(() => {
     }
 
     .login-title {
-        font-size: 20px;
+        font-size: 22px;
     }
 
     .login-subtitle {
-        font-size: 12px;
+        font-size: 14px;
     }
 }
 

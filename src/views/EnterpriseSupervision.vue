@@ -539,14 +539,14 @@ onMounted(async () => {
 .header-left h2 {
   margin: 0 0 8px 0;
   color: #303133;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
 }
 
 .page-description {
   margin: 0;
   color: #909399;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .header-right {
@@ -567,7 +567,7 @@ onMounted(async () => {
 
 .result-count {
   color: #909399;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .search-actions {

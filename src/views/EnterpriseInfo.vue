@@ -579,7 +579,7 @@ onMounted(async () => {
 .page-description {
   margin: 0;
   color: #606266;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.5;
 }
 
@@ -598,7 +598,7 @@ onMounted(async () => {
 
 .result-summary {
   color: #606266;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: normal;
 }
 
@@ -619,7 +619,7 @@ onMounted(async () => {
 
 .form-tip {
   color: #909399;
-  font-size: 12px;
+  font-size: 14px;
   margin-top: 5px;
 }
 

@@ -596,14 +596,14 @@ onMounted(() => {
 .header-left h2 {
   margin: 0 0 8px 0;
   color: #303133;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 600;
 }
 
 .page-description {
   margin: 0;
   color: #606266;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.5;
 }
 
