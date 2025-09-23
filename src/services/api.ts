@@ -16,6 +16,7 @@ import type {
   OtherStatisticsItem,
   ExportParams,
   GroupSearchParams,
+  GroupExportParams,
   GroupInfo,
   GroupDetailInfo,
   EnterpriseItem,
@@ -506,7 +507,7 @@ export const groupApi = {
 
   // 导出集团信息
   async export(
-    params: GroupSearchParams & ExportParams
+    params: GroupExportParams
   ): Promise<Blob> {
     const response = await fetch(`${BASE_URL}/group/export`, {
       method: "POST",

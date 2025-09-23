@@ -233,6 +233,10 @@ export interface GroupSearchParams extends PaginationParams, SortParams {
   has_new_energy?: boolean; // 是否涉及新能源
 }
 
+export interface GroupExportParams extends GroupSearchParams, ExportParams {
+  range?: string;           // 导出范围：current（当前页）、all（全部数据）
+}
+
 export interface EnterpriseItem {
   enterprise_id: string;
   enterprise_name: string;

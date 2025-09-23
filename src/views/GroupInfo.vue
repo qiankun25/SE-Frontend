@@ -9,12 +9,16 @@
         </p>
       </div>
       <div class="header-right">
-        <el-button type="primary" :loading="exportLoading" @click="handleExport">
-          <el-icon>
-            <Download />
-          </el-icon>
-          导出数据
-        </el-button>
+        <export-button
+          :data="tableData"
+          :total-count="total"
+          :fields="exportFields"
+          default-filename="集团基本信息"
+          module="group_info"
+          :show-quota-info="true"
+          @export="handleExport"
+          @download-template="handleDownloadTemplate"
+        />
         <el-button @click="handleReset">
           <el-icon>
             <Refresh />
@@ -165,12 +169,32 @@ import { Download, Refresh, Search, View } from '@element-plus/icons-vue'
 import { groupApi, exportUtils } from '../services/api'
 import type { GroupInfo, GroupSearchParams } from '../types/api'
 import EnterpriseList from '../components/EnterpriseList.vue'
+import ExportButton from '../components/ExportButton.vue'
 
 // 响应式数据
 const loading = ref(false)
 const total = ref(0)
 const tableData = ref<GroupInfo[]>([])
-const exportLoading = ref(false)
+
+// 导出字段配置
+const exportFields = ref([
+  { key: 'group_code', label: '集团代码', required: true },
+  { key: 'group_name', label: '集团名称', required: true },
+  { key: 'main_region', label: '主要地区' },
+  { key: 'enterprise_count', label: '下属企业数量' },
+  { key: 'provinces', label: '分布省份列表' },
+  { key: 'new_energy_count', label: '新能源企业数量' },
+  { key: 'joint_venture_count', label: '合资企业数量' },
+  { key: 'new_energy_ratio', label: '新能源企业占比(%)' },
+  { key: 'joint_venture_ratio', label: '合资企业占比(%)' },
+  {
+    key: 'enterprise_names',
+    label: '下属企业名称',
+    optional: true,
+    description: '包含该集团所有下属企业名称（分号分隔），可能影响导出速度',
+    performance_impact: true
+  }
+])
 
 // 搜索表单
 const searchForm = reactive({
@@ -256,43 +280,73 @@ const handleReset = () => {
   tableData.value = []
 }
 
-// 导出数据
-const handleExport = async () => {
+// 导出数据 - 使用统一的ExportButton组件处理
+const handleExport = async (config: any) => {
   try {
-    await ElMessageBox.confirm(
-      `确定要导出当前查询条件下的所有集团信息吗？`,
-      '确认导出',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-
-    exportLoading.value = true
-
     const params = {
       ...searchForm,
-      page: pagination.page,
-      pageSize: pagination.page_size,
+      format: config.format,
+      filename: config.filename,
+      fields: config.selectedFields,
+      // 根据导出范围调整参数
+      ...(config.range === 'current' ? {
+        page: pagination.page,
+        pageSize: pagination.page_size
+      } : {
+        page: 1,
+        pageSize: 10000
+      }),
       field: sortConfig.field,
-      order: sortConfig.order,
-      format: 'excel' as const,
-      filename: '集团基本信息'
+      order: sortConfig.order
     }
 
     const blob = await groupApi.export(params)
-    const filename = exportUtils.generateFilename('集团基本信息', 'xlsx')
+    const filename = exportUtils.generateFilename(
+      config.filename || '集团基本信息',
+      config.format === 'csv' ? 'csv' : 'xlsx'
+    )
     exportUtils.downloadFile(blob, filename)
 
     ElMessage.success('导出成功')
   } catch (error) {
-    if (error !== 'cancel') {
-      console.error('导出失败:', error)
-      ElMessage.error('导出失败，请稍后重试')
-    }
-  } finally {
-    exportLoading.value = false
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败，请重试')
+  }
+}
+
+// 下载模板
+const handleDownloadTemplate = async () => {
+  try {
+    // 创建模板数据
+    const templateData = [
+      {
+        "集团代码": "FAW",
+        "集团名称": "中国第一汽车集团有限公司",
+        "主要地区": "吉林",
+        "下属企业数量": "15",
+        "分布省份列表": "吉林, 天津, 四川, 广东",
+        "新能源企业数量": "3",
+        "合资企业数量": "8",
+        "新能源企业占比(%)": "20",
+        "合资企业占比(%)": "53.33"
+      }
+    ]
+
+    // 生成Excel文件
+    const workbook = new (await import('xlsx')).utils.book_new()
+    const worksheet = (await import('xlsx')).utils.json_to_sheet(templateData)
+    (await import('xlsx')).utils.book_append_sheet(workbook, worksheet, '集团信息模板')
+
+    const excelBuffer = (await import('xlsx')).write(workbook, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+
+    const filename = exportUtils.generateFilename('集团基本信息查询模板', 'xlsx')
+    exportUtils.downloadFile(blob, filename)
+
+    ElMessage.success('模板下载成功')
+  } catch (error) {
+    console.error('下载模板失败:', error)
+    ElMessage.error('下载模板失败，请重试')
   }
 }
 

@@ -101,12 +101,35 @@
             <el-divider />
             <el-checkbox-group v-model="exportConfig.selectedFields">
               <div class="field-grid">
-                <el-checkbox
+                <div
                   v-for="field in availableFields"
                   :key="field.key"
-                  :value="field.key"
-                  :label="field.label"
-                />
+                  class="field-item"
+                >
+                  <el-checkbox
+                    :value="field.key"
+                    :label="field.label"
+                  >
+                    <span class="field-label">
+                      {{ field.label }}
+                      <el-tooltip
+                        v-if="field.performance_impact"
+                        content="此选项可能影响导出速度"
+                        placement="top"
+                      >
+                        <el-icon class="performance-warning">
+                          <Warning />
+                        </el-icon>
+                      </el-tooltip>
+                    </span>
+                  </el-checkbox>
+                  <div
+                    v-if="field.description"
+                    class="field-description"
+                  >
+                    {{ field.description }}
+                  </div>
+                </div>
               </div>
             </el-checkbox-group>
           </div>
@@ -138,7 +161,7 @@
 <script lang="ts" setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Download, ArrowDown } from '@element-plus/icons-vue'
+import { Download, ArrowDown, Warning } from '@element-plus/icons-vue'
 import type { ExportParams } from '../../types/api'
 import { exportLimitApi, exportUtils, type QuotaInfo } from '../services/exportLimitApi'
 import { useAuth } from '../composables/useAuth'
@@ -147,6 +170,9 @@ interface FieldOption {
   key: string
   label: string
   required?: boolean
+  optional?: boolean
+  description?: string
+  performance_impact?: boolean
 }
 
 interface ExportConfig {
@@ -449,12 +475,61 @@ watch(() => user.value, () => {
 
 .field-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
   margin-top: 10px;
 }
 
-.field-grid .el-checkbox {
+.field-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.field-item .el-checkbox {
   margin-right: 0;
+  margin-bottom: 5px;
+}
+
+.field-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.performance-warning {
+  color: #e6a23c;
+  font-size: 14px;
+}
+
+.field-description {
+  font-size: 12px;
+  color: #909399;
+  margin-left: 24px;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.field-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.performance-warning {
+  color: #e6a23c;
+  font-size: 14px;
+}
+
+.field-description {
+  font-size: 12px;
+  color: #909399;
+  margin-left: 24px;
+  line-height: 1.4;
 }
 </style>
