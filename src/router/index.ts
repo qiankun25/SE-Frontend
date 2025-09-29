@@ -80,7 +80,7 @@ const router = createRouter({
           component: () => import("../views/Dashboard.vue"),
           meta: {
             requiresAuth: true,
-            title: "大屏界面",
+            title: "统计结果",
             icon: "Monitor",
             parentTitle: "可视化图表",
           },

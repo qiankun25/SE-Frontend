@@ -3,9 +3,9 @@
     <!-- 页面标题和操作区 -->
     <div class="page-header">
       <div class="header-left">
-        <h2>大屏界面</h2>
+        <h2>统计结果</h2>
         <p class="page-description">
-          汽车企业数据可视化大屏展示，支持实时数据监控和图表分析
+          汽车企业数据可视化结果展示，支持数据监控和图表分析
         </p>
       </div>
       <div class="header-right">
@@ -131,23 +131,13 @@
             <div class="card-header">
               <span>实时数据监控</span>
               <div class="header-actions">
-                <el-switch
-                  v-model="autoRefresh"
-                  active-text="自动刷新"
-                  @change="handleAutoRefreshChange"
-                />
+                <el-switch v-model="autoRefresh" active-text="自动刷新" @change="handleAutoRefreshChange" />
                 <el-button link type="primary">导出数据</el-button>
               </div>
             </div>
           </template>
-          
-          <el-table
-            :data="realtimeData"
-            v-loading="loading"
-            stripe
-            style="width: 100%"
-            max-height="300"
-          >
+
+          <el-table :data="realtimeData" v-loading="loading" stripe style="width: 100%" max-height="300">
             <el-table-column prop="time" label="时间" width="120" />
             <el-table-column prop="enterpriseName" label="企业名称" width="200" />
             <el-table-column prop="action" label="操作类型" width="120" />
@@ -166,17 +156,10 @@
     </div>
 
     <!-- 外部链接配置对话框 -->
-    <el-dialog
-      v-model="showLinkDialog"
-      title="外部大屏链接配置"
-      width="500px"
-    >
+    <el-dialog v-model="showLinkDialog" title="外部大屏链接配置" width="500px">
       <el-form :model="linkForm" label-width="100px">
         <el-form-item label="链接地址">
-          <el-input
-            v-model="linkForm.url"
-            placeholder="请输入外部大屏链接地址"
-          />
+          <el-input v-model="linkForm.url" placeholder="请输入外部大屏链接地址" />
         </el-form-item>
         <el-form-item label="显示方式">
           <el-radio-group v-model="linkForm.displayType">
@@ -185,7 +168,7 @@
           </el-radio-group>
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
         <el-button @click="showLinkDialog = false">取消</el-button>
         <el-button type="primary" @click="handleLinkConfirm">确定</el-button>
@@ -295,14 +278,14 @@ const handleLinkConfirm = () => {
     ElMessage.warning('请输入链接地址')
     return
   }
-  
+
   if (linkForm.displayType === 'newTab') {
     window.open(linkForm.url, '_blank')
   } else {
     // TODO: 实现iframe内嵌显示
     ElMessage.info('内嵌显示功能开发中')
   }
-  
+
   showLinkDialog.value = false
 }
 
@@ -465,7 +448,7 @@ onUnmounted(() => {
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .charts-row {
     grid-template-columns: 1fr;
   }
