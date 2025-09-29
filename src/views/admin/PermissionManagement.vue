@@ -32,13 +32,7 @@
         </div>
       </template>
 
-      <el-table
-        :data="roleData"
-        v-loading="loading"
-        stripe
-        border
-        style="width: 100%"
-      >
+      <el-table :data="roleData" v-loading="loading" stripe border style="width: 100%">
         <el-table-column prop="roleName" label="角色名称" width="150" />
         <el-table-column prop="roleCode" label="角色代码" width="150" />
         <el-table-column prop="description" label="角色描述" />
@@ -59,11 +53,8 @@
             <el-button link type="warning" @click="handlePermissionConfig(scope.row)">
               权限配置
             </el-button>
-            <el-button 
-              link 
-              :type="scope.row.status === '启用' ? 'warning' : 'success'"
-              @click="handleToggleRoleStatus(scope.row)"
-            >
+            <el-button link :type="scope.row.status === '启用' ? 'warning' : 'success'"
+              @click="handleToggleRoleStatus(scope.row)">
               {{ scope.row.status === '启用' ? '禁用' : '启用' }}
             </el-button>
             <el-button link type="danger" @click="handleDeleteRole(scope.row)">
@@ -75,11 +66,7 @@
     </el-card>
 
     <!-- 角色编辑对话框 -->
-    <el-dialog
-      v-model="showRoleDialog"
-      :title="roleForm.id ? '编辑角色' : '新增角色'"
-      width="500px"
-    >
+    <el-dialog v-model="showRoleDialog" :title="roleForm.id ? '编辑角色' : '新增角色'" width="500px">
       <el-form :model="roleForm" :rules="roleRules" ref="roleFormRef" label-width="100px">
         <el-form-item label="角色名称" prop="roleName">
           <el-input v-model="roleForm.roleName" />
@@ -97,7 +84,7 @@
           </el-radio-group>
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
         <el-button @click="showRoleDialog = false">取消</el-button>
         <el-button type="primary" @click="handleSaveRole" :loading="saving">保存</el-button>
@@ -105,30 +92,19 @@
     </el-dialog>
 
     <!-- 权限配置对话框 -->
-    <el-dialog
-      v-model="showPermissionDialog"
-      title="权限配置"
-      width="800px"
-    >
+    <el-dialog v-model="showPermissionDialog" title="权限配置" width="800px">
       <div class="permission-config">
         <div class="config-header">
           <h4>为角色 "{{ currentRole.roleName }}" 配置权限</h4>
         </div>
-        
+
         <el-tabs v-model="activeTab" type="card">
           <!-- 功能权限 -->
           <el-tab-pane label="功能权限" name="function">
-            <el-tree
-              ref="functionTreeRef"
-              :data="functionPermissions"
-              :props="treeProps"
-              show-checkbox
-              node-key="id"
-              :default-checked-keys="checkedFunctionKeys"
-              @check="handleFunctionCheck"
-            />
+            <el-tree ref="functionTreeRef" :data="functionPermissions" :props="treeProps" show-checkbox node-key="id"
+              :default-checked-keys="checkedFunctionKeys" @check="handleFunctionCheck" />
           </el-tab-pane>
-          
+
           <!-- 数据权限 -->
           <el-tab-pane label="数据权限" name="data">
             <el-form label-width="120px">
@@ -140,22 +116,16 @@
                   <el-radio value="custom">自定义数据</el-radio>
                 </el-radio-group>
               </el-form-item>
-              
+
               <el-form-item v-if="dataPermission.scope === 'custom'" label="自定义范围">
-                <el-tree
-                  ref="dataTreeRef"
-                  :data="dataPermissions"
-                  :props="treeProps"
-                  show-checkbox
-                  node-key="id"
-                  :default-checked-keys="checkedDataKeys"
-                />
+                <el-tree ref="dataTreeRef" :data="dataPermissions" :props="treeProps" show-checkbox node-key="id"
+                  :default-checked-keys="checkedDataKeys" />
               </el-form-item>
             </el-form>
           </el-tab-pane>
         </el-tabs>
       </div>
-      
+
       <template #footer>
         <el-button @click="showPermissionDialog = false">取消</el-button>
         <el-button type="primary" @click="handleSavePermission" :loading="saving">保存权限</el-button>
@@ -243,7 +213,7 @@ const functionPermissions = ref([
     id: 3,
     label: '可视化图表',
     children: [
-      { id: 31, label: '大屏界面' }
+      { id: 31, label: '统计结果' }
     ]
   },
   {
@@ -325,14 +295,14 @@ const handleEditRole = (row: any) => {
 // 保存角色
 const handleSaveRole = async () => {
   if (!roleFormRef.value) return
-  
+
   try {
     await roleFormRef.value.validate()
     saving.value = true
-    
+
     // TODO: 调用API接口
     await new Promise(resolve => setTimeout(resolve, 1000))
-    
+
     ElMessage.success(roleForm.id ? '角色更新成功' : '角色创建成功')
     showRoleDialog.value = false
     handleRefresh()
@@ -360,10 +330,10 @@ const handleSavePermission = async () => {
   try {
     const functionKeys = functionTreeRef.value?.getCheckedKeys() || []
     const dataKeys = dataTreeRef.value?.getCheckedKeys() || []
-    
+
     // TODO: 调用API接口保存权限配置
     await new Promise(resolve => setTimeout(resolve, 1000))
-    
+
     ElMessage.success('权限配置保存成功')
     showPermissionDialog.value = false
   } catch (error) {

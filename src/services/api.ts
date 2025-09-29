@@ -23,8 +23,9 @@ import type {
 } from "../types/api";
 
 // 基础请求配置
-// 开发环境使用后端服务器地址，生产环境使用相对路径
-const BASE_URL = import.meta.env.DEV ? "http://localhost:8000/api" : "/api";
+
+// 硬编码API地址 - 开发环境快速解决方案
+const BASE_URL = '/api';
 
 // 通用请求函数
 async function request<T>(
@@ -74,13 +75,25 @@ export const certificateQuantityApi = {
   async export(
     params: CertificateQuantityParams & ExportParams
   ): Promise<Blob> {
+    const token = localStorage.getItem('token')
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    }
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`
+    }
+
     const response = await fetch(`${BASE_URL}/certificate-quantity/export`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(params),
     });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
     return response.blob();
   },
 
