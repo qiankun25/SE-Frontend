@@ -9,33 +9,17 @@
         </p>
       </div>
       <div class="header-right">
-        <el-dropdown @command="handleExportCommand" :disabled="!hasSearched">
-          <el-button type="primary">
-            <el-icon>
-              <Download />
-            </el-icon>
-            导出数据
-            <el-icon class="el-icon--right">
-              <arrow-down />
-            </el-icon>
-          </el-button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="current">
-                <el-icon>
-                  <Document />
-                </el-icon>
-                导出当前页 ({{ tableData.length }}条)
-              </el-dropdown-item>
-              <el-dropdown-item command="all">
-                <el-icon>
-                  <FolderOpened />
-                </el-icon>
-                导出全部数据
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <export-button
+          :data="tableData"
+          :selected-data="selectedRows"
+          :total-count="total"
+          :fields="exportFields"
+          default-filename="合格证总量统计"
+          :allow-select-export="true"
+          :disabled="!hasSearched"
+          @export="handleExport"
+          @download-template="handleDownloadTemplate"
+        />
         <el-button @click="handleReset">
           <el-icon>
             <Refresh />
@@ -62,21 +46,22 @@
       <!-- 查询结果表格组件 -->
       <certificate-result-table :data="tableData" :loading="loading" :search-conditions="selectedConditions"
         :display-fields="displayFields" @export="handleExportData" @view-detail="handleViewDetail"
-        @sort-change="handleSortChange" />
+        @sort-change="handleSortChange" @selection-change="handleSelectionChange" />
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Download, Refresh, ArrowDown, Document, FolderOpened } from '@element-plus/icons-vue'
+import { Refresh } from '@element-plus/icons-vue'
 
 // 导入新的组件
 import CertificateSearchConditions from '../components/CertificateSearchConditions.vue'
 import CertificateSelectedConditions from '../components/CertificateSelectedConditions.vue'
 import CertificateDisplayFields from '../components/CertificateDisplayFields.vue'
 import CertificateResultTable from '../components/CertificateResultTable.vue'
+import ExportButton from '../components/ExportButton.vue'
 
 // 响应式数据
 const loading = ref(false)
@@ -84,6 +69,38 @@ const hasSearched = ref(false)
 const selectedConditions = ref<any[]>([])
 const tableData = ref<any[]>([])
 const displayFields = ref<string[]>([]) // 用户选择的显示字段
+const selectedRows = ref<any[]>([]) // 选中的数据行
+const total = ref(0) // 总记录数
+
+// 计算属性：导出字段配置
+const exportFields = computed(() => {
+  // 基于合格证总量统计的字段结构，与后端CertificateQuantityItem模型保持一致
+  return [
+    { key: 'companyId', label: '企业ID', required: false },
+    { key: 'companyName', label: '企业名称', required: true },
+    { key: 'vehicleBrand', label: '车辆品牌', required: false },
+    { key: 'vehicleModel', label: '车辆型号', required: false },
+    { key: 'vehicleName', label: '车辆名称', required: false },
+    { key: 'vehicleCategory', label: '车辆类别', required: false },
+    { key: 'sixCategory', label: '六大类', required: false },
+    { key: 'fuelType', label: '燃料类型', required: false },
+    { key: 'newEnergyType', label: '新能源类型', required: false },
+    { key: 'productionAddress', label: '生产地址', required: false },
+    { key: 'productionProvince', label: '生产省份', required: false },
+    { key: 'productionCity', label: '生产城市', required: false },
+    { key: 'certificateCount', label: '合格证数量', required: true },
+    { key: 'uploadYear', label: '上传年份', required: false },
+    { key: 'uploadMonth', label: '上传月份', required: false },
+    { key: 'uploadDay', label: '上传日期', required: false },
+    { key: 'date', label: '日期', required: false },
+    { key: 'year', label: '年份', required: false },
+    { key: 'month', label: '月份', required: false },
+    { key: 'currentPeriodCount', label: '当期数量', required: false },
+    { key: 'previousPeriodCount', label: '同期数量', required: false },
+    { key: 'comparisonRatio', label: '同期比率', required: false },
+    { key: 'ranking', label: '排名', required: false }
+  ]
+})
 
 // 事件处理函数
 const handleAddCondition = (condition: any) => {
@@ -121,6 +138,10 @@ const handleDisplayFieldsChange = (fields: string[]) => {
   // 这里不需要重新查询数据，只需要更新显示字段即可
 }
 
+const handleSelectionChange = (selection: any[]) => {
+  selectedRows.value = selection
+}
+
 const handleSearch = async (conditions: any[]) => {
   if (conditions.length === 0) {
     ElMessage.warning('请至少添加一个查询条件')
@@ -149,6 +170,7 @@ const handleSearch = async (conditions: any[]) => {
 
     if (response.code === 200) {
       tableData.value = response.data.list
+      total.value = response.data.total || 0
 
       // 开发环境下验证返回数据
       if (import.meta.env.DEV) {
@@ -431,87 +453,72 @@ const handleReset = () => {
 // 存储当前显示的字段 - 现在使用用户选择的字段
 // const currentDisplayFields = ref<string[]>([])
 
-// 导出当前页数据（默认行为，安全）
-const handleExport = async () => {
-  if (!hasSearched.value || tableData.value.length === 0) {
-    ElMessage.warning('当前页没有可导出的数据')
-    return
-  }
-
-  try {
-    const { certificateQuantityApi, exportUtils } = await import('../services/api')
-
-    // 构建导出参数 - 只导出当前页数据
-    const params = {
-      ...buildSearchParams(selectedConditions.value),
-      page: 1, // 当前页码
-      pageSize: 100, // 当前页大小
-      field: 'certificateCount',
-      order: 'desc' as const,
-      format: 'excel' as const,
-      filename: '合格证总量统计_当前页',
-      export_range: 'current', // 明确指定导出范围
-      fields: displayFields.value // 只导出用户选择的字段
-    }
-
-    const blob = await certificateQuantityApi.export(params)
-    exportUtils.downloadFile(blob, exportUtils.generateFilename('合格证总量统计_当前页'))
-
-    ElMessage.success(`当前页数据导出成功（${tableData.value.length}条记录）`)
-  } catch (error) {
-    console.error('导出失败:', error)
-    ElMessage.error('导出失败，请重试')
-  }
-}
-
-// 导出全部数据（需要用户确认）
-const handleExportAll = async () => {
+// 统一的导出处理方法
+const handleExport = async (config: any) => {
   if (!hasSearched.value) {
     ElMessage.warning('请先执行查询')
     return
   }
 
   try {
-    await ElMessageBox.confirm(
-      '确定要导出全部符合条件的数据吗？这可能包含大量记录。',
-      '确认导出全部数据',
-      {
-        confirmButtonText: '确定导出',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
-
     const { certificateQuantityApi, exportUtils } = await import('../services/api')
 
+    // 构建导出参数
     const params = {
       ...buildSearchParams(selectedConditions.value),
+      format: config.format || 'excel',
+      filename: config.filename || '合格证总量统计',
+      fields: config.selectedFields || displayFields.value,
       field: 'certificateCount',
-      order: 'desc' as const,
-      format: 'excel' as const,
-      filename: '合格证总量统计_全部数据',
-      export_range: 'all', // 导出全部数据
-      fields: displayFields.value // 只导出用户选择的字段
+      order: 'desc' as const
+    }
+
+    // 根据导出范围调整参数
+    if (config.range === 'current') {
+      params.page = 1
+      params.pageSize = 100
+      params.export_range = 'current'
+    } else if (config.range === 'all') {
+      params.page = 1
+      params.pageSize = 10000
+      params.export_range = 'all'
+    } else if (config.range === 'selected') {
+      if (!selectedRows.value || selectedRows.value.length === 0) {
+        ElMessage.warning('请先选择要导出的数据')
+        return
+      }
+      const selectedIds = selectedRows.value.map((row: any) =>
+        row.companyId || row.id || `${row.companyName}_${row.vehicleModel}`
+      )
+      params.selected_ids = selectedIds
+      params.export_range = 'selected'
     }
 
     const blob = await certificateQuantityApi.export(params)
-    exportUtils.downloadFile(blob, exportUtils.generateFilename('合格证总量统计_全部'))
+    const filename = exportUtils.generateFilename(
+      config.filename || '合格证总量统计',
+      config.format === 'csv' ? 'csv' : 'xlsx'
+    )
+    exportUtils.downloadFile(blob, filename)
 
-    ElMessage.success('全部数据导出成功')
+    ElMessage.success('导出成功')
   } catch (error) {
-    if (error !== 'cancel') {
-      console.error('导出失败:', error)
-      ElMessage.error('导出失败，请重试')
-    }
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败，请重试')
   }
 }
 
-// 导出选中数据
+// 下载模板
+const handleDownloadTemplate = () => {
+  ElMessage.info('模板下载功能开发中...')
+}
+
+// 保留原有的导出选中数据方法，供CertificateResultTable组件使用
 const handleExportData = async (exportData: any) => {
   // 处理新的数据结构
-  const selectedRows = Array.isArray(exportData) ? exportData : exportData.data
+  const selectedRowsData = Array.isArray(exportData) ? exportData : exportData.data
 
-  if (!selectedRows || selectedRows.length === 0) {
+  if (!selectedRowsData || selectedRowsData.length === 0) {
     ElMessage.warning('请先选择要导出的数据')
     return
   }
@@ -520,7 +527,7 @@ const handleExportData = async (exportData: any) => {
     const { certificateQuantityApi, exportUtils } = await import('../services/api')
 
     // 提取选中数据的ID
-    const selectedIds = selectedRows.map((row: any) => row.companyId || row.id || `${row.companyName}_${row.vehicleModel}`)
+    const selectedIds = selectedRowsData.map((row: any) => row.companyId || row.id || `${row.companyName}_${row.vehicleModel}`)
 
     const params = {
       ...buildSearchParams(selectedConditions.value),
@@ -536,7 +543,7 @@ const handleExportData = async (exportData: any) => {
     const blob = await certificateQuantityApi.export(params)
     exportUtils.downloadFile(blob, exportUtils.generateFilename('合格证总量统计_选中'))
 
-    ElMessage.success(`选中的${selectedRows.length}条数据导出成功`)
+    ElMessage.success(`选中的${selectedRowsData.length}条数据导出成功`)
   } catch (error) {
     console.error('导出失败:', error)
     ElMessage.error('导出失败，请重试')
@@ -554,14 +561,7 @@ const handleSortChange = (sortInfo: { prop: string; order: string }) => {
   // 这里可以重新排序数据或重新查询
 }
 
-// 添加缺失的导出命令处理方法
-const handleExportCommand = (command: string) => {
-  if (command === 'current') {
-    handleExport()
-  } else if (command === 'all') {
-    handleExportAll()
-  }
-}
+
 
 // 生命周期
 onMounted(() => {

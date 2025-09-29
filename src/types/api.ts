@@ -51,6 +51,8 @@ export interface ExportParams {
   format: "excel" | "csv";
   fields?: string[];
   filename?: string;
+  export_range?: "current" | "all" | "selected";
+  selected_ids?: string[];
 }
 
 // 合格证总量查询相关接口
