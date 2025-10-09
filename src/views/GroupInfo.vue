@@ -278,6 +278,7 @@ const handleReset = () => {
   sortConfig.order = 'desc'
   total.value = 0
   tableData.value = []
+  expandedRows.value = [] // 清空展开状态
 }
 
 // 导出数据 - 使用统一的ExportButton组件处理
@@ -401,15 +402,14 @@ const formatProvinces = (provinces: string[]) => {
   return `${provinces.slice(0, 3).join(', ')} 等${provinces.length}个省份`
 }
 
-// 表格展开处理
+// 表格展开处理 - 实现手风琴效果，只允许一个行展开，支持再次点击收起
 const handleExpandChange = (row: GroupInfo, expanded: boolean) => {
   if (expanded) {
-    expandedRows.value.push(row.group_code)
+    // 展开当前行，替换所有已展开的行，确保只有当前行展开
+    expandedRows.value = [row.group_code]
   } else {
-    const index = expandedRows.value.indexOf(row.group_code)
-    if (index > -1) {
-      expandedRows.value.splice(index, 1)
-    }
+    // 收起当前行，直接清空展开数组
+    expandedRows.value = []
   }
 }
 

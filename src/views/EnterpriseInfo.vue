@@ -278,8 +278,7 @@ const allFields = ref([
   { key: 'contact_person', label: '联系人' },
   { key: 'contact_position', label: '联系人职务' },
   { key: 'contact_phone', label: '联系人号码' },
-  { key: 'created_at', label: '创建时间', sortable: true },
-  { key: 'updated_at', label: '更新时间', sortable: true }
+  // created_at/updated_at removed - backend does not provide these fields
 ])
 
 // 计算属性：可见字段
@@ -354,8 +353,7 @@ const handleReset = () => {
     qualification: '',
     page: 1,
     pageSize: 20,
-    field: 'created_at',
-    order: 'desc'
+    // field/order removed
   })
   pagination.page = 1
   pagination.pageSize = 20
@@ -394,8 +392,7 @@ const getColumnWidth = (fieldKey: string): number => {
     'contact_person': 100,
     'contact_position': 120,
     'contact_phone': 130,
-    'created_at': 160,
-    'updated_at': 160
+    // created_at/updated_at removed
   }
   return widthMap[fieldKey] || 150
 }

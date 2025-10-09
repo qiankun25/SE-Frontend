@@ -336,7 +336,7 @@ export interface OtherStatisticsItem {
 export interface EnterpriseBasicParams extends PaginationParams, SortParams {
   enterprise_id?: string;
   enterprise_name?: string;
-  supervision_status?: string;
+  supervision_status?: string | string[];
   new_energy_flag?: string;
   enterprise_type?: string;
   social_credit_code?: string;
@@ -368,8 +368,6 @@ export interface EnterpriseBasicItem {
   contact_position?: string;
   contact_phone?: string;
   social_credit_code?: string;
-  created_at?: string;
-  updated_at?: string;
 }
 
 export interface BatchEnterpriseBasicParams {
@@ -383,7 +381,8 @@ export interface EnterpriseSupervisionParams extends PaginationParams {
   enterprise_id?: string;
   enterprise_name?: string;
   social_credit_code?: string;
-  supervision_status?: string;
+  // supervision_status supports multi-select; can be a single string or an array of strings
+  supervision_status?: string | string[];
   supervision_code?: string;
   access_status?: string;
   valid_flag?: string;
@@ -399,7 +398,7 @@ export interface EnterpriseSupervisionItem {
   enterprise_id?: string;
   enterprise_name?: string;
   social_credit_code?: string;
-  supervision_status?: string;
+  supervision_status?: string | string[];
   supervision_code?: string;
   access_status?: string;
   valid_flag?: string;
@@ -412,8 +411,6 @@ export interface EnterpriseSupervisionItem {
   contact_person?: string;
   contact_position?: string;
   contact_phone?: string;
-  created_at?: string;
-  updated_at?: string;
 }
 
 export interface EnterpriseSupervisionExportParams extends EnterpriseSupervisionParams {

@@ -218,8 +218,7 @@ const searchForm = reactive<EnterpriseSupervisionParams>({
   production_address: '',
   page: 1,
   pageSize: 20,
-  field: 'created_at',
-  order: 'desc'
+  // field/order removed because EnterpriseSupervisionParams doesn't include SortParams
 })
 
 // 分页配置
@@ -256,8 +255,7 @@ const allFields = ref([
   { key: 'contact_person', label: '联系人' },
   { key: 'contact_position', label: '联系人职务' },
   { key: 'contact_phone', label: '联系人号码' },
-  { key: 'created_at', label: '创建时间' },
-  { key: 'updated_at', label: '更新时间' }
+  // removed created_at/updated_at - backend does not provide these fields
 ])
 
 // 计算属性：可见字段
@@ -337,8 +335,7 @@ const handleReset = () => {
     production_address: '',
     page: 1,
     pageSize: 20,
-    field: 'created_at',
-    order: 'desc'
+    // field/order removed
   })
   pagination.page = 1
   pagination.pageSize = 20
@@ -370,14 +367,13 @@ const getColumnWidth = (fieldKey: string): number => {
     'contact_person': 100,
     'contact_position': 120,
     'contact_phone': 130,
-    'created_at': 160,
-    'updated_at': 160
+    // created_at/updated_at removed
   }
   return widthMap[fieldKey] || 150
 }
 
 // 获取监管状态标签类型（支持 string 或 string[]）
-const getSupervisionStatusType = (status: string | string[] | undefined): string => {
+const getSupervisionStatusType = (status: string | string[] | undefined): 'success' | 'warning' | 'danger' | 'info' => {
   if (!status) return 'info'
   const check = (s: string) => {
     if (s.includes('正常')) return 'success'
@@ -404,11 +400,11 @@ const getSupervisionStatusType = (status: string | string[] | undefined): string
     return 'info'
   }
 
-  return check(status as string)
+  return check(status as string) as 'success' | 'warning' | 'danger' | 'info'
 }
 
 // 获取准入状态标签类型
-const getAccessStatusType = (status: string): string => {
+const getAccessStatusType = (status: string): 'success' | 'warning' | 'danger' | 'info' => {
   if (!status) return 'info'
   if (status.includes('准入') || status.includes('正常')) return 'success'
   if (status.includes('暂停') || status.includes('限制')) return 'warning'

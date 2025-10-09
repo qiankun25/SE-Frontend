@@ -92,8 +92,7 @@ const enterpriseSupervisionFields: Field[] = [
     { key: 'contact_person', label: '联系人', selected: false },
     { key: 'contact_position', label: '联系人职务', selected: false },
     { key: 'contact_phone', label: '联系人号码', selected: false },
-    { key: 'created_at', label: '创建时间', selected: false },
-    { key: 'updated_at', label: '更新时间', selected: false }
+    // removed created_at/updated_at - backend does not provide these fields for enterprise supervision
 ]
 
 const fields = ref<Field[]>([])
