@@ -150,8 +150,8 @@
       <el-table :data="tableData" v-loading="loading" stripe border style="width: 100%" row-key="id" height="500">
         <!-- 动态生成表格列 -->
         <el-table-column v-for="field in visibleFields" :key="field.key" :prop="field.key" :label="field.label"
-          :width="getColumnWidth(field.key)" :sortable="field.sortable ? 'custom' : false"
-          :show-overflow-tooltip="true">
+          :min-width="getColumnMinWidth(field.key)" :width="getColumnWidth(field.key)"
+          :sortable="field.sortable ? 'custom' : false" :show-overflow-tooltip="true">
           <template #default="scope">
             <span v-if="field.key === 'supervision_status'">
               <el-tag :type="getSupervisionStatusType(scope.row.supervision_status)">
@@ -183,15 +183,14 @@
         </el-table-column>
 
       </el-table>
-
-      <!-- 分页 -->
-      <div class="pagination-container">
-        <el-pagination v-model:current-page="pagination.page" v-model:page-size="pagination.pageSize" :total="total"
-          :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange" @current-change="handlePageChange" />
-      </div>
     </el-card>
 
+    <!-- 分页 -->
+    <div class="pagination-container">
+      <el-pagination v-model:current-page="pagination.page" v-model:page-size="pagination.pageSize" :total="total"
+        :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
+        @current-change="handlePageChange" />
+    </div>
   </div>
 </template>
 
@@ -371,8 +370,54 @@ const handleFieldsChange = (fields: string[]) => {
   }
 }
 
-// 获取列宽度
-const getColumnWidth = (fieldKey: string): number => {
+// 获取列最小宽度 - 根据字段数量动态调整最小宽度
+const getColumnMinWidth = (fieldKey: string): number => {
+  const fieldCount = selectedFields.value.length
+
+  // 基础最小宽度映射
+  const baseMinWidthMap: Record<string, number> = {
+    'enterprise_id': 100,
+    'enterprise_name': 150,
+    'social_credit_code': 140,
+    'supervision_status': 100,
+    'supervision_code': 80,
+    'access_status': 120,
+    'valid_flag': 80,
+    'enterprise_type': 100,
+    'catalog_number': 100,
+    'new_energy_flag': 100,
+    'registered_address': 180,
+    'production_address': 180,
+    'product_brand': 120,
+    'qualification': 120,
+    'equity': 120,
+    'contact_person': 80,
+    'contact_position': 100,
+    'contact_phone': 110,
+  }
+
+  const baseMinWidth = baseMinWidthMap[fieldKey] || 120
+
+  // 当字段数量较少时，增加最小宽度，让列更好地填满表格
+  if (fieldCount <= 3) {
+    return Math.max(baseMinWidth, 200) // 最少3列时，每列至少200px
+  } else if (fieldCount <= 5) {
+    return Math.max(baseMinWidth, 150) // 最少5列时，每列至少150px
+  } else {
+    return baseMinWidth // 字段较多时使用基础最小宽度
+  }
+}
+
+// 获取列宽度 - 根据选择字段数量动态调整，确保表格始终占满100%宽度
+const getColumnWidth = (fieldKey: string): number | undefined => {
+  const fieldCount = selectedFields.value.length
+
+  // 当字段数量较少时（≤8个），不设置固定宽度，让列自适应扩展填满表格
+  if (fieldCount <= 8) {
+    return undefined // 不设置width，让列自适应扩展填满表格宽度
+  }
+
+  // 当字段数量较多时（>8个），使用固定宽度，启用横向滚动
   const widthMap: Record<string, number> = {
     'enterprise_id': 120,
     'enterprise_name': 200,
@@ -392,7 +437,6 @@ const getColumnWidth = (fieldKey: string): number => {
     'contact_person': 100,
     'contact_position': 120,
     'contact_phone': 130,
-    // created_at/updated_at removed
   }
   return widthMap[fieldKey] || 150
 }
@@ -639,6 +683,37 @@ onMounted(async () => {
 }
 
 
+/* 表格自适应样式优化 */
+:deep(.el-table) {
+  /* 表格始终占满容器宽度，使用auto布局让列自适应 */
+  width: 100%;
+  table-layout: auto;
+}
+
+:deep(.el-table .el-table__cell) {
+  /* 优化单元格内容显示 */
+  padding: 8px 12px;
+}
+
+/* 表格内容区域支持横向滚动 */
+:deep(.el-table__body-wrapper) {
+  overflow-x: auto;
+}
+
+/* 当字段较少时，确保列能够自适应扩展填满表格宽度 */
+:deep(.el-table__header-wrapper),
+:deep(.el-table__body-wrapper) {
+  width: 100%;
+}
+
+/* 响应式设计优化 */
+@media (max-width: 1200px) {
+  :deep(.el-table .el-table__cell) {
+    padding: 6px 8px;
+    font-size: 14px;
+  }
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .page-header {
@@ -648,6 +723,11 @@ onMounted(async () => {
 
   .header-right {
     align-self: stretch;
+  }
+
+  :deep(.el-table .el-table__cell) {
+    padding: 4px 6px;
+    font-size: 12px;
   }
 }
 </style>
