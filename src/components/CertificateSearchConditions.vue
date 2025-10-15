@@ -242,7 +242,7 @@
             <el-form-item label="时间范围">
               <div class="time-range-container" style="display: flex; align-items: center;">
                 <!-- 快捷时间范围 -->
-                <el-select v-model="form.quickTimeRange" placeholder="快捷时间" style="width: 200px"
+                <el-select v-model="form.quickTimeRange" placeholder="快捷时间" style="width: 200px" clearable
                   @change="handleQuickTimeRangeChange">
                   <el-option label="今年" value="thisYear" />
                   <el-option label="近三个月" value="3months" />
@@ -578,19 +578,25 @@ const companyDatabase = ref<CompanyInfo[]>([])
 const loadingCompanies = ref(false)
 
 // 时间范围选择
-const timeRange = ref<[Date, Date]>([
-  new Date(new Date().getFullYear(), 0, 1),   // 默认开始日期：今年1月1日
-  new Date()                                  // 默认结束日期：今天
+// 修改类型定义，允许 null 值以支持重置功能
+const timeRange = ref<[string, string] | null>([
+  new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],   // 默认开始日期：今年1月1日
+  new Date().toISOString().split('T')[0]                                  // 默认结束日期：今天
 ])
 
 // 时间范围处理方法
 const handleQuickTimeRangeChange = (value: string) => {
+  if (!value) {
+    // 如果清空快捷选项，不做任何处理
+    return
+  }
+
   if (value === 'custom') {
     // 自定义时间范围，设置默认范围今年
-    if (!timeRange.value[0] || !timeRange.value[1]) {
+    if (!timeRange.value || !timeRange.value[0] || !timeRange.value[1]) {
       timeRange.value = [
-        new Date(new Date().getFullYear(), 0, 1),
-        new Date()
+        new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
+        new Date().toISOString().split('T')[0]
       ]
     }
     return
@@ -607,7 +613,7 @@ const handleQuickTimeRangeChange = (value: string) => {
     case '6months':
       startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()).toISOString().split('T')[0]
       break
-    case 'thisyear':
+    case 'thisYear':  // 修复大小写错误
       startDate = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0]
       break
     case '1year':
@@ -623,7 +629,9 @@ const handleQuickTimeRangeChange = (value: string) => {
       return
   }
 
+  // 同步更新时间选择器的值
   timeRange.value = [startDate, endDate]
+  console.log('快捷时间范围已更新:', { value, startDate, endDate })
 }
 
 const handleComparisonToggle = (value: string | number | boolean) => {
@@ -1121,7 +1129,13 @@ onUnmounted(() => {
 // 时间范围选择事件处理
 const handleTimeRangeChange = (value: [string, string] | null) => {
   timeRange.value = value
-  console.log('时间范围变化:', value)
+
+  // 当用户手动修改时间选择器时，清空快捷时间范围选择
+  // 这样可以确保查询时使用的是用户手动选择的时间
+  if (value && value[0] && value[1]) {
+    form.quickTimeRange = ''
+    console.log('用户手动选择时间范围，已清空快捷选项:', value)
+  }
 }
 
 // 移除复杂的时间处理函数
@@ -1142,13 +1156,14 @@ const handleAddCondition = () => {
   if (form.vehicleNames.length > 0) condition.vehicleNames = [...form.vehicleNames]
 
   // 时间范围相关参数
-  if (timeRange.value) {
+  // 只使用时间选择器的实际值，不再传递 quickTimeRange
+  // 这样可以确保始终使用用户看到的时间范围
+  if (timeRange.value && timeRange.value[0] && timeRange.value[1]) {
     condition.timeRange = {
       startDate: timeRange.value[0],
       endDate: timeRange.value[1]
     }
   }
-  if (form.quickTimeRange) condition.quickTimeRange = form.quickTimeRange
   if (form.viewDimension) condition.viewDimension = form.viewDimension
   if (form.enableComparison) condition.enableComparison = form.enableComparison
   if (form.productionAddresses.length > 0) condition.productionAddresses = [...form.productionAddresses]
@@ -1199,8 +1214,8 @@ const handleReset = () => {
     vehicleNames: [],
     vehicleNameInput: '',
 
-    // 时间范围选择重置
-    quickTimeRange: '',
+    // 时间范围选择重置为默认值（今年）
+    quickTimeRange: 'thisYear',
     viewDimension: 'total',
     enableComparison: false,
 
@@ -1216,8 +1231,11 @@ const handleReset = () => {
     isNewEnergy: ''
   })
 
-  // 重置时间范围
-  timeRange.value = null
+  // 重置时间范围为今年
+  timeRange.value = [
+    new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
+    new Date().toISOString().split('T')[0]
+  ]
 
   // 重置所有建议
   showCompanySuggestions.value = false
