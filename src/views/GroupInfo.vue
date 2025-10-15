@@ -9,16 +9,9 @@
         </p>
       </div>
       <div class="header-right">
-        <export-button
-          :data="tableData"
-          :total-count="total"
-          :fields="exportFields"
-          default-filename="集团基本信息"
-          module="group_info"
-          :show-quota-info="true"
-          @export="handleExport"
-          @download-template="handleDownloadTemplate"
-        />
+        <export-button :data="tableData" :total-count="total" :fields="exportFields" default-filename="集团基本信息"
+          module="group_info" :show-quota-info="true" @export="handleExport"
+          @download-template="handleDownloadTemplate" />
         <el-button @click="handleReset">
           <el-icon>
             <Refresh />
@@ -336,7 +329,7 @@ const handleDownloadTemplate = async () => {
     // 生成Excel文件
     const workbook = new (await import('xlsx')).utils.book_new()
     const worksheet = (await import('xlsx')).utils.json_to_sheet(templateData)
-    (await import('xlsx')).utils.book_append_sheet(workbook, worksheet, '集团信息模板')
+      (await import('xlsx')).utils.book_append_sheet(workbook, worksheet, '集团信息模板')
 
     const excelBuffer = (await import('xlsx')).write(workbook, { bookType: 'xlsx', type: 'array' })
     const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
@@ -403,12 +396,16 @@ const formatProvinces = (provinces: string[]) => {
 }
 
 // 表格展开处理 - 实现手风琴效果，只允许一个行展开，支持再次点击收起
-const handleExpandChange = (row: GroupInfo, expanded: boolean) => {
-  if (expanded) {
-    // 展开当前行，替换所有已展开的行，确保只有当前行展开
+const handleExpandChange = (row: GroupInfo, expandedRowsArray: GroupInfo[]) => {
+  // expandedRowsArray 是当前所有展开的行数组
+  // 检查当前行是否在展开数组中
+  const isExpanded = expandedRowsArray.some((r: any) => r.group_code === row.group_code)
+
+  if (isExpanded) {
+    // 如果当前行被展开，只保留当前行（手风琴效果）
     expandedRows.value = [row.group_code]
   } else {
-    // 收起当前行，直接清空展开数组
+    // 如果当前行被收起，清空展开数组
     expandedRows.value = []
   }
 }

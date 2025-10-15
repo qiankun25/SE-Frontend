@@ -240,22 +240,24 @@
           <!-- 时间范围选择 -->
           <el-col :span="16">
             <el-form-item label="时间范围">
-              <div class="time-range-container">
-                <!-- 快捷时间选择 -->
-                <el-select v-model="form.quickTimeRange" placeholder="选择时间范围" style="width: 200px"
+              <div class="time-range-container" style="display: flex; align-items: center;">
+                <!-- 快捷时间范围 -->
+                <el-select v-model="form.quickTimeRange" placeholder="快捷时间" style="width: 200px"
                   @change="handleQuickTimeRangeChange">
+                  <el-option label="今年" value="thisYear" />
                   <el-option label="近三个月" value="3months" />
                   <el-option label="近六个月" value="6months" />
                   <el-option label="近一年" value="1year" />
                   <el-option label="近两年" value="2years" />
                   <el-option label="近三年" value="3years" />
-                  <el-option label="自定义" value="custom" />
                 </el-select>
 
+                <span style="margin: 0 8px; color: #909399;">或</span>
+
                 <!-- 自定义时间范围 -->
-                <el-date-picker v-if="form.quickTimeRange === 'custom'" v-model="timeRange" type="daterange"
-                  range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" format="YYYY-MM-DD"
-                  value-format="YYYY-MM-DD" @change="handleTimeRangeChange" style="margin-left: 10px" />
+                <el-date-picker v-model="timeRange" type="daterange" range-separator="至" start-placeholder="开始日期"
+                  end-placeholder="结束日期" format="YYYY-MM-DD" value-format="YYYY-MM-DD" style="margin-left: 0"
+                  @change="handleTimeRangeChange" />
 
                 <!-- 查看维度选择 -->
                 <el-select v-model="form.viewDimension" placeholder="查看维度" style="width: 150px; margin-left: 10px">
@@ -555,7 +557,7 @@ const form = reactive<SearchForm>({
   vehicleNameInput: '',
 
   // 时间范围选择初始化
-  quickTimeRange: '',
+  quickTimeRange: 'thisYear', // 默认使用“今年”范围（从今年1月1日至今天）
   viewDimension: 'total',
   enableComparison: false,
 
@@ -576,13 +578,21 @@ const companyDatabase = ref<CompanyInfo[]>([])
 const loadingCompanies = ref(false)
 
 // 时间范围选择
-const timeRange = ref<[string, string] | null>(null)
+const timeRange = ref<[Date, Date]>([
+  new Date(new Date().getFullYear(), 0, 1),   // 默认开始日期：今年1月1日
+  new Date()                                  // 默认结束日期：今天
+])
 
 // 时间范围处理方法
 const handleQuickTimeRangeChange = (value: string) => {
   if (value === 'custom') {
-    // 自定义时间范围，不设置默认值
-    timeRange.value = null
+    // 自定义时间范围，设置默认范围今年
+    if (!timeRange.value[0] || !timeRange.value[1]) {
+      timeRange.value = [
+        new Date(new Date().getFullYear(), 0, 1),
+        new Date()
+      ]
+    }
     return
   }
 
@@ -596,6 +606,9 @@ const handleQuickTimeRangeChange = (value: string) => {
       break
     case '6months':
       startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()).toISOString().split('T')[0]
+      break
+    case 'thisyear':
+      startDate = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0]
       break
     case '1year':
       startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split('T')[0]
@@ -613,8 +626,9 @@ const handleQuickTimeRangeChange = (value: string) => {
   timeRange.value = [startDate, endDate]
 }
 
-const handleComparisonToggle = (value: boolean) => {
-  if (value) {
+const handleComparisonToggle = (value: string | number | boolean) => {
+  const boolValue = Boolean(value)
+  if (boolValue) {
     ElMessage.info('已开启同期比分析，将与去年同期进行对比')
   } else {
     ElMessage.info('已关闭同期比分析')
@@ -1088,6 +1102,11 @@ onMounted(() => {
 
   // 获取省份列表数据
   fetchProvinces()
+
+  // 初始化时间范围（默认使用 quickTimeRange 的值）
+  if (form.quickTimeRange) {
+    handleQuickTimeRangeChange(form.quickTimeRange)
+  }
 
   // 开发环境下的初始化逻辑
   if (import.meta.env.DEV) {
