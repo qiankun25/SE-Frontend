@@ -51,7 +51,7 @@
                     <span class="company-tag-content">
                       <span class="company-name">{{ company.name }}</span>
                       <span v-if="company.code && !company.isPartialMatch" class="company-code">({{ company.code
-                      }})</span>
+                        }})</span>
                       <span v-if="company.isPartialMatch" class="partial-match-hint">(部分匹配)</span>
                     </span>
                   </el-tag>
@@ -108,6 +108,60 @@
                     </div>
                   </div>
                 </div>
+              </div>
+            </el-form-item>
+          </el-col>
+
+          <!-- 时间范围选择 -->
+          <el-col :span="12">
+            <el-form-item label="时间范围" style="margin-bottom: 0;">
+              <div class="time-range-container"
+                style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;">
+                <!-- 快捷时间范围 -->
+                <el-select v-model="form.quickTimeRange" placeholder="快捷时间" style="width: 180px; height: 32px;"
+                  clearable @change="handleQuickTimeRangeChange">
+                  <el-option label="今年" value="thisYear" />
+                  <el-option label="近三个月" value="3months" />
+                  <el-option label="近六个月" value="6months" />
+                  <el-option label="近一年" value="1year" />
+                  <el-option label="近两年" value="2years" />
+                  <el-option label="近三年" value="3years" />
+                </el-select>
+
+                <!-- 自定义时间范围 -->
+                <el-date-picker v-model="timeRange" type="daterange" range-separator="至" start-placeholder="开始日期"
+                  end-placeholder="结束日期" format="YYYY-MM-DD" value-format="YYYY-MM-DD"
+                  style="width: 260px; height: 32px;" @change="handleTimeRangeChange" />
+
+                <!-- 查看维度选择 -->
+                <el-select v-model="form.viewDimension" placeholder="查看维度" style="width: 150px; height: 32px;">
+                  <el-option label="总量" value="total">
+                    <el-icon>
+                      <TrendCharts />
+                    </el-icon>
+                    <span style="margin-left: 8px">总量</span>
+                  </el-option>
+                  <el-option label="分年度" value="yearly">
+                    <span style="margin-left: 8px">年 分年度</span>
+                  </el-option>
+                  <el-option label="分月份" value="monthly">
+                    <span style="margin-left: 8px">月 分月份</span>
+                  </el-option>
+                  <el-option label="分天数" value="daily">
+                    <span style="margin-left: 8px">日 分天数</span>
+                  </el-option>
+                </el-select>
+
+                <!-- 同期比开关 -->
+                <el-switch v-model="form.enableComparison" active-text="同期比" inactive-text="同期比"
+                  style="margin-left: 10px; height: 32px;" :active-color="form.enableComparison ? '#409eff' : '#dcdfe6'"
+                  @change="handleComparisonToggle">
+                  <template #active-action>
+                    <el-icon :style="{ color: form.enableComparison ? '#409eff' : '#909399' }">
+                      <TrendCharts />
+                    </el-icon>
+                  </template>
+                </el-switch>
               </div>
             </el-form-item>
           </el-col>
@@ -193,11 +247,9 @@
               </div>
             </el-form-item>
           </el-col>
-        </el-row>
 
-        <el-row :gutter="20">
           <!-- 车辆名称 -->
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="车辆名称">
               <div class="vehicle-input-selection">
                 <!-- 已选择的车辆名称标签 -->
@@ -236,105 +288,11 @@
               </div>
             </el-form-item>
           </el-col>
-
-          <!-- 时间范围选择 -->
-          <el-col :span="16">
-            <el-form-item label="时间范围">
-              <div class="time-range-container" style="display: flex; align-items: center;">
-                <!-- 快捷时间范围 -->
-                <el-select v-model="form.quickTimeRange" placeholder="快捷时间" style="width: 200px" clearable
-                  @change="handleQuickTimeRangeChange">
-                  <el-option label="今年" value="thisYear" />
-                  <el-option label="近三个月" value="3months" />
-                  <el-option label="近六个月" value="6months" />
-                  <el-option label="近一年" value="1year" />
-                  <el-option label="近两年" value="2years" />
-                  <el-option label="近三年" value="3years" />
-                </el-select>
-
-                <span style="margin: 0 8px; color: #909399;">或</span>
-
-                <!-- 自定义时间范围 -->
-                <el-date-picker v-model="timeRange" type="daterange" range-separator="至" start-placeholder="开始日期"
-                  end-placeholder="结束日期" format="YYYY-MM-DD" value-format="YYYY-MM-DD" style="margin-left: 0"
-                  @change="handleTimeRangeChange" />
-
-                <!-- 查看维度选择 -->
-                <el-select v-model="form.viewDimension" placeholder="查看维度" style="width: 150px; margin-left: 10px">
-                  <el-option label="总量" value="total">
-                    <el-icon>
-                      <TrendCharts />
-                    </el-icon>
-                    <span style="margin-left: 8px">总量</span>
-                  </el-option>
-                  <el-option label="分年度" value="yearly">
-                    <span style="margin-left: 8px">年 分年度</span>
-                  </el-option>
-                  <el-option label="分月份" value="monthly">
-                    <span style="margin-left: 8px">月 分月份</span>
-                  </el-option>
-                  <el-option label="分天数" value="daily">
-                    <span style="margin-left: 8px">日 分天数</span>
-                  </el-option>
-                </el-select>
-
-                <!-- 同期比开关 -->
-                <el-switch v-model="form.enableComparison" active-text="同期比" inactive-text="同期比"
-                  style="margin-left: 15px" :active-color="form.enableComparison ? '#409eff' : '#dcdfe6'"
-                  @change="handleComparisonToggle">
-                  <template #active-action>
-                    <el-icon :style="{ color: form.enableComparison ? '#409eff' : '#909399' }">
-                      <TrendCharts />
-                    </el-icon>
-                  </template>
-                </el-switch>
-              </div>
-            </el-form-item>
-          </el-col>
         </el-row>
 
+
+
         <el-row :gutter="20">
-          <!-- 生产地址 -->
-          <el-col :span="8">
-            <el-form-item label="生产地址">
-              <div class="vehicle-input-selection">
-                <!-- 已选择的生产地址标签 -->
-                <div v-if="form.productionAddresses.length > 0" class="selected-items">
-                  <el-tag v-for="(address, index) in form.productionAddresses" :key="`address-${index}`" closable
-                    @close="removeProductionAddress(index)" type="primary" class="item-tag">
-                    {{ address }}
-                  </el-tag>
-                </div>
-
-                <!-- 输入区域 -->
-                <el-input v-model="form.productionAddressInput" placeholder="输入生产地址，回车添加" clearable
-                  @keyup.enter="addProductionAddress" @input="handleProductionAddressInput">
-                  <template #append>
-                    <el-button @click="addProductionAddress" :disabled="!form.productionAddressInput.trim()">
-                      添加
-                    </el-button>
-                  </template>
-                </el-input>
-
-                <!-- 建议列表 -->
-                <div class="suggestions"
-                  v-if="showProductionAddressSuggestions && productionAddressSuggestions.length > 0">
-                  <div class="suggestion-header">
-                    匹配的生产地址（点击添加）：
-                  </div>
-                  <div class="suggestion-list">
-                    <div v-for="address in productionAddressSuggestions" :key="address" class="suggestion-item"
-                      @click="addProductionAddressFromSuggestion(address)">
-                      <span class="suggestion-text">{{ address }}</span>
-                      <el-icon class="add-icon">
-                        <Plus />
-                      </el-icon>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </el-form-item>
-          </el-col>
 
           <!-- 生产省份 -->
           <el-col :span="8">
@@ -579,7 +537,7 @@ const loadingCompanies = ref(false)
 
 // 时间范围选择
 // 修改类型定义，允许 null 值以支持重置功能
-const timeRange = ref<[string, string] | null>([
+const timeRange = ref<[string, string] | undefined>([
   new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],   // 默认开始日期：今年1月1日
   new Date().toISOString().split('T')[0]                                  // 默认结束日期：今天
 ])
@@ -1127,7 +1085,7 @@ onUnmounted(() => {
 })
 
 // 时间范围选择事件处理
-const handleTimeRangeChange = (value: [string, string] | null) => {
+const handleTimeRangeChange = (value: [string, string] | undefined) => {
   timeRange.value = value
 
   // 当用户手动修改时间选择器时，清空快捷时间范围选择
@@ -1235,7 +1193,7 @@ const handleReset = () => {
   timeRange.value = [
     new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
     new Date().toISOString().split('T')[0]
-  ]
+  ] as [string, string]
 
   // 重置所有建议
   showCompanySuggestions.value = false
@@ -1277,8 +1235,11 @@ const handleReset = () => {
 
 .time-range-container {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 8px;
+  flex-wrap: nowrap;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .comparison-container {
