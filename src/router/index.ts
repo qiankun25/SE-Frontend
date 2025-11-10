@@ -6,10 +6,6 @@ const router = createRouter({
   history: createWebHistory( '/cxxt/'),
   routes: [
     {
-      path: "/",
-      redirect: "/login",
-    },
-    {
       path: "/login",
       name: "login",
       component: Login,
