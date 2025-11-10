@@ -2,9 +2,10 @@
  * 导出限制相关API
  */
 import type { ApiResponse } from '../types/api'
+import { getApiBaseUrl } from '../utils/request';
 
 // 基础请求配置
-const BASE_URL = import.meta.env.DEV ? "http://localhost:8000/api" : "/api"
+const BASE_URL = getApiBaseUrl();
 
 // 通用请求函数
 async function request<T>(

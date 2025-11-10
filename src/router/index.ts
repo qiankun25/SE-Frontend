@@ -3,8 +3,12 @@ import Layout from "../views/Layout.vue";
 import Login from "../views/Login.vue";
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory( '/cxxt/'),
   routes: [
+    {
+      path: "/",
+      redirect: "/login",
+    },
     {
       path: "/login",
       name: "login",

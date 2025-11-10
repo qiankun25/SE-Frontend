@@ -22,9 +22,11 @@ import type {
   EnterpriseItem,
 } from "../types/api";
 
+import { getApiBaseUrl } from '../utils/request';
+
 // 基础请求配置
 // 开发环境使用后端服务器地址，生产环境使用相对路径
-const BASE_URL = import.meta.env.DEV ? "http://localhost:8000/api" : "/api";
+const BASE_URL = getApiBaseUrl();
 
 // 通用请求函数
 async function request<T>(
