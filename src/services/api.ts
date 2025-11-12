@@ -76,13 +76,40 @@ export const certificateQuantityApi = {
   async export(
     params: CertificateQuantityParams & ExportParams
   ): Promise<Blob> {
+    // 获取token并检查
+    const token = localStorage.getItem("token");
+    
+    // 开发环境下打印调试信息
+    if (import.meta.env.DEV) {
+      console.log('🔐 导出API - Token检查:', {
+        hasToken: !!token,
+        tokenLength: token?.length || 0,
+        tokenPreview: token ? `${token.substring(0, 20)}...` : 'null'
+      });
+    }
+
+    if (!token) {
+      throw new Error('未登录或登录已过期，请先登录');
+    }
+
     const response = await fetch(`${BASE_URL}/certificate-quantity/export`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
       },
       body: JSON.stringify(params),
     });
+
+    // 处理403错误
+    if (response.status === 403) {
+      throw new Error('没有导出权限，请联系管理员');
+    }
+
+    if (!response.ok) {
+      throw new Error(`导出失败: ${response.status} ${response.statusText}`);
+    }
+
     return response.blob();
   },
 
@@ -135,9 +162,15 @@ export const certificateDetailApi = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
       },
       body: JSON.stringify(params),
     });
+
+    if (!response.ok) {
+      throw new Error(`导出失败: ${response.statusText}`);
+    }
+
     return response.blob();
   },
 

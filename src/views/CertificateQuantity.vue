@@ -152,12 +152,7 @@ const handleSearch = async (conditions: any[]) => {
 
       // 开发环境下验证返回数据
       if (import.meta.env.DEV) {
-        // 数据验证逻辑
-        const expectedPrimaryColumn = conditions.some(c => c.vehicleNames && c.vehicleNames.length > 0) &&
-          !conditions.some(c => c.selectedCompanies && c.selectedCompanies.length > 0)
-          ? 'vehicleName' : 'companyName'
-
-        // 验证逻辑处理
+        // 数据验证逻辑（预留）
       }
 
       ElMessage.success(`查询完成，共找到 ${response.data.total} 条记录`)
@@ -438,6 +433,13 @@ const handleExport = async () => {
     return
   }
 
+  // 检查是否已登录
+  const token = localStorage.getItem('token')
+  if (!token) {
+    ElMessage.error('未登录或登录已过期，请先登录')
+    return
+  }
+
   try {
     const { certificateQuantityApi, exportUtils } = await import('../services/api')
 
@@ -458,9 +460,18 @@ const handleExport = async () => {
     exportUtils.downloadFile(blob, exportUtils.generateFilename('合格证总量统计_当前页'))
 
     ElMessage.success(`当前页数据导出成功（${tableData.value.length}条记录）`)
-  } catch (error) {
+  } catch (error: any) {
     console.error('导出失败:', error)
-    ElMessage.error('导出失败，请重试')
+    const errorMessage = error?.message || '导出失败，请重试'
+
+    // 特殊处理403错误
+    if (errorMessage.includes('403') || errorMessage.includes('权限')) {
+      ElMessage.error('没有导出权限，请联系管理员或检查登录状态')
+    } else if (errorMessage.includes('登录')) {
+      ElMessage.error('登录已过期，请重新登录')
+    } else {
+      ElMessage.error(errorMessage)
+    }
   }
 }
 
@@ -468,6 +479,13 @@ const handleExport = async () => {
 const handleExportAll = async () => {
   if (!hasSearched.value) {
     ElMessage.warning('请先执行查询')
+    return
+  }
+
+  // 检查是否已登录
+  const token = localStorage.getItem('token')
+  if (!token) {
+    ElMessage.error('未登录或登录已过期，请先登录')
     return
   }
 
@@ -498,10 +516,19 @@ const handleExportAll = async () => {
     exportUtils.downloadFile(blob, exportUtils.generateFilename('合格证总量统计_全部'))
 
     ElMessage.success('全部数据导出成功')
-  } catch (error) {
+  } catch (error: any) {
     if (error !== 'cancel') {
       console.error('导出失败:', error)
-      ElMessage.error('导出失败，请重试')
+      const errorMessage = error?.message || '导出失败，请重试'
+
+      // 特殊处理403错误
+      if (errorMessage.includes('403') || errorMessage.includes('权限')) {
+        ElMessage.error('没有导出权限，请联系管理员或检查登录状态')
+      } else if (errorMessage.includes('登录')) {
+        ElMessage.error('登录已过期，请重新登录')
+      } else {
+        ElMessage.error(errorMessage)
+      }
     }
   }
 }
@@ -513,6 +540,13 @@ const handleExportData = async (exportData: any) => {
 
   if (!selectedRows || selectedRows.length === 0) {
     ElMessage.warning('请先选择要导出的数据')
+    return
+  }
+
+  // 检查是否已登录
+  const token = localStorage.getItem('token')
+  if (!token) {
+    ElMessage.error('未登录或登录已过期，请先登录')
     return
   }
 
@@ -537,9 +571,18 @@ const handleExportData = async (exportData: any) => {
     exportUtils.downloadFile(blob, exportUtils.generateFilename('合格证总量统计_选中'))
 
     ElMessage.success(`选中的${selectedRows.length}条数据导出成功`)
-  } catch (error) {
+  } catch (error: any) {
     console.error('导出失败:', error)
-    ElMessage.error('导出失败，请重试')
+    const errorMessage = error?.message || '导出失败，请重试'
+
+    // 特殊处理403错误
+    if (errorMessage.includes('403') || errorMessage.includes('权限')) {
+      ElMessage.error('没有导出权限，请联系管理员或检查登录状态')
+    } else if (errorMessage.includes('登录')) {
+      ElMessage.error('登录已过期，请重新登录')
+    } else {
+      ElMessage.error(errorMessage)
+    }
   }
 }
 
@@ -567,12 +610,39 @@ const handleExportCommand = (command: string) => {
 onMounted(() => {
   // 查询参数处理
 
-  // 开发环境下打印API映射报告
+  // 开发环境下打印API映射报告和认证状态
   if (import.meta.env.DEV) {
-    import('../utils/api-validation').then(({ printMappingReport }) => {
-      printMappingReport()
-    })
-    // 其他开发环境初始化逻辑
+    // 打印API映射报告
+    import('../utils/api-validation')
+      .then(({ printMappingReport }) => printMappingReport())
+      .catch(err => console.error('加载API验证工具失败:', err))
+
+    // 打印认证状态调试信息
+    import('../utils/authDebug')
+      .then(({ printAuthDebugInfo, checkExportPermission }) => {
+        console.log('\n=== 合格证总量查询页面 ===')
+        printAuthDebugInfo()
+        const permissionCheck = checkExportPermission()
+        console.log('导出权限检查:', permissionCheck.hasPermission ? '✅ 通过' : '❌ 未通过', '-', permissionCheck.message)
+        console.log('提示: 在控制台输入 window.__checkAuth() 可随时检查认证状态')
+      })
+      .catch(err => console.error('加载认证调试工具失败:', err))
+
+    // 在开发环境下暴露调试函数
+    const checkAuthFunc = async () => {
+      const { printAuthDebugInfo, checkExportPermission } = await import('../utils/authDebug')
+      printAuthDebugInfo()
+      const permissionCheck = checkExportPermission()
+      console.log('导出权限检查:', permissionCheck)
+      return permissionCheck
+    };
+    (window as any).__checkAuth = checkAuthFunc
+  }
+
+  // 生产环境下静默检查认证状态
+  const token = localStorage.getItem('token')
+  if (!token) {
+    console.warn('警告: 未检测到登录token，部分功能可能无法使用')
   }
 })
 </script>

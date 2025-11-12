@@ -497,23 +497,37 @@ const handlePageChange = (page: number) => {
 // 导出处理
 const handleExport = async (config: any) => {
   try {
-    const params = {
+    // 复制一份查询参数并进行清洗（移除空字符串/空数组）
+    const baseParams: Record<string, any> = {
       ...searchForm,
       format: config.format,
       filename: config.filename,
       fields: config.selectedFields
     }
 
+    // 参数清洗：删除空字符串、空数组、undefined
+    Object.keys(baseParams).forEach((key) => {
+      const value = baseParams[key]
+      if (
+        value === '' ||
+        value === undefined ||
+        (Array.isArray(value) && value.length === 0)
+      ) {
+        delete baseParams[key]
+      }
+    })
+
     // 根据导出范围调整参数
     if (config.range === 'current') {
-      params.page = pagination.page
-      params.pageSize = pagination.pageSize
+      baseParams.page = pagination.page
+      baseParams.pageSize = pagination.pageSize
     } else if (config.range === 'all') {
-      params.page = 1
-      params.pageSize = 10000
+      // 后端限制：pageSize <= 100
+      baseParams.page = 1
+      baseParams.pageSize = 100
     }
 
-    const blob = await enterpriseBasicApi.export(params)
+    const blob = await enterpriseBasicApi.export(baseParams as any)
 
     // 创建下载链接
     const url = window.URL.createObjectURL(blob)
@@ -526,9 +540,15 @@ const handleExport = async (config: any) => {
     window.URL.revokeObjectURL(url)
 
     ElMessage.success('导出成功')
-  } catch (error) {
+  } catch (error: any) {
     console.error('导出失败:', error)
-    ElMessage.error('导出失败，请重试')
+    // 后端422的友好提示
+    const msg = error?.message || ''
+    if (msg.includes('422') || msg.includes('验证失败')) {
+      ElMessage.error('导出参数不合法，请检查筛选条件与导出字段')
+    } else {
+      ElMessage.error('导出失败，请重试')
+    }
   }
 }
 
