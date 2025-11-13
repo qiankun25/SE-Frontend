@@ -111,6 +111,7 @@ const pagination = ref({
   page: 1,
   pageSize: 20
 })
+const sortConfig = ref<{ prop: string; order: string } | null>(null)
 
 // 计算属性
 const hasData = computed(() => props.data.length > 0)
@@ -120,13 +121,39 @@ const filteredData = computed(() => {
     const data = Array.isArray(props.data) ? [...props.data] : []
 
     // 过滤掉null或undefined的项
-    const validData = data.filter(item => item != null)
+    let validData = data.filter(item => item != null)
 
     // 如果启用了排行功能，按排名升序排列
     const hasRankingCondition = Array.isArray(props.searchConditions) &&
       props.searchConditions.some(c => c && c.showRanking)
     if (hasRankingCondition && validData.length > 0) {
-      return validData.sort((a, b) => (a.ranking || 0) - (b.ranking || 0))
+      validData = validData.sort((a, b) => (a.ranking || 0) - (b.ranking || 0))
+    }
+
+    // 应用排序
+    if (sortConfig.value && sortConfig.value.prop && sortConfig.value.order !== null) {
+      const { prop, order } = sortConfig.value
+
+      validData = [...validData].sort((a, b) => {
+        const aValue = a[prop]
+        const bValue = b[prop]
+
+        // 处理null/undefined值
+        if (aValue == null && bValue == null) return 0
+        if (aValue == null) return order === 'ascending' ? 1 : -1
+        if (bValue == null) return order === 'ascending' ? -1 : 1
+
+        // 数值比较
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return order === 'ascending' ? aValue - bValue : bValue - aValue
+        }
+
+        // 字符串比较
+        const aStr = String(aValue)
+        const bStr = String(bValue)
+        const compareResult = aStr.localeCompare(bStr, 'zh-CN')
+        return order === 'ascending' ? compareResult : -compareResult
+      })
     }
 
     return validData
@@ -172,7 +199,6 @@ const dynamicColumns = computed(() => {
         key: 'companyName',
         label: '车辆制造企业名称',
         minWidth: 200,
-        sortable: 'custom',
         showTooltip: true
       },
       'CLZT': {
@@ -195,14 +221,12 @@ const dynamicColumns = computed(() => {
       'CLPP': {
         key: 'vehicleBrand',
         label: '车辆品牌',
-        width: 120,
-        sortable: 'custom'
+        width: 120
       },
       'CLMC': {
         key: 'vehicleName',
         label: '车辆名称',
         minWidth: 200,
-        sortable: 'custom',
         showTooltip: true
       },
       'RLZL': {
@@ -312,16 +336,25 @@ const dynamicColumns = computed(() => {
         width: 120,
         showTooltip: true
       },
-      'UPY': {
-        key: 'uploadYear',
-        label: '上传年',
-        width: 80,
-        align: 'center'
+      // 时间字段 - 根据 viewDimension 使用
+      'year': {
+        key: 'year',
+        label: '年份',
+        width: 100,
+        align: 'center',
+        formatter: (value: number) => value ? `${value}年` : '-'
       },
-      'UPM': {
-        key: 'uploadMonth',
-        label: '上传月',
+      'month': {
+        key: 'month',
+        label: '月份',
         width: 80,
+        align: 'center',
+        formatter: (value: number) => value ? `${value}月` : '-'
+      },
+      'date': {
+        key: 'date',
+        label: '日期',
+        width: 120,
         align: 'center'
       }
     }
@@ -337,7 +370,8 @@ const dynamicColumns = computed(() => {
     return columns
   } catch (error) {
     console.error('动态列生成失败:', error)
-    return getDefaultColumns(props.searchConditions || [])
+    // 发生错误时，仍然返回空数组而不是默认列，避免与displayFields逻辑冲突
+    return []
   }
 })
 
@@ -367,7 +401,6 @@ const getDefaultColumns = (conditions: any[]) => {
       key: 'vehicleName',
       label: '车辆名称',
       minWidth: 200,
-      sortable: 'custom',
       showTooltip: true
     })
   } else {
@@ -376,7 +409,6 @@ const getDefaultColumns = (conditions: any[]) => {
       key: 'companyName',
       label: '企业名称',
       minWidth: 200,
-      sortable: 'custom',
       showTooltip: true
     })
   }
@@ -386,8 +418,7 @@ const getDefaultColumns = (conditions: any[]) => {
     columns.push({
       key: 'vehicleBrand',
       label: '车辆品牌',
-      width: 120,
-      sortable: 'custom'
+      width: 120
     })
   }
 
@@ -407,7 +438,6 @@ const getDefaultColumns = (conditions: any[]) => {
       key: 'vehicleName',
       label: '车辆名称',
       width: 120,
-      sortable: 'custom',
       showTooltip: true
     })
   }
@@ -418,7 +448,6 @@ const getDefaultColumns = (conditions: any[]) => {
       key: 'companyName',
       label: '企业名称',
       width: 180,
-      sortable: 'custom',
       showTooltip: true
     })
   }
@@ -665,6 +694,13 @@ const formatNumber = (num: number | null | undefined) => {
 }
 
 const handleSortChange = ({ prop, order }: any) => {
+  // 更新排序配置
+  sortConfig.value = order ? { prop, order } : null
+
+  // 重置到第一页
+  pagination.value.page = 1
+
+  // 触发事件（如果父组件需要）
   emit('sort-change', { prop, order })
 }
 
@@ -711,13 +747,10 @@ const handleExport = () => {
   })
 }
 
-const handleViewDetail = (row: any) => {
-  emit('view-detail', row)
-}
-
-// 监听数据变化，重置分页
+// 监听数据变化，重置分页和排序
 watch(() => props.data, () => {
   pagination.value.page = 1
+  sortConfig.value = null
 }, { immediate: true })
 </script>
 

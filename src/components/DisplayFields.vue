@@ -70,8 +70,10 @@ const certificateFields: Field[] = [
     { key: 'QYID', label: '公告企业ID', selected: false },
     { key: 'GXSJ', label: '更新时间', selected: false },
     { key: 'JT', label: '集团', selected: false },
-    { key: 'UPY', label: '上传年', selected: false },
-    { key: 'UPM', label: '上传月', selected: false }
+    // 时间字段 - 根据查看维度使用
+    { key: 'year', label: '年份', selected: false },
+    { key: 'month', label: '月份', selected: false },
+    { key: 'date', label: '日期', selected: false }
 ]
 
 // 企业监管状态字段配置

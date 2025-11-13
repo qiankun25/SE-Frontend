@@ -153,26 +153,13 @@
     </el-card>
 
     <!-- 批量查询对话框 -->
-    <BatchQueryDialog
-      v-model="showBatchDialog"
-      title="批量查询合格证信息"
-      :query-types="batchQueryTypes"
-      placeholder="请输入查询条件，每行一个（支持产品号或配置序列号）"
-      :max-queries="100"
-      :support-file-upload="true"
-      :loading="batchLoading"
-      @confirm="handleBatchSearch"
-      @download-template="handleDownloadTemplate"
-      @file-upload="handleBatchFileUpload"
-    />
+    <BatchQueryDialog v-model="showBatchDialog" title="批量查询合格证信息" :query-types="batchQueryTypes"
+      placeholder="请输入查询条件，每行一个（支持产品号或配置序列号）" :max-queries="100" :support-file-upload="true" :loading="batchLoading"
+      @confirm="handleBatchSearch" @download-template="handleDownloadTemplate" @file-upload="handleBatchFileUpload" />
 
-  
+
     <!-- 字段选择区域 -->
-    <DisplayFields
-      field-type="certificate"
-      :initial-fields="selectedFields"
-      @fields-change="handleFieldsChange"
-    />
+    <DisplayFields field-type="certificate" :initial-fields="selectedFields" @fields-change="handleFieldsChange" />
 
     <!-- 结果展示区域 -->
     <el-card class="result-card" shadow="never">
@@ -206,20 +193,12 @@
           <el-table-column type="index" label="序号" width="60" />
 
           <!-- 动态生成表格列 -->
-          <el-table-column
-            v-for="field in visibleFields"
-            :key="field.key"
-            :prop="field.key"
-            :label="field.label"
-            :width="getColumnWidth(field.key)"
-            :sortable="field.sortable ? 'custom' : false"
-            :show-overflow-tooltip="true"
-          >
+          <el-table-column v-for="field in visibleFields" :key="field.key" :prop="field.key" :label="field.label"
+            :width="getColumnWidth(field.key)" :sortable="field.sortable ? 'custom' : false"
+            :show-overflow-tooltip="true">
             <template #default="scope">
               <span v-if="field.key === 'XNYBJ'">
-                <el-tag
-                  :type="scope.row.XNYBJ === '是' ? 'success' : 'info'"
-                >
+                <el-tag :type="scope.row.XNYBJ === '是' ? 'success' : 'info'">
                   {{ scope.row.XNYBJ || '-' }}
                 </el-tag>
               </span>
@@ -377,8 +356,9 @@ const allFields = ref([
   { key: 'QYID', label: '公告企业ID', sortable: true },
   { key: 'GXSJ', label: '更新时间', sortable: true },
   { key: 'JT', label: '集团', sortable: true },
-  { key: 'UPY', label: '上传年', sortable: true },
-  { key: 'UPM', label: '上传月', sortable: true }
+  { key: 'year', label: '年份', sortable: true },
+  { key: 'month', label: '月份', sortable: true },
+  { key: 'date', label: '日期', sortable: true }
 ])
 
 
@@ -432,8 +412,9 @@ const handleSearch = async () => {
         QYID: 'QY001',
         GXSJ: '2023-06-20 15:45:00',
         JT: '一汽集团',
-        UPY: '2023',
-        UPM: '06'
+        year: 2023,
+        month: 6,
+        date: '2023-06-20'
       }
     ]
 
@@ -660,8 +641,9 @@ const getColumnWidth = (fieldKey: string): number => {
     'QYID': 120,
     'GXSJ': 160,
     'JT': 100,
-    'UPY': 80,
-    'UPM': 80
+    'year': 100,
+    'month': 80,
+    'date': 120
   }
   return widthMap[fieldKey] || 120
 }

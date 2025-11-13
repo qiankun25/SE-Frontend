@@ -116,12 +116,14 @@ export interface CertificateQuantityItem {
   productionProvince?: string;
   productionCity?: string;
   certificateCount: number;
-  uploadYear?: number;
-  uploadMonth?: number;
-  uploadDay?: number;
-  date?: string;
-  year?: number;
-  month?: number;
+
+  // 时间字段 - 根据 viewDimension 使用不同字段
+  // yearly: 使用 year
+  // monthly: 使用 year + month
+  // daily: 使用 date
+  date?: string; // 日期(YYYY-MM-DD) - daily维度使用
+  year?: number; // 年份 - yearly/monthly维度使用
+  month?: number; // 月份 - monthly维度使用
 
   // 同期比相关字段
   currentPeriodCount?: number;
@@ -226,15 +228,15 @@ export interface EnterpriseAccessItem {
 
 // 集团查询相关接口
 export interface GroupSearchParams extends PaginationParams, SortParams {
-  group_name?: string;      // 集团名称
-  group_code?: string;      // 集团代码
-  region?: string;          // 所在地区
+  group_name?: string; // 集团名称
+  group_code?: string; // 集团代码
+  region?: string; // 所在地区
   enterprise_type?: string; // 企业性质（合资/自主）
   has_new_energy?: boolean; // 是否涉及新能源
 }
 
 export interface GroupExportParams extends GroupSearchParams, ExportParams {
-  range?: string;           // 导出范围：current（当前页）、all（全部数据）
+  range?: string; // 导出范围：current（当前页）、all（全部数据）
 }
 
 export interface EnterpriseItem {
@@ -268,15 +270,15 @@ export interface EnterpriseDetailInfo {
 }
 
 export interface GroupInfo {
-  group_code: string;           // 集团代码
-  group_name: string;           // 集团名称
-  enterprise_count: number;     // 下属企业数量
-  provinces: string[];          // 分布省份
-  new_energy_count: number;     // 新能源企业数量
-  joint_venture_count: number;  // 合资企业数量
-  main_region: string;          // 主要地区
-  new_energy_ratio: number;     // 新能源企业占比
-  joint_venture_ratio: number;  // 合资企业占比
+  group_code: string; // 集团代码
+  group_name: string; // 集团名称
+  enterprise_count: number; // 下属企业数量
+  provinces: string[]; // 分布省份
+  new_energy_count: number; // 新能源企业数量
+  joint_venture_count: number; // 合资企业数量
+  main_region: string; // 主要地区
+  new_energy_ratio: number; // 新能源企业占比
+  joint_venture_ratio: number; // 合资企业占比
   enterprises?: EnterpriseItem[]; // 下属企业列表
 }
 
@@ -413,7 +415,8 @@ export interface EnterpriseSupervisionItem {
   contact_phone?: string;
 }
 
-export interface EnterpriseSupervisionExportParams extends EnterpriseSupervisionParams {
+export interface EnterpriseSupervisionExportParams
+  extends EnterpriseSupervisionParams {
   format: "excel" | "csv";
   filename?: string;
   fields?: string[];

@@ -11,40 +11,28 @@
     </div>
 
     <el-dropdown @command="handleExportCommand" :disabled="disabled || isQuotaExceeded">
-      <el-button
-        type="primary"
-        :loading="exporting"
-        :disabled="isQuotaExceeded"
-      >
-        <el-icon><Download /></el-icon>
+      <el-button type="primary" :loading="exporting" :disabled="isQuotaExceeded">
+        <el-icon>
+          <Download />
+        </el-icon>
         {{ buttonText }}
         <el-icon class="el-icon--right"><arrow-down /></el-icon>
       </el-button>
       <template #dropdown>
         <el-dropdown-menu>
-          <el-dropdown-item
-            command="current"
-            :disabled="!canExport('current')"
-          >
+          <el-dropdown-item command="current" :disabled="!canExport('current')">
             导出当前页
             <el-tag v-if="!canExport('current')" size="small" type="danger">
               配额不足
             </el-tag>
           </el-dropdown-item>
-          <el-dropdown-item
-            command="all"
-            :disabled="!canExport('all')"
-          >
+          <el-dropdown-item command="all" :disabled="!canExport('all')">
             导出全部数据
             <el-tag v-if="!canExport('all')" size="small" type="danger">
               配额不足
             </el-tag>
           </el-dropdown-item>
-          <el-dropdown-item
-            command="selected"
-            v-if="allowSelectExport"
-            :disabled="!canExport('selected')"
-          >
+          <el-dropdown-item command="selected" v-if="allowSelectExport" :disabled="!canExport('selected')">
             导出选中数据
             <el-tag v-if="!canExport('selected')" size="small" type="danger">
               配额不足
@@ -57,26 +45,14 @@
     </el-dropdown>
 
     <!-- 配额不足提示 -->
-    <el-alert
-      v-if="isQuotaExceeded"
-      title="导出配额已用完"
-      type="warning"
-      :closable="false"
-      show-icon
-      class="quota-alert"
-    >
+    <el-alert v-if="isQuotaExceeded" title="导出配额已用完" type="warning" :closable="false" show-icon class="quota-alert">
       <template #default>
         您今日的导出配额已用完，请明日再试或联系管理员增加配额。
       </template>
     </el-alert>
 
     <!-- 导出配置对话框 -->
-    <el-dialog
-      v-model="showConfigDialog"
-      title="导出配置"
-      width="600px"
-      @close="closeConfigDialog"
-    >
+    <el-dialog v-model="showConfigDialog" title="导出配置" width="600px" @close="closeConfigDialog">
       <el-form :model="exportConfig" label-width="100px">
         <el-form-item label="文件名称">
           <el-input v-model="exportConfig.filename" placeholder="请输入文件名称" />
@@ -91,42 +67,24 @@
 
         <el-form-item label="导出字段">
           <div class="field-selection">
-            <el-checkbox
-              v-model="selectAllFields"
-              :indeterminate="isIndeterminate"
-              @change="handleSelectAllFields"
-            >
+            <el-checkbox v-model="selectAllFields" :indeterminate="isIndeterminate" @change="handleSelectAllFields">
               全选
             </el-checkbox>
             <el-divider />
             <el-checkbox-group v-model="exportConfig.selectedFields">
               <div class="field-grid">
-                <div
-                  v-for="field in availableFields"
-                  :key="field.key"
-                  class="field-item"
-                >
-                  <el-checkbox
-                    :value="field.key"
-                    :label="field.label"
-                  >
+                <div v-for="field in availableFields" :key="field.key" class="field-item">
+                  <el-checkbox :value="field.key" :label="field.label">
                     <span class="field-label">
                       {{ field.label }}
-                      <el-tooltip
-                        v-if="field.performance_impact"
-                        content="此选项可能影响导出速度"
-                        placement="top"
-                      >
+                      <el-tooltip v-if="field.performance_impact" content="此选项可能影响导出速度" placement="top">
                         <el-icon class="performance-warning">
                           <Warning />
                         </el-icon>
                       </el-tooltip>
                     </span>
                   </el-checkbox>
-                  <div
-                    v-if="field.description"
-                    class="field-description"
-                  >
+                  <div v-if="field.description" class="field-description">
                     {{ field.description }}
                   </div>
                 </div>
@@ -162,7 +120,6 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, ArrowDown, Warning } from '@element-plus/icons-vue'
-import type { ExportParams } from '../../types/api'
 import { exportLimitApi, exportUtils, type QuotaInfo } from '../services/exportLimitApi'
 import { useAuth } from '../composables/useAuth'
 
@@ -363,7 +320,7 @@ const executeQuickExport = async (command: string) => {
     console.error('导出失败:', error)
 
     // 处理配额相关错误
-    if (error?.response?.status === 429) {
+    if ((error as any)?.response?.status === 429) {
       ElMessage.error('导出配额已用完，请明日再试')
       await fetchQuotaInfo() // 刷新配额信息
     } else {
@@ -395,7 +352,7 @@ const executeExport = async () => {
     }
 
     emit('export', config)
-    
+
     closeConfigDialog()
     ElMessage.success('导出成功')
   } catch (error) {
@@ -412,7 +369,7 @@ const handleDownloadTemplate = () => {
 }
 
 // 处理全选字段
-const handleSelectAllFields = (checked: boolean) => {
+const handleSelectAllFields = (checked: boolean | string | number) => {
   if (checked) {
     exportConfig.value.selectedFields = availableFields.value.map(field => field.key)
   } else {

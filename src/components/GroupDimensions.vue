@@ -1,9 +1,9 @@
 <template>
-  <div class="certificate-display-fields">
+  <div class="group-dimensions">
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
-          <span>显示字段选择</span>
+          <span>统计维度选择</span>
           <div class="header-actions">
             <el-button size="small" @click="selectAll">全选</el-button>
             <el-button size="small" @click="selectNone">全不选</el-button>
@@ -13,17 +13,14 @@
       </template>
 
       <div class="fields-container">
-        <div class="field-category" v-for="category in fieldCategories" :key="category.name">
-          <div class="category-header">
-            <el-checkbox :model-value="isCategorySelected(category)" :indeterminate="isCategoryIndeterminate(category)"
-              @change="toggleCategory(category, $event)">
-              {{ category.label }}
-            </el-checkbox>
-          </div>
+        <div class="field-category" v-for="category in visibleCategories" :key="category.name">
+          <div class="category-label">{{ category.label }}：</div>
           <div class="category-fields">
             <el-checkbox-group v-model="selectedFields" @change="handleFieldsChange">
-              <el-checkbox v-for="field in category.fields" :key="field.key" :value="field.key" class="field-checkbox">
+              <el-checkbox v-for="field in category.fields" :key="field.key" :value="field.key"
+                :disabled="field.disabled" class="field-checkbox">
                 {{ field.label }}
+                <el-tag v-if="field.required" type="danger" size="small">必选</el-tag>
               </el-checkbox>
             </el-checkbox-group>
           </div>
@@ -32,7 +29,7 @@
 
       <div class="selected-summary">
         <el-tag type="info" size="small">
-          已选择 {{ selectedFields.length }} 个字段
+          已选择 {{ selectedFields.length }} 个统计维度
         </el-tag>
       </div>
     </el-card>
@@ -45,6 +42,8 @@ import { ref, computed, watch, onMounted } from 'vue'
 interface Field {
   key: string
   label: string
+  required?: boolean
+  disabled?: boolean
 }
 
 interface FieldCategory {
@@ -55,21 +54,20 @@ interface FieldCategory {
 
 const props = defineProps<{
   initialFields?: string[]
-  mode?: 'quantity' | 'detail'
 }>()
 
 const emit = defineEmits<{
-  'fields-change': [fields: string[]]
+  'dimensions-change': [fields: string[]]
 }>()
 
-// 字段分类配置
+// 字段分类配置（仅包含可作为统计维度的字段）
 const fieldCategories: FieldCategory[] = [
   {
     name: 'basic',
     label: '基础信息',
     fields: [
-      { key: 'QYDM', label: '合格证企业代码' },
-      { key: 'CLZZQYMC', label: '车辆制造企业名称' },
+      { key: 'CLZZQYMC', label: '车辆制造企业名称', required: true },
+      { key: 'QYDM', label: '合格证企业代码', required: true },
       { key: 'CLZT', label: '车辆类别' },
       { key: 'QYID', label: '公告企业ID' },
       { key: 'JT', label: '集团' }
@@ -118,65 +116,43 @@ const fieldCategories: FieldCategory[] = [
     ]
   },
   {
-    name: 'time',
-    label: '时间信息',
+    name: 'config',
+    label: '配置信息',
     fields: [
-      { key: 'UPD', label: '上传时间' },
-      { key: 'year', label: '年份' },
-      { key: 'month', label: '月份' },
-      { key: 'date', label: '日期' },
-      { key: 'GXSJ', label: '更新时间' }
-    ]
-  },
-  {
-    name: 'quantity',
-    label: '数量信息',
-    fields: [
-      { key: 'SL', label: '数量' }
+      { key: 'LSPZXLH', label: '配置序列号' },
+      { key: 'CONFIG_SEQUENCE_NUM', label: '配置序列号' },
+      { key: 'POINTS_CONF_ID', label: '双积分ID' }
     ]
   }
 ]
 
+// 默认选择的字段
+const getDefaultFields = () => {
+  return ['CLZZQYMC', 'QYDM'] // 默认选择企业名称和企业代码（必选字段）
+}
+
 const selectedFields = ref<string[]>([])
 
-// 计算属性
-const isCategorySelected = (category: FieldCategory) => {
-  const categoryFieldKeys = category.fields.map(f => f.key)
-  return categoryFieldKeys.every(key => selectedFields.value.includes(key))
-}
-
-const isCategoryIndeterminate = (category: FieldCategory) => {
-  const categoryFieldKeys = category.fields.map(f => f.key)
-  const selectedCount = categoryFieldKeys.filter(key => selectedFields.value.includes(key)).length
-  return selectedCount > 0 && selectedCount < categoryFieldKeys.length
-}
+// 过滤掉时间信息分类（这些字段由时间维度控制，不在这里显示）
+const visibleCategories = computed(() => {
+  return fieldCategories.filter(category => category.name !== 'time')
+})
 
 // 方法
-const toggleCategory = (category: FieldCategory, checked: boolean) => {
-  const categoryFieldKeys = category.fields.map(f => f.key)
-
-  if (checked) {
-    // 添加该分类的所有字段
-    categoryFieldKeys.forEach(key => {
-      if (!selectedFields.value.includes(key)) {
-        selectedFields.value.push(key)
-      }
-    })
-  } else {
-    // 移除该分类的所有字段
-    selectedFields.value = selectedFields.value.filter(key => !categoryFieldKeys.includes(key))
-  }
-
-  handleFieldsChange()
-}
-
 const selectAll = () => {
-  selectedFields.value = fieldCategories.flatMap(category => category.fields.map(f => f.key))
+  const allFields = fieldCategories.flatMap(category =>
+    category.fields.filter(f => !f.disabled && !f.required).map(f => f.key)
+  )
+  selectedFields.value = [...getDefaultFields(), ...allFields]
   handleFieldsChange()
 }
 
 const selectNone = () => {
-  selectedFields.value = []
+  // 保留必选字段
+  const requiredFields = fieldCategories.flatMap(category =>
+    category.fields.filter(f => f.required).map(f => f.key)
+  )
+  selectedFields.value = requiredFields
   handleFieldsChange()
 }
 
@@ -186,30 +162,15 @@ const selectDefault = () => {
 }
 
 const handleFieldsChange = () => {
-  emit('fields-change', selectedFields.value)
+  emit('dimensions-change', selectedFields.value)
 }
 
-// 初始化字段方法
+// 初始化
 const initializeFields = () => {
   if (props.initialFields && props.initialFields.length > 0) {
     selectedFields.value = [...props.initialFields]
   } else {
     selectedFields.value = getDefaultFields()
-  }
-}
-
-// 默认选择字段方法
-const getDefaultFields = () => {
-  if (props.mode === 'detail') {
-    return [
-      'QYDM', 'CLZZQYMC', 'CLXH', 'CLPP', 'CLMC', 'RLZL',
-      'SCDZ', 'SF', 'CS', 'UPD', 'SL'
-    ]
-  } else {
-    // quantity 模式默认字段
-    return [
-      'QYDM', 'CLZZQYMC', 'CLXH', 'CLPP', 'CLMC', 'SL'
-    ]
   }
 }
 
@@ -220,12 +181,12 @@ watch(() => props.initialFields, () => {
 
 // 组件挂载时发送初始选中的字段
 onMounted(() => {
-  emit('fields-change', selectedFields.value)
+  emit('dimensions-change', selectedFields.value)
 })
 </script>
 
 <style scoped>
-.certificate-display-fields {
+.group-dimensions {
   margin-bottom: 20px;
 }
 
@@ -242,49 +203,66 @@ onMounted(() => {
 }
 
 .fields-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .field-category {
-  border: 1px solid #e4e7ed;
-  border-radius: 4px;
-  padding: 15px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
 }
 
-.category-header {
-  margin-bottom: 10px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #f0f0f0;
+.category-label {
   font-weight: 600;
+  color: #606266;
+  white-space: nowrap;
+  padding-top: 2px;
+  min-width: 80px;
 }
 
 .category-fields {
+  flex: 1;
+}
+
+.category-fields :deep(.el-checkbox-group) {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 8px 16px;
 }
 
 .field-checkbox {
   margin-right: 0;
-  margin-bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.field-checkbox :deep(.el-tag) {
+  margin-left: 4px;
 }
 
 .selected-summary {
-  margin-top: 15px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e4e7ed;
   text-align: center;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .fields-container {
-    grid-template-columns: 1fr;
+  .field-category {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .category-label {
+    min-width: auto;
   }
 
   .header-actions {
-    flex-direction: column;
-    gap: 4px;
+    flex-wrap: wrap;
   }
 }
 </style>
