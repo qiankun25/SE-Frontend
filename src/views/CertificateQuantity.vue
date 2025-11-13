@@ -50,13 +50,16 @@
       <!-- 查询条件设置组件 -->
       <certificate-search-conditions @add-condition="handleAddCondition" @reset="handleResetConditions" />
 
+      <!-- 统计维度选择组件 -->
+      <group-dimensions :initial-fields="groupDimensions" @dimensions-change="handleGroupDimensionsChange" />
+
       <!-- 已选条件显示组件 -->
       <certificate-selected-conditions :selected-conditions="selectedConditions"
         @remove-condition="handleRemoveCondition" @clear-all="handleClearAllConditions" @search="handleSearch"
         @reset="handleResetAll" />
 
       <!-- 显示字段选择组件 -->
-      <certificate-display-fields :initial-fields="displayFields" mode="quantity"
+      <display-fields field-type="certificate" :initial-fields="displayFields"
         @fields-change="handleDisplayFieldsChange" />
 
       <!-- 查询结果表格组件 -->
@@ -75,7 +78,8 @@ import { Download, Refresh, ArrowDown, Document, FolderOpened } from '@element-p
 // 导入新的组件
 import CertificateSearchConditions from '../components/CertificateSearchConditions.vue'
 import CertificateSelectedConditions from '../components/CertificateSelectedConditions.vue'
-import CertificateDisplayFields from '../components/CertificateDisplayFields.vue'
+import GroupDimensions from '../components/GroupDimensions.vue'
+import DisplayFields from '../components/DisplayFields.vue'
 import CertificateResultTable from '../components/CertificateResultTable.vue'
 
 // 响应式数据
@@ -83,6 +87,7 @@ const loading = ref(false)
 const hasSearched = ref(false)
 const selectedConditions = ref<any[]>([])
 const tableData = ref<any[]>([])
+const groupDimensions = ref<string[]>([]) // 用户选择的统计维度（分组维度）
 const displayFields = ref<string[]>([]) // 用户选择的显示字段
 
 // 事件处理函数
@@ -113,6 +118,13 @@ const handleResetAll = () => {
   tableData.value = []
   hasSearched.value = false
   // 重置所有
+}
+
+const handleGroupDimensionsChange = (dimensions: string[]) => {
+  groupDimensions.value = dimensions
+  // 确保显示字段包含所有统计维度和数量字段
+  const requiredFields = [...dimensions, 'SL']
+  displayFields.value = [...new Set([...displayFields.value, ...requiredFields])]
 }
 
 const handleDisplayFieldsChange = (fields: string[]) => {
@@ -170,7 +182,9 @@ const handleSearch = async (conditions: any[]) => {
 
 // 构建查询参数
 const buildSearchParams = (conditions: any[]) => {
-  const params: any = {}
+  const params: any = {
+    group_dimensions: groupDimensions.value // 添加统计维度参数
+  }
 
   // 收集所有参数的数组，用于合并多个条件
   const allCompanyNames: string[] = []
