@@ -37,17 +37,16 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="8">
+          <!-- 监管状态 - 已隐藏 -->
+          <!-- <el-col :span="8">
             <el-form-item label="监管状态">
               <el-select v-model="searchForm.supervision_status" placeholder="请选择监管状态" clearable filterable multiple
                 collapse-tags collapse-tags-tooltip class="wide-select" popper-class="wide-select-dropdown">
                 <el-option v-for="option in supervisionStatusOptions" :key="option" :label="option" :value="option" />
               </el-select>
             </el-form-item>
-          </el-col>
-        </el-row>
+          </el-col> -->
 
-        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="新能源标记">
               <el-select v-model="searchForm.new_energy_flag" placeholder="请选择新能源标记" clearable class="wide-select"
@@ -57,7 +56,9 @@
               </el-select>
             </el-form-item>
           </el-col>
+        </el-row>
 
+        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="企业类型">
               <el-select v-model="searchForm.enterprise_type" placeholder="请选择企业类型" clearable filterable
@@ -67,14 +68,13 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="8">
+          <!-- 统一社会信用代码 - 已隐藏 -->
+          <!-- <el-col :span="8">
             <el-form-item label="统一社会信用代码">
               <el-input v-model="searchForm.social_credit_code" placeholder="请输入统一社会信用代码" clearable />
             </el-form-item>
-          </el-col>
-        </el-row>
+          </el-col> -->
 
-        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="注册地址">
               <el-input v-model="searchForm.registered_address" placeholder="请输入注册地址关键词" clearable />
@@ -86,22 +86,22 @@
               <el-input v-model="searchForm.production_address" placeholder="请输入生产地址关键词" clearable />
             </el-form-item>
           </el-col>
+        </el-row>
 
+        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="产品商标">
               <el-input v-model="searchForm.product_brand" placeholder="请输入产品商标关键词" clearable />
             </el-form-item>
           </el-col>
-        </el-row>
 
-        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="资质">
               <el-input v-model="searchForm.qualification" placeholder="请输入资质关键词" clearable />
             </el-form-item>
           </el-col>
 
-          <el-col :span="16">
+          <el-col :span="8">
             <el-form-item>
               <el-button type="primary" @click="handleSearch" :loading="loading">
                 <el-icon>
@@ -248,23 +248,23 @@ const pagination = reactive({
   pageSize: 20
 })
 
-// 字段选择相关
+// 字段选择相关 - 默认选中字段（已排除隐藏字段）
 const selectedFields = ref<string[]>([
   'enterprise_id',
   'enterprise_name',
-  'supervision_status',
-  'new_energy_flag',
   'enterprise_type',
+  'new_energy_flag',
   'registered_address',
-  'production_address'
+  'production_address',
+  'product_brand'
 ])
 
-// 所有可用字段 - 与enterprise_supervision字段保持一致
+// 所有可用字段 - 已隐藏部分字段以体现与企业监管状态的差异
 const allFields = ref([
   { key: 'enterprise_id', label: '企业ID', required: true, sortable: true },
   { key: 'enterprise_name', label: '企业名称', required: true, sortable: true },
-  { key: 'social_credit_code', label: '统一社会信用代码', sortable: true },
-  { key: 'supervision_status', label: '监管状态', sortable: true },
+  // { key: 'social_credit_code', label: '统一社会信用代码', sortable: true }, // 已隐藏
+  // { key: 'supervision_status', label: '监管状态', sortable: true }, // 已隐藏
   { key: 'supervision_code', label: '监管代码' },
   { key: 'access_status', label: '企业准入状态' },
   { key: 'valid_flag', label: '有效标记' },
@@ -274,9 +274,9 @@ const allFields = ref([
   { key: 'production_address', label: '生产地址' },
   { key: 'product_brand', label: '产品商标' },
   { key: 'qualification', label: '资质' },
-  { key: 'contact_person', label: '联系人' },
-  { key: 'contact_position', label: '联系人职务' },
-  { key: 'contact_phone', label: '联系人号码' },
+  // { key: 'contact_person', label: '联系人' }, // 已隐藏
+  // { key: 'contact_position', label: '联系人职务' }, // 已隐藏
+  // { key: 'contact_phone', label: '联系人号码' }, // 已隐藏
   // created_at/updated_at removed - backend does not provide these fields
 ])
 

@@ -42,14 +42,13 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="8">
+          <!-- 统一社会信用代码 - 已隐藏 -->
+          <!-- <el-col :span="8">
             <el-form-item label="统一社会信用代码">
               <el-input v-model="searchForm.social_credit_code" placeholder="请输入统一社会信用代码" clearable />
             </el-form-item>
-          </el-col>
-        </el-row>
+          </el-col> -->
 
-        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="监管状态">
               <el-select v-model="searchForm.supervision_status" placeholder="请选择监管状态" clearable filterable multiple
@@ -58,7 +57,9 @@
               </el-select>
             </el-form-item>
           </el-col>
+        </el-row>
 
+        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="企业准入状态">
               <el-select v-model="searchForm.access_status" placeholder="请选择企业准入状态" clearable filterable>
@@ -74,9 +75,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
 
-        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="新能源标记">
               <el-select v-model="searchForm.new_energy_flag" placeholder="请选择新能源标记" clearable>
@@ -85,7 +84,9 @@
               </el-select>
             </el-form-item>
           </el-col>
+        </el-row>
 
+        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="有效标记">
               <el-select v-model="searchForm.valid_flag" placeholder="请选择有效标记" clearable>
@@ -95,7 +96,7 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="8">
+          <el-col :span="16">
             <div class="search-actions">
               <el-button type="primary" @click="handleSearch" :loading="loading">
                 <el-icon>
@@ -236,24 +237,24 @@ const selectedFields = ref<string[]>([
   'new_energy_flag'
 ])
 
-// 所有可用字段
+// 所有可用字段 - 已隐藏部分字段以体现与企业基本信息的差异
 const allFields = ref([
   { key: 'enterprise_id', label: '企业ID', required: true },
   { key: 'enterprise_name', label: '企业名称', required: true },
-  { key: 'social_credit_code', label: '统一社会信用代码' },
+  // { key: 'social_credit_code', label: '统一社会信用代码' }, // 已隐藏
   { key: 'supervision_status', label: '监管状态' },
   { key: 'supervision_code', label: '监管代码' },
   { key: 'access_status', label: '企业准入状态' },
   { key: 'valid_flag', label: '有效标记' },
   { key: 'enterprise_type', label: '企业类型' },
   { key: 'new_energy_flag', label: '新能源标记' },
-  { key: 'registered_address', label: '注册地址' },
-  { key: 'production_address', label: '生产地址' },
-  { key: 'product_brand', label: '产品商标' },
+  // { key: 'registered_address', label: '注册地址' }, // 已隐藏
+  // { key: 'production_address', label: '生产地址' }, // 已隐藏
+  // { key: 'product_brand', label: '产品商标' }, // 已隐藏
   { key: 'qualification', label: '资质' },
-  { key: 'contact_person', label: '联系人' },
-  { key: 'contact_position', label: '联系人职务' },
-  { key: 'contact_phone', label: '联系人号码' },
+  // { key: 'contact_person', label: '联系人' }, // 已隐藏
+  // { key: 'contact_position', label: '联系人职务' }, // 已隐藏
+  // { key: 'contact_phone', label: '联系人号码' }, // 已隐藏
   // removed created_at/updated_at - backend does not provide these fields
 ])
 
