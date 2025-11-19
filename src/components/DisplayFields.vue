@@ -14,7 +14,7 @@
 import { ref, onMounted, watch } from 'vue'
 
 const props = defineProps<{
-    fieldType?: 'enterprise' | 'certificate' | 'enterprise_supervision'
+    fieldType?: 'enterprise' | 'certificate' | 'enterprise_supervision' | 'enterprise_basic'
     initialFields?: string[]
 }>()
 
@@ -76,25 +76,44 @@ const certificateFields: Field[] = [
     { key: 'date', label: '日期', selected: false }
 ]
 
-// 企业监管状态字段配置
+// 企业基本信息字段配置（已隐藏部分字段）
+const enterpriseBasicFields: Field[] = [
+    { key: 'enterprise_id', label: '企业ID', selected: true },
+    { key: 'enterprise_name', label: '企业名称', selected: true },
+    // social_credit_code - 已隐藏
+    // supervision_status - 已隐藏
+    { key: 'supervision_code', label: '监管代码', selected: false },
+    { key: 'access_status', label: '企业准入状态', selected: false },
+    { key: 'valid_flag', label: '有效标记', selected: false },
+    { key: 'enterprise_type', label: '企业类型', selected: true },
+    { key: 'new_energy_flag', label: '新能源标记', selected: true },
+    { key: 'registered_address', label: '注册地址', selected: true },
+    { key: 'production_address', label: '生产地址', selected: true },
+    { key: 'product_brand', label: '产品商标', selected: true },
+    { key: 'qualification', label: '资质', selected: false },
+    // contact_person - 已隐藏
+    // contact_position - 已隐藏
+    // contact_phone - 已隐藏
+]
+
+// 企业监管状态字段配置（已隐藏部分字段）
 const enterpriseSupervisionFields: Field[] = [
     { key: 'enterprise_id', label: '企业ID', selected: true },
     { key: 'enterprise_name', label: '企业名称', selected: true },
-    { key: 'social_credit_code', label: '统一社会信用代码', selected: true },
+    // social_credit_code - 已隐藏
     { key: 'supervision_status', label: '监管状态', selected: true },
     { key: 'supervision_code', label: '监管代码', selected: false },
     { key: 'access_status', label: '企业准入状态', selected: true },
     { key: 'valid_flag', label: '有效标记', selected: false },
     { key: 'enterprise_type', label: '企业类型', selected: true },
     { key: 'new_energy_flag', label: '新能源标记', selected: true },
-    { key: 'registered_address', label: '注册地址', selected: false },
-    { key: 'production_address', label: '生产地址', selected: false },
-    { key: 'product_brand', label: '产品商标', selected: false },
+    // registered_address - 已隐藏
+    // production_address - 已隐藏
+    // product_brand - 已隐藏
     { key: 'qualification', label: '资质', selected: false },
-    { key: 'contact_person', label: '联系人', selected: false },
-    { key: 'contact_position', label: '联系人职务', selected: false },
-    { key: 'contact_phone', label: '联系人号码', selected: false },
-    // removed created_at/updated_at - backend does not provide these fields for enterprise supervision
+    // contact_person - 已隐藏
+    // contact_position - 已隐藏
+    // contact_phone - 已隐藏
 ]
 
 const fields = ref<Field[]>([])
@@ -106,6 +125,8 @@ const initializeFields = () => {
         fields.value = [...certificateFields]
     } else if (fieldType === 'enterprise_supervision') {
         fields.value = [...enterpriseSupervisionFields]
+    } else if (fieldType === 'enterprise_basic') {
+        fields.value = [...enterpriseBasicFields]
     } else {
         fields.value = [...enterpriseFields]
     }

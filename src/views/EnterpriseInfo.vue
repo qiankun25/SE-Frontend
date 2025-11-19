@@ -128,8 +128,7 @@
     </el-card>
 
     <!-- 字段选择区域 -->
-    <DisplayFields field-type="enterprise_supervision" :initial-fields="selectedFields"
-      @fields-change="handleFieldsChange" />
+    <DisplayFields field-type="enterprise_basic" :initial-fields="selectedFields" @fields-change="handleFieldsChange" />
 
     <!-- 批量查询对话框 -->
     <BatchQueryDialog v-model="showBatchDialog" title="批量查询企业基本信息" :query-types="batchQueryTypes"
