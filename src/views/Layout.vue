@@ -78,7 +78,7 @@
           </el-sub-menu>
 
           <!-- 可视化图表 -->
-          <el-sub-menu index="visualization">
+          <el-sub-menu index="visualization" v-if="visualizationRoutes.length > 0">
             <template #title>
               <el-icon>
                 <TrendCharts />

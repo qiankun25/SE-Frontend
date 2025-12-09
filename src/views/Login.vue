@@ -41,16 +41,6 @@
                 </el-form-item>
             </el-form>
 
-            <!-- 演示账号提示 -->
-            <div class="demo-accounts" v-if="showDemoAccounts">
-                <el-divider content-position="center">演示账号</el-divider>
-                <div class="demo-account-list">
-                    <el-tag v-for="account in demoAccounts" :key="account.username" @click="fillDemoAccount(account)"
-                        class="demo-account-tag" :type="account.type">
-                        {{ account.label }}
-                    </el-tag>
-                </div>
-            </div>
         </el-card>
     </div>
 </template>

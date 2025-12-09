@@ -100,8 +100,9 @@
         </div>
       </template>
 
-      <el-table :data="tableData" v-loading="loading" stripe border style="width: 100%" @sort-change="handleSortChange"
-        :expand-row-keys="expandedRows" row-key="group_code" @expand-change="handleExpandChange">
+      <el-table :data="tableData" v-loading="loading" stripe border :style="{ width: '100%' }"
+        @sort-change="handleSortChange" :expand-row-keys="expandedRows" row-key="group_code"
+        @expand-change="handleExpandChange">
         <!-- 展开列 -->
         <el-table-column type="expand">
           <template #default="{ row }">
@@ -133,16 +134,7 @@
             {{ formatPercentage(scope.row.joint_venture_ratio) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
-          <template #default="scope">
-            <el-button link type="primary" @click="handleView(scope.row)">
-              <el-icon>
-                <View />
-              </el-icon>
-              查看详情
-            </el-button>
-          </template>
-        </el-table-column>
+
       </el-table>
 
       <!-- 分页 -->
@@ -157,10 +149,10 @@
 
 <script lang="ts" setup>
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Download, Refresh, Search, View } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { Refresh, Search } from '@element-plus/icons-vue'
 import { groupApi, exportUtils } from '../services/api'
-import type { GroupInfo, GroupSearchParams } from '../types/api'
+import type { GroupInfo, GroupSearchParams, GroupExportParams } from '../types/api'
 import EnterpriseList from '../components/EnterpriseList.vue'
 import ExportButton from '../components/ExportButton.vue'
 
@@ -190,12 +182,18 @@ const exportFields = ref([
 ])
 
 // 搜索表单
-const searchForm = reactive({
+const searchForm = reactive<{
+  group_name: string
+  group_code: string
+  region: string
+  enterprise_type: string
+  has_new_energy: string | boolean
+}>({
   group_name: '',
   group_code: '',
   region: '',
   enterprise_type: '',
-  has_new_energy: undefined as boolean | undefined
+  has_new_energy: ''
 })
 
 // 分页配置
@@ -222,7 +220,7 @@ const enterpriseTypeOptions = [
 
 // 新能源选项
 const newEnergyOptions = [
-  { label: '全部', value: undefined },
+  { label: '全部', value: '' },
   { label: '有新能源企业', value: true },
   { label: '无新能源企业', value: false }
 ]
@@ -232,7 +230,11 @@ const handleSearch = async () => {
   loading.value = true
   try {
     const params: GroupSearchParams = {
-      ...searchForm,
+      group_name: searchForm.group_name,
+      group_code: searchForm.group_code,
+      region: searchForm.region,
+      enterprise_type: searchForm.enterprise_type,
+      has_new_energy: searchForm.has_new_energy === '' ? undefined : searchForm.has_new_energy as boolean,
       page: pagination.page,
       pageSize: pagination.page_size,
       field: sortConfig.field,
@@ -263,7 +265,7 @@ const handleReset = () => {
     group_code: '',
     region: '',
     enterprise_type: '',
-    has_new_energy: undefined
+    has_new_energy: ''
   })
   pagination.page = 1
   pagination.page_size = 20
@@ -277,11 +279,16 @@ const handleReset = () => {
 // 导出数据 - 使用统一的ExportButton组件处理
 const handleExport = async (config: any) => {
   try {
-    const params = {
-      ...searchForm,
+    const params: GroupExportParams = {
+      group_name: searchForm.group_name,
+      group_code: searchForm.group_code,
+      region: searchForm.region,
+      enterprise_type: searchForm.enterprise_type,
+      has_new_energy: searchForm.has_new_energy === '' ? undefined : searchForm.has_new_energy as boolean,
       format: config.format,
       filename: config.filename,
       fields: config.selectedFields,
+      range: config.range,
       // 根据导出范围调整参数
       ...(config.range === 'current' ? {
         page: pagination.page,
@@ -327,11 +334,12 @@ const handleDownloadTemplate = async () => {
     ]
 
     // 生成Excel文件
-    const workbook = new (await import('xlsx')).utils.book_new()
-    const worksheet = (await import('xlsx')).utils.json_to_sheet(templateData)
-      (await import('xlsx')).utils.book_append_sheet(workbook, worksheet, '集团信息模板')
+    const XLSX = await import('xlsx')
+    const workbook = XLSX.utils.book_new()
+    const worksheet = XLSX.utils.json_to_sheet(templateData)
+    XLSX.utils.book_append_sheet(workbook, worksheet, '集团信息模板')
 
-    const excelBuffer = (await import('xlsx')).write(workbook, { bookType: 'xlsx', type: 'array' })
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
     const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
 
     const filename = exportUtils.generateFilename('集团基本信息查询模板', 'xlsx')
@@ -344,22 +352,7 @@ const handleDownloadTemplate = async () => {
   }
 }
 
-// 查看详情
-const handleView = async (row: GroupInfo) => {
-  try {
-    const response = await groupApi.getDetail(row.group_code)
-    if (response.code === 200) {
-      // 这里可以打开详情弹窗或跳转到详情页面
-      ElMessage.success(`获取集团详情成功：${row.group_name}`)
-      console.log('集团详情:', response.data)
-    } else {
-      ElMessage.error(response.message || '获取详情失败')
-    }
-  } catch (error) {
-    console.error('获取集团详情失败:', error)
-    ElMessage.error('获取详情失败，请稍后重试')
-  }
-}
+
 
 // 表格排序处理
 const handleSortChange = ({ prop, order }: { prop: string; order: string | null }) => {

@@ -9,7 +9,7 @@
           </el-button>
         </div>
       </template>
-      
+
       <!-- 搜索筛选 -->
       <el-form :model="searchForm" inline class="search-form">
         <el-form-item label="配置类型">
@@ -29,32 +29,33 @@
           <el-button @click="resetSearch">重置</el-button>
         </el-form-item>
       </el-form>
-      
+
       <!-- 配置列表 -->
       <el-table :data="configList" v-loading="loading">
-        <el-table-column prop="configType" label="配置类型" width="100">
+        <el-table-column prop="config_type" label="配置类型" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.configType === 'role' ? 'primary' : 'success'">
-              {{ row.configType === 'role' ? '角色' : '用户' }}
+            <el-tag :type="row.config_type === 'role' ? 'primary' : 'success'">
+              {{ row.config_type === 'role' ? '角色' : '用户' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="targetName" label="目标" width="150" />
-        <el-table-column prop="exportType" label="导出类型" width="120">
+        <el-table-column prop="target_name" label="目标" width="200" />
+        <el-table-column prop="export_type" label="导出类型" width="120">
           <template #default="{ row }">
-            <el-tag size="small">{{ getExportTypeLabel(row.exportType) }}</el-tag>
+            <el-tag size="small">{{ getExportTypeLabel(row.export_type) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="dailyLimit" label="每日限额" width="100" />
-        <el-table-column prop="isEnabled" label="状态" width="80">
+        <el-table-column prop="daily_limit" label="每日限额" width="100" />
+        <el-table-column prop="is_enabled" label="状态" width="80">
           <template #default="{ row }">
-            <el-switch
-              v-model="row.isEnabled"
-              @change="toggleConfig(row)"
-            />
+            <el-switch v-model="row.is_enabled" @change="toggleConfig(row)" />
           </template>
         </el-table-column>
-        <el-table-column prop="effectiveFrom" label="生效时间" width="180" />
+        <el-table-column prop="effective_from" label="生效时间" width="180">
+          <template #default="{ row }">
+            {{ row.effective_from ? new Date(row.effective_from).toLocaleString('zh-CN') : '-' }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="200">
           <template #default="{ row }">
             <el-button size="small" @click="editConfig(row)">编辑</el-button>
@@ -64,75 +65,37 @@
           </template>
         </el-table-column>
       </el-table>
-      
+
       <!-- 分页 -->
-      <el-pagination
-        v-model:current-page="pagination.page"
-        v-model:page-size="pagination.pageSize"
-        :total="pagination.total"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="fetchConfigs"
-        @current-change="fetchConfigs"
-      />
+      <el-pagination v-model:current-page="pagination.page" v-model:page-size="pagination.pageSize"
+        :total="pagination.total" :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper"
+        @size-change="fetchConfigs" @current-change="fetchConfigs" />
     </el-card>
-    
+
     <!-- 添加/编辑对话框 -->
-    <el-dialog
-      v-model="showAddDialog"
-      :title="editingConfig ? '编辑配置' : '添加配置'"
-      width="600px"
-    >
-      <el-form
-        ref="configFormRef"
-        :model="configForm"
-        :rules="configRules"
-        label-width="120px"
-      >
+    <el-dialog v-model="showAddDialog" :title="editingConfig ? '编辑配置' : '添加配置'" width="600px">
+      <el-form ref="configFormRef" :model="configForm" :rules="configRules" label-width="120px">
         <el-form-item label="配置类型" prop="configType">
           <el-radio-group v-model="configForm.configType">
             <el-radio label="role">角色配置</el-radio>
             <el-radio label="user">用户配置</el-radio>
           </el-radio-group>
         </el-form-item>
-        
-        <el-form-item 
-          v-if="configForm.configType === 'role'"
-          label="选择角色" 
-          prop="targetId"
-        >
+
+        <el-form-item v-if="configForm.configType === 'role'" label="选择角色" prop="targetId">
           <el-select v-model="configForm.targetId" placeholder="请选择角色">
-            <el-option
-              v-for="role in roleList"
-              :key="role.id"
-              :label="role.name"
-              :value="role.id"
-            />
+            <el-option v-for="role in roleList" :key="role.id" :label="role.name" :value="role.id" />
           </el-select>
         </el-form-item>
-        
-        <el-form-item 
-          v-if="configForm.configType === 'user'"
-          label="选择用户" 
-          prop="targetId"
-        >
-          <el-select
-            v-model="configForm.targetId"
-            placeholder="请输入用户名搜索"
-            filterable
-            remote
-            :remote-method="searchUsers"
-            :loading="userSearchLoading"
-          >
-            <el-option
-              v-for="user in userList"
-              :key="user.id"
-              :label="`${user.name} (${user.username})`"
-              :value="user.id"
-            />
+
+        <el-form-item v-if="configForm.configType === 'user'" label="选择用户" prop="targetId">
+          <el-select v-model="configForm.targetId" placeholder="请输入用户名搜索" filterable remote :remote-method="searchUsers"
+            :loading="userSearchLoading">
+            <el-option v-for="user in userList" :key="user.id" :label="`${user.name} (${user.username})`"
+              :value="user.id" />
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="导出类型" prop="exportType">
           <el-select v-model="configForm.exportType">
             <el-option label="所有导出" value="all" />
@@ -140,45 +103,26 @@
             <el-option label="全部数据导出" value="full" />
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="每日限额" prop="dailyLimit">
-          <el-input-number
-            v-model="configForm.dailyLimit"
-            :min="0"
-            :max="1000"
-            placeholder="请输入每日限额"
-          />
+          <el-input-number v-model="configForm.dailyLimit" :min="0" :max="1000" placeholder="请输入每日限额" />
         </el-form-item>
-        
+
         <el-form-item label="生效时间">
-          <el-date-picker
-            v-model="configForm.effectiveFrom"
-            type="datetime"
-            placeholder="选择生效时间"
-            format="YYYY-MM-DD HH:mm:ss"
-            value-format="YYYY-MM-DD HH:mm:ss"
-          />
+          <el-date-picker v-model="configForm.effectiveFrom" type="datetime" placeholder="选择生效时间"
+            format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" />
         </el-form-item>
-        
+
         <el-form-item label="失效时间">
-          <el-date-picker
-            v-model="configForm.effectiveTo"
-            type="datetime"
-            placeholder="选择失效时间（可选）"
-            format="YYYY-MM-DD HH:mm:ss"
-            value-format="YYYY-MM-DD HH:mm:ss"
-          />
+          <el-date-picker v-model="configForm.effectiveTo" type="datetime" placeholder="选择失效时间（可选）"
+            format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" />
         </el-form-item>
-        
+
         <el-form-item label="备注">
-          <el-input
-            v-model="configForm.remarks"
-            type="textarea"
-            placeholder="请输入备注信息"
-          />
+          <el-input v-model="configForm.remarks" type="textarea" placeholder="请输入备注信息" />
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
         <el-button @click="showAddDialog = false">取消</el-button>
         <el-button type="primary" @click="saveConfig">确定</el-button>
@@ -246,11 +190,21 @@ const configRules = {
 const fetchConfigs = async () => {
   loading.value = true
   try {
-    // 这里应该调用获取配置列表的API
-    // const response = await exportLimitApi.getConfigs(...)
-    // configList.value = response.data.list
-    // pagination.total = response.data.total
+    const response = await exportLimitApi.getConfigList({
+      config_type: searchForm.configType || undefined,
+      is_enabled: searchForm.status === 'enabled' ? true : searchForm.status === 'disabled' ? false : undefined,
+      page: pagination.page,
+      page_size: pagination.pageSize
+    })
+
+    if (response.code === 200) {
+      configList.value = response.data.list
+      pagination.total = response.data.total
+    } else {
+      ElMessage.error(response.message || '获取配置列表失败')
+    }
   } catch (error) {
+    console.error('获取配置列表失败:', error)
     ElMessage.error('获取配置列表失败')
   } finally {
     loading.value = false
@@ -274,11 +228,18 @@ const getExportTypeLabel = (type: string) => {
 
 const toggleConfig = async (row: any) => {
   try {
-    // 调用切换状态的API
-    ElMessage.success('状态更新成功')
+    const response = await exportLimitApi.toggleConfig(row.id)
+    if (response.code === 200) {
+      ElMessage.success(response.message || '状态更新成功')
+      fetchConfigs() // 刷新列表
+    } else {
+      ElMessage.error(response.message || '状态更新失败')
+      row.is_enabled = !row.is_enabled // 回滚状态
+    }
   } catch (error) {
+    console.error('状态更新失败:', error)
     ElMessage.error('状态更新失败')
-    row.isEnabled = !row.isEnabled // 回滚状态
+    row.is_enabled = !row.is_enabled // 回滚状态
   }
 }
 
@@ -293,12 +254,17 @@ const deleteConfig = async (row: any) => {
     await ElMessageBox.confirm('确定要删除这个配置吗？', '确认删除', {
       type: 'warning'
     })
-    
-    // 调用删除API
-    ElMessage.success('删除成功')
-    fetchConfigs()
+
+    const response = await exportLimitApi.deleteConfig(row.id)
+    if (response.code === 200) {
+      ElMessage.success('删除成功')
+      fetchConfigs()
+    } else {
+      ElMessage.error(response.message || '删除失败')
+    }
   } catch (error) {
     if (error !== 'cancel') {
+      console.error('删除失败:', error)
       ElMessage.error('删除失败')
     }
   }
@@ -323,7 +289,7 @@ const saveConfig = async () => {
         remarks: configForm.remarks
       })
     }
-    
+
     ElMessage.success('保存成功')
     showAddDialog.value = false
     fetchConfigs()
@@ -334,7 +300,7 @@ const saveConfig = async () => {
 
 const searchUsers = async (query: string) => {
   if (!query) return
-  
+
   userSearchLoading.value = true
   try {
     // 调用搜索用户API
