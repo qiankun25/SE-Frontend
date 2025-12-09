@@ -3,7 +3,7 @@ import Layout from "../views/Layout.vue";
 import Login from "../views/Login.vue";
 
 const router = createRouter({
-  history: createWebHistory( '/cxxt/'),
+  history: createWebHistory("/cxxt/"),
   routes: [
     {
       path: "/login",
@@ -83,6 +83,7 @@ const router = createRouter({
             title: "统计结果",
             icon: "Monitor",
             parentTitle: "可视化图表",
+            hidden: true,
           },
         },
         // 管理工具
@@ -95,7 +96,7 @@ const router = createRouter({
             title: "用户管理",
             icon: "User",
             parentTitle: "管理工具",
-            requiredPermissions: ["admin:all"]
+            requiredPermissions: ["admin:all"],
           },
         },
         {
@@ -107,7 +108,7 @@ const router = createRouter({
             title: "权限管理",
             icon: "Lock",
             parentTitle: "管理工具",
-            requiredPermissions: ["admin:all"]
+            requiredPermissions: ["admin:all"],
           },
         },
         {
@@ -119,7 +120,19 @@ const router = createRouter({
             title: "导出限制管理",
             icon: "Download",
             parentTitle: "管理工具",
-            requiredPermissions: ["admin:all"]
+            requiredPermissions: ["admin:all"],
+          },
+        },
+        {
+          path: "/management/operation-logs",
+          name: "operation-log-audit",
+          component: () => import("../views/admin/OperationLogAudit.vue"),
+          meta: {
+            requiresAuth: true,
+            title: "操作日志审查",
+            icon: "Document",
+            parentTitle: "管理工具",
+            requiredPermissions: ["admin:all"],
           },
         },
         // 隐藏的原有页面（保留以防需要）
@@ -175,57 +188,57 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach(async (to, _from, next) => {
   // 动态导入useAuth以避免循环依赖
-  const { useAuth } = await import('../composables/useAuth')
-  const { isLoggedIn, validateToken, user } = useAuth()
+  const { useAuth } = await import("../composables/useAuth");
+  const { isLoggedIn, validateToken, user } = useAuth();
 
   // 检查是否需要认证
   if (to.meta.requiresAuth) {
     if (!isLoggedIn.value) {
       // 未登录，跳转到登录页
       next({
-        path: '/login',
-        query: { redirect: to.fullPath } // 保存原始路径用于登录后跳转
-      })
-      return
+        path: "/login",
+        query: { redirect: to.fullPath }, // 保存原始路径用于登录后跳转
+      });
+      return;
     }
 
     // 已登录，验证token有效性
-    const tokenValid = await validateToken()
+    const tokenValid = await validateToken();
     if (!tokenValid) {
       // token无效，跳转到登录页
       next({
-        path: '/login',
-        query: { redirect: to.fullPath }
-      })
-      return
+        path: "/login",
+        query: { redirect: to.fullPath },
+      });
+      return;
     }
 
     // 检查权限要求
     if (to.meta.requiredPermissions) {
-      const requiredPermissions = to.meta.requiredPermissions as string[]
-      const userPermissions = user.value?.permissions || []
+      const requiredPermissions = to.meta.requiredPermissions as string[];
+      const userPermissions = user.value?.permissions || [];
 
-      const hasPermission = requiredPermissions.some(permission =>
+      const hasPermission = requiredPermissions.some((permission) =>
         userPermissions.includes(permission)
-      )
+      );
 
       if (!hasPermission) {
         // 权限不足，跳转到首页并显示错误信息
-        next('/')
+        next("/");
         // 这里可以显示权限不足的提示
-        return
+        return;
       }
     }
   }
 
   // 如果已登录用户访问登录页，重定向到首页
-  if (to.path === '/login' && isLoggedIn.value) {
-    next('/')
-    return
+  if (to.path === "/login" && isLoggedIn.value) {
+    next("/");
+    return;
   }
 
   // 正常跳转
-  next()
+  next();
 });
 
 export default router;

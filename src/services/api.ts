@@ -22,7 +22,7 @@ import type {
   EnterpriseItem,
 } from "../types/api";
 
-import { getApiBaseUrl } from '../utils/request';
+import { getApiBaseUrl } from "../utils/request";
 
 // 基础请求配置
 // 开发环境使用后端服务器地址，生产环境使用相对路径
@@ -34,14 +34,14 @@ async function request<T>(
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   // 获取token并自动添加Authorization头
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...options.headers as Record<string, string>,
+    ...(options.headers as Record<string, string>),
   };
 
   // 如果有token且不是登录接口，自动添加Authorization头
-  if (token && !url.includes('/auth/login')) {
+  if (token && !url.includes("/auth/login")) {
     headers.Authorization = `Bearer ${token}`;
   }
 
@@ -78,32 +78,32 @@ export const certificateQuantityApi = {
   ): Promise<Blob> {
     // 获取token并检查
     const token = localStorage.getItem("token");
-    
+
     // 开发环境下打印调试信息
     if (import.meta.env.DEV) {
-      console.log('🔐 导出API - Token检查:', {
+      console.log("🔐 导出API - Token检查:", {
         hasToken: !!token,
         tokenLength: token?.length || 0,
-        tokenPreview: token ? `${token.substring(0, 20)}...` : 'null'
+        tokenPreview: token ? `${token.substring(0, 20)}...` : "null",
       });
     }
 
     if (!token) {
-      throw new Error('未登录或登录已过期，请先登录');
+      throw new Error("未登录或登录已过期，请先登录");
     }
 
     const response = await fetch(`${BASE_URL}/certificate-quantity/export`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(params),
     });
 
     // 处理403错误
     if (response.status === 403) {
-      throw new Error('没有导出权限，请联系管理员');
+      throw new Error("没有导出权限，请联系管理员");
     }
 
     if (!response.ok) {
@@ -162,7 +162,7 @@ export const certificateDetailApi = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
       body: JSON.stringify(params),
     });
@@ -537,18 +537,18 @@ export const groupApi = {
       total: number;
     }>
   > {
-    return request(`/group/enterprises/${groupCode}?page=${page}&page_size=${pageSize}`);
+    return request(
+      `/group/enterprises/${groupCode}?page=${page}&page_size=${pageSize}`
+    );
   },
 
   // 导出集团信息
-  async export(
-    params: GroupExportParams
-  ): Promise<Blob> {
+  async export(params: GroupExportParams): Promise<Blob> {
     const response = await fetch(`${BASE_URL}/group/export`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
       body: JSON.stringify(params),
     });
@@ -606,11 +606,15 @@ export const groupApi = {
     params.append("page", page.toString());
     params.append("page_size", pageSize.toString());
 
-    return request(`/group/enterprises/${groupCode}/detailed?${params.toString()}`);
+    return request(
+      `/group/enterprises/${groupCode}/detailed?${params.toString()}`
+    );
   },
 
   // 获取单个企业详细信息
-  async getEnterpriseDetail(enterpriseId: string): Promise<ApiResponse<EnterpriseDetailInfo>> {
+  async getEnterpriseDetail(
+    enterpriseId: string
+  ): Promise<ApiResponse<EnterpriseDetailInfo>> {
     return request(`/group/enterprise/${enterpriseId}`);
   },
 };
@@ -651,7 +655,7 @@ export const enterpriseSupervisionApi = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
       body: JSON.stringify(params),
     });
@@ -680,29 +684,225 @@ export const enterpriseSupervisionApi = {
 
   // 获取字段选项
   async getFieldOptions(): Promise<
-    ApiResponse<Array<{
-      key: string;
-      label: string;
-      required?: boolean;
-    }>>
+    ApiResponse<
+      Array<{
+        key: string;
+        label: string;
+        required?: boolean;
+      }>
+    >
   > {
     return request("/enterprise-supervision/field-options");
   },
 
   // 下载批量查询模板
   async downloadTemplate(): Promise<Blob> {
-    const response = await fetch(`${BASE_URL}/enterprise-supervision/template`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
+    const response = await fetch(
+      `${BASE_URL}/enterprise-supervision/template`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`下载模板失败: ${response.status}`);
     }
 
     return response.blob();
+  },
+};
+
+// 角色管理相关API
+export const roleManagementApi = {
+  // 获取角色列表
+  async getRoleList(params: {
+    name?: string;
+    is_active?: boolean;
+    page?: number;
+    page_size?: number;
+  }): Promise<
+    ApiResponse<{
+      list: any[];
+      total: number;
+      page: number;
+      page_size: number;
+    }>
+  > {
+    const queryParams = new URLSearchParams();
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        queryParams.append(key, String(value));
+      }
+    });
+
+    return request(`/role/list?${queryParams.toString()}`);
+  },
+
+  // 创建角色
+  async createRole(data: {
+    name: string;
+    description?: string;
+    permissions?: string[];
+  }): Promise<ApiResponse<any>> {
+    return request("/role/create", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 获取角色详情
+  async getRoleDetail(roleId: number): Promise<ApiResponse<any>> {
+    return request(`/role/${roleId}`);
+  },
+
+  // 更新角色
+  async updateRole(
+    roleId: number,
+    data: {
+      name?: string;
+      description?: string;
+      permissions?: string[];
+      is_active?: boolean;
+    }
+  ): Promise<ApiResponse<any>> {
+    return request(`/role/${roleId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 删除角色
+  async deleteRole(roleId: number): Promise<ApiResponse<any>> {
+    return request(`/role/${roleId}`, {
+      method: "DELETE",
+    });
+  },
+
+  // 切换角色状态
+  async toggleRoleStatus(roleId: number): Promise<ApiResponse<any>> {
+    return request(`/role/${roleId}/toggle-status`, {
+      method: "PUT",
+    });
+  },
+
+  // 获取角色权限
+  async getRolePermissions(roleId: number): Promise<ApiResponse<string[]>> {
+    return request(`/role/${roleId}/permissions`);
+  },
+
+  // 更新角色权限
+  async updateRolePermissions(
+    roleId: number,
+    permissions: string[]
+  ): Promise<ApiResponse<any>> {
+    return request(`/role/${roleId}/permissions`, {
+      method: "PUT",
+      body: JSON.stringify({ permissions }),
+    });
+  },
+
+  // 获取权限树
+  async getPermissionTree(): Promise<ApiResponse<any[]>> {
+    return request("/role/permissions/tree");
+  },
+};
+
+// 用户管理相关API
+export const userManagementApi = {
+  // 获取用户列表
+  async getUserList(params: {
+    username?: string;
+    name?: string;
+    is_active?: boolean;
+    is_admin?: boolean;
+    role_id?: number;
+    page?: number;
+    page_size?: number;
+  }): Promise<
+    ApiResponse<{
+      list: any[];
+      total: number;
+      page: number;
+      page_size: number;
+    }>
+  > {
+    const queryParams = new URLSearchParams();
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        queryParams.append(key, String(value));
+      }
+    });
+
+    return request(`/user/list?${queryParams.toString()}`);
+  },
+
+  // 创建用户
+  async createUser(data: {
+    username: string;
+    password: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    is_admin?: boolean;
+    role_ids?: number[];
+  }): Promise<ApiResponse<any>> {
+    return request("/user/create", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 获取用户详情
+  async getUserDetail(userId: number): Promise<ApiResponse<any>> {
+    return request(`/user/${userId}`);
+  },
+
+  // 更新用户
+  async updateUser(
+    userId: number,
+    data: {
+      name?: string;
+      email?: string;
+      phone?: string;
+      is_admin?: boolean;
+      role_ids?: number[];
+    }
+  ): Promise<ApiResponse<any>> {
+    return request(`/user/${userId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 删除用户
+  async deleteUser(userId: number): Promise<ApiResponse<any>> {
+    return request(`/user/${userId}`, {
+      method: "DELETE",
+    });
+  },
+
+  // 切换用户状态
+  async toggleUserStatus(userId: number): Promise<ApiResponse<any>> {
+    return request(`/user/${userId}/toggle-status`, {
+      method: "PUT",
+    });
+  },
+
+  // 重置用户密码
+  async resetUserPassword(userId: number): Promise<ApiResponse<any>> {
+    return request(`/user/${userId}/reset-password`, {
+      method: "POST",
+    });
+  },
+
+  // 获取所有角色列表
+  async getAllRoles(): Promise<ApiResponse<any[]>> {
+    return request("/user/roles/all");
   },
 };
 
@@ -737,14 +937,12 @@ export const enterpriseBasicApi = {
   },
 
   // 导出企业基本信息
-  async export(
-    params: EnterpriseBasicParams & ExportParams
-  ): Promise<Blob> {
+  async export(params: EnterpriseBasicParams & ExportParams): Promise<Blob> {
     const response = await fetch(`${BASE_URL}/enterprise-basic/export`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
       body: JSON.stringify(params),
     });
@@ -766,7 +964,7 @@ export const enterpriseBasicApi = {
     const response = await fetch(`${BASE_URL}/enterprise-basic/template`, {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     });
     return response.blob();

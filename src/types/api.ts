@@ -53,6 +53,9 @@ export interface ExportParams {
   filename?: string;
 }
 
+// 时间维度类型
+export type TimeDimension = "total" | "yearly" | "monthly" | "daily";
+
 // 合格证总量查询相关接口
 export interface CertificateQuantityParams
   extends PaginationParams,
@@ -94,8 +97,18 @@ export interface CertificateQuantityParams
   // 时间相关
   timeRange?: TimeRangeParams;
   quickTimeRange?: string; // 快捷时间选择
-  viewDimension?: string; // 查看维度
-  enableComparison?: boolean; // 启用同期比
+
+  // 时间维度（新增，替代 viewDimension）
+  time_dimension?: TimeDimension; // 时间维度: total(总量)/yearly(年)/monthly(月)/daily(日)
+
+  // 分组维度
+  group_dimensions?: string[]; // 统计分组维度（如['CLZZQYMC', 'G50']）
+
+  // 同期比开关
+  enableComparison?: boolean; // 启用同期比（仅在时间维度非total时有效）
+
+  // 向后兼容：保留旧字段
+  viewDimension?: string; // 已废弃，使用 time_dimension 替代
 
   // 其他选项
   excludeNonAnnouncement?: boolean; // 排除非公告产品
@@ -426,4 +439,68 @@ export interface BatchEnterpriseSupervisionParams {
   queries: string[];
   query_type: "enterprise_id" | "enterprise_name";
   fields?: string[];
+}
+
+// 操作日志相关接口
+export interface OperationLogParams extends PaginationParams {
+  user_id?: number;
+  username?: string;
+  operation_type?: string;
+  module?: string;
+  action?: string;
+  response_status?: number;
+  start_date?: string;
+  end_date?: string;
+  ip_address?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface OperationLogItem {
+  id: number;
+  user_id: number;
+  username?: string;
+  name?: string;
+  operation_type: string;
+  module: string;
+  action: string;
+  request_method?: string;
+  request_path?: string;
+  request_params?: string;
+  response_status?: number;
+  response_message?: string;
+  result_count?: number;
+  ip_address?: string;
+  user_agent?: string;
+  start_time?: string;
+  end_time?: string;
+  duration_ms?: number;
+  error_message?: string;
+  remarks?: string;
+  business_data?: string;
+  user?: {
+    username: string;
+    name: string;
+  };
+}
+
+export interface OperationLogStatistics {
+  total_operations: number;
+  total_errors: number;
+  by_type: Record<
+    string,
+    {
+      count: number;
+      error_count: number;
+      avg_duration: number;
+    }
+  >;
+  by_module: Record<
+    string,
+    {
+      count: number;
+      error_count: number;
+      avg_duration: number;
+    }
+  >;
 }
