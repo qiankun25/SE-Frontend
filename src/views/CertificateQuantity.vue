@@ -48,24 +48,26 @@
     <!-- 四个主要组件 -->
     <div class="main-content">
       <!-- 查询条件设置组件 -->
-      <certificate-search-conditions @add-condition="handleAddCondition" @reset="handleResetConditions" />
+      <certificate-search-conditions ref="searchConditionsRef" @add-condition="handleAddCondition"
+        @reset="handleResetConditions" />
 
       <!-- 统计维度选择组件 -->
-      <group-dimensions :initial-fields="groupDimensions" @dimensions-change="handleGroupDimensionsChange" />
+      <group-dimensions :initial-fields="groupDimensions" :initial-time-dimension="timeDimension"
+        :initial-enable-comparison="enableComparison" @dimensions-change="handleGroupDimensionsChange" />
 
       <!-- 已选条件显示组件 -->
       <certificate-selected-conditions :selected-conditions="selectedConditions"
         @remove-condition="handleRemoveCondition" @clear-all="handleClearAllConditions" @search="handleSearch"
         @reset="handleResetAll" />
 
-      <!-- 显示字段选择组件 -->
-      <display-fields field-type="certificate" :initial-fields="displayFields"
-        @fields-change="handleDisplayFieldsChange" />
+      <!-- 显示字段选择组件（已废弃，保留用于向后兼容） -->
+      <!-- <display-fields field-type="certificate" :initial-fields="displayFields"
+        @fields-change="handleDisplayFieldsChange" /> -->
 
       <!-- 查询结果表格组件 -->
       <certificate-result-table :data="tableData" :loading="loading" :search-conditions="selectedConditions"
-        :display-fields="displayFields" @export="handleExportData" @view-detail="handleViewDetail"
-        @sort-change="handleSortChange" />
+        :time-dimension="timeDimension" :group-dimensions="groupDimensions" :enable-comparison="enableComparison"
+        @export="handleExportData" @view-detail="handleViewDetail" @sort-change="handleSortChange" />
     </div>
   </div>
 </template>
@@ -87,8 +89,16 @@ const loading = ref(false)
 const hasSearched = ref(false)
 const selectedConditions = ref<any[]>([])
 const tableData = ref<any[]>([])
-const groupDimensions = ref<string[]>([]) // 用户选择的统计维度（分组维度）
-const displayFields = ref<string[]>([]) // 用户选择的显示字段
+
+// 组件引用
+const searchConditionsRef = ref<InstanceType<typeof CertificateSearchConditions>>()
+
+// 统计维度相关状态
+const timeDimension = ref<string>('total') // 时间维度
+const groupDimensions = ref<string[]>([]) // 分组维度
+const enableComparison = ref<boolean>(false) // 同期比开关
+
+const displayFields = ref<string[]>([]) // 用户选择的显示字段（已废弃，将使用维度字段）
 
 // 事件处理函数
 const handleAddCondition = (condition: any) => {
@@ -120,11 +130,21 @@ const handleResetAll = () => {
   // 重置所有
 }
 
-const handleGroupDimensionsChange = (dimensions: string[]) => {
-  groupDimensions.value = dimensions
-  // 确保显示字段包含所有统计维度和数量字段
-  const requiredFields = [...dimensions, 'SL']
-  displayFields.value = [...new Set([...displayFields.value, ...requiredFields])]
+const handleGroupDimensionsChange = (data: {
+  timeDimension: string
+  groupDimensions: string[]
+  enableComparison: boolean
+}) => {
+  // 保存时间维度、分组维度和同期比状态
+  timeDimension.value = data.timeDimension
+  groupDimensions.value = data.groupDimensions
+  enableComparison.value = data.enableComparison
+
+  console.log('📊 统计维度已更新:', {
+    timeDimension: data.timeDimension,
+    groupDimensions: data.groupDimensions,
+    enableComparison: data.enableComparison
+  })
 }
 
 const handleDisplayFieldsChange = (fields: string[]) => {
@@ -168,6 +188,14 @@ const handleSearch = async (conditions: any[]) => {
       }
 
       ElMessage.success(`查询完成，共找到 ${response.data.total} 条记录`)
+
+      // 查询成功后自动重置条件表单和清空已选条件
+      // 这样用户可以直接添加新条件进行下一次查询，无需手动点击重置
+      if (searchConditionsRef.value) {
+        searchConditionsRef.value.handleReset()
+      }
+      // 清空已选条件
+      selectedConditions.value = []
     } else {
       throw new Error(response.message)
     }
@@ -183,7 +211,10 @@ const handleSearch = async (conditions: any[]) => {
 // 构建查询参数
 const buildSearchParams = (conditions: any[]) => {
   const params: any = {
-    group_dimensions: groupDimensions.value // 添加统计维度参数
+    // 新的统计维度参数
+    time_dimension: timeDimension.value, // 时间维度
+    group_dimensions: groupDimensions.value, // 分组维度
+    enableComparison: enableComparison.value // 同期比开关
   }
 
   // 收集所有参数的数组，用于合并多个条件
@@ -299,12 +330,7 @@ const buildSearchParams = (conditions: any[]) => {
     if (condition.quickTimeRange) {
       params.quickTimeRange = condition.quickTimeRange
     }
-    if (condition.viewDimension) {
-      params.viewDimension = condition.viewDimension
-    }
-    if (condition.enableComparison !== undefined) {
-      params.enableComparison = condition.enableComparison
-    }
+    // viewDimension 和 enableComparison 已移至 GroupDimensions 组件管理
 
     // 其他选项
     if (condition.excludeNonAnnouncement !== undefined) {
@@ -457,6 +483,25 @@ const handleExport = async () => {
   try {
     const { certificateQuantityApi, exportUtils } = await import('../services/api')
 
+    // 构建导出字段列表（基于用户选择的维度）
+    const exportFields = [...groupDimensions.value]
+
+    // 添加时间维度字段
+    if (timeDimension.value === 'yearly') {
+      exportFields.push('year')
+    } else if (timeDimension.value === 'monthly') {
+      exportFields.push('year', 'month')
+    } else if (timeDimension.value === 'daily') {
+      exportFields.push('date')
+    }
+
+    // 添加数量字段
+    if (enableComparison.value) {
+      exportFields.push('currentPeriodCount', 'previousPeriodCount', 'comparisonRatio')
+    } else {
+      exportFields.push('certificateCount')
+    }
+
     // 构建导出参数 - 只导出当前页数据
     const params = {
       ...buildSearchParams(selectedConditions.value),
@@ -467,7 +512,7 @@ const handleExport = async () => {
       format: 'excel' as const,
       filename: '合格证总量统计_当前页',
       export_range: 'current', // 明确指定导出范围
-      fields: displayFields.value // 只导出用户选择的字段
+      fields: exportFields // 使用维度字段
     }
 
     const blob = await certificateQuantityApi.export(params)
@@ -516,6 +561,25 @@ const handleExportAll = async () => {
 
     const { certificateQuantityApi, exportUtils } = await import('../services/api')
 
+    // 构建导出字段列表（基于用户选择的维度）
+    const exportFields = [...groupDimensions.value]
+
+    // 添加时间维度字段
+    if (timeDimension.value === 'yearly') {
+      exportFields.push('year')
+    } else if (timeDimension.value === 'monthly') {
+      exportFields.push('year', 'month')
+    } else if (timeDimension.value === 'daily') {
+      exportFields.push('date')
+    }
+
+    // 添加数量字段
+    if (enableComparison.value) {
+      exportFields.push('currentPeriodCount', 'previousPeriodCount', 'comparisonRatio')
+    } else {
+      exportFields.push('certificateCount')
+    }
+
     const params = {
       ...buildSearchParams(selectedConditions.value),
       field: 'certificateCount',
@@ -523,7 +587,7 @@ const handleExportAll = async () => {
       format: 'excel' as const,
       filename: '合格证总量统计_全部数据',
       export_range: 'all', // 导出全部数据
-      fields: displayFields.value // 只导出用户选择的字段
+      fields: exportFields // 使用维度字段
     }
 
     const blob = await certificateQuantityApi.export(params)
@@ -570,6 +634,25 @@ const handleExportData = async (exportData: any) => {
     // 提取选中数据的ID
     const selectedIds = selectedRows.map((row: any) => row.companyId || row.id || `${row.companyName}_${row.vehicleModel}`)
 
+    // 构建导出字段列表（基于用户选择的维度）
+    const exportFields = [...groupDimensions.value]
+
+    // 添加时间维度字段
+    if (timeDimension.value === 'yearly') {
+      exportFields.push('year')
+    } else if (timeDimension.value === 'monthly') {
+      exportFields.push('year', 'month')
+    } else if (timeDimension.value === 'daily') {
+      exportFields.push('date')
+    }
+
+    // 添加数量字段
+    if (enableComparison.value) {
+      exportFields.push('currentPeriodCount', 'previousPeriodCount', 'comparisonRatio')
+    } else {
+      exportFields.push('certificateCount')
+    }
+
     const params = {
       ...buildSearchParams(selectedConditions.value),
       field: 'certificateCount',
@@ -578,7 +661,7 @@ const handleExportData = async (exportData: any) => {
       filename: '合格证总量统计_选中数据',
       export_range: 'selected', // 导出选中数据
       selected_ids: selectedIds,
-      fields: displayFields.value // 只导出用户选择的字段
+      fields: exportFields // 使用维度字段
     }
 
     const blob = await certificateQuantityApi.export(params)
