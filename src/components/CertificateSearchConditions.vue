@@ -112,7 +112,7 @@
             </el-form-item>
           </el-col>
 
-          <!-- 时间范围选择 -->
+          <!-- 时间范围选择（移除查看维度和同期比，这些功能已集成到统计维度组件中） -->
           <el-col :span="12">
             <el-form-item label="时间范围" style="margin-bottom: 0;">
               <div class="time-range-container"
@@ -132,36 +132,6 @@
                 <el-date-picker v-model="timeRange" type="daterange" range-separator="至" start-placeholder="开始日期"
                   end-placeholder="结束日期" format="YYYY-MM-DD" value-format="YYYY-MM-DD"
                   style="width: 260px; height: 32px;" @change="handleTimeRangeChange" />
-
-                <!-- 查看维度选择 -->
-                <el-select v-model="form.viewDimension" placeholder="查看维度" style="width: 150px; height: 32px;">
-                  <el-option label="总量" value="total">
-                    <el-icon>
-                      <TrendCharts />
-                    </el-icon>
-                    <span style="margin-left: 8px">总量</span>
-                  </el-option>
-                  <el-option label="分年度" value="yearly">
-                    <span style="margin-left: 8px">年 分年度</span>
-                  </el-option>
-                  <el-option label="分月份" value="monthly">
-                    <span style="margin-left: 8px">月 分月份</span>
-                  </el-option>
-                  <el-option label="分天数" value="daily">
-                    <span style="margin-left: 8px">日 分天数</span>
-                  </el-option>
-                </el-select>
-
-                <!-- 同期比开关 -->
-                <el-switch v-model="form.enableComparison" active-text="同期比" inactive-text="同期比"
-                  style="margin-left: 10px; height: 32px;" :active-color="form.enableComparison ? '#409eff' : '#dcdfe6'"
-                  @change="handleComparisonToggle">
-                  <template #active-action>
-                    <el-icon :style="{ color: form.enableComparison ? '#409eff' : '#909399' }">
-                      <TrendCharts />
-                    </el-icon>
-                  </template>
-                </el-switch>
               </div>
             </el-form-item>
           </el-col>
@@ -456,8 +426,6 @@ interface SearchForm {
 
   // 时间范围选择
   quickTimeRange: string            // 快捷时间选择
-  viewDimension: string             // 查看维度
-  enableComparison: boolean         // 同期比开关
 
   productionAddresses: string[]
   productionAddressInput: string    // 生产地址输入框
@@ -590,15 +558,6 @@ const handleQuickTimeRangeChange = (value: string) => {
   // 同步更新时间选择器的值
   timeRange.value = [startDate, endDate]
   console.log('快捷时间范围已更新:', { value, startDate, endDate })
-}
-
-const handleComparisonToggle = (value: string | number | boolean) => {
-  const boolValue = Boolean(value)
-  if (boolValue) {
-    ElMessage.info('已开启同期比分析，将与去年同期进行对比')
-  } else {
-    ElMessage.info('已关闭同期比分析')
-  }
 }
 
 // 开发环境标识
@@ -1122,8 +1081,7 @@ const handleAddCondition = () => {
       endDate: timeRange.value[1]
     }
   }
-  if (form.viewDimension) condition.viewDimension = form.viewDimension
-  if (form.enableComparison) condition.enableComparison = form.enableComparison
+  // viewDimension 和 enableComparison 已移至 GroupDimensions 组件
   if (form.productionAddresses.length > 0) condition.productionAddresses = [...form.productionAddresses]
   if (form.productionProvinces.length > 0) condition.productionProvinces = [...form.productionProvinces]
   if (form.productionCities.length > 0) condition.productionCities = [...form.productionCities]
@@ -1174,8 +1132,6 @@ const handleReset = () => {
 
     // 时间范围选择重置为默认值（今年）
     quickTimeRange: 'thisYear',
-    viewDimension: 'total',
-    enableComparison: false,
 
     productionAddresses: [],
     productionAddressInput: '',
@@ -1212,6 +1168,11 @@ const handleReset = () => {
   emit('reset')
   ElMessage.success('表单已重置')
 }
+
+// 暴露方法给父组件调用
+defineExpose({
+  handleReset
+})
 </script>
 
 <style scoped>

@@ -5,14 +5,38 @@
         <div class="card-header">
           <span>统计维度选择</span>
           <div class="header-actions">
-            <el-button size="small" @click="selectAll">全选</el-button>
-            <el-button size="small" @click="selectNone">全不选</el-button>
             <el-button size="small" @click="selectDefault">默认选择</el-button>
+            <el-button size="small" @click="selectNone">清空选择</el-button>
           </div>
         </div>
       </template>
 
       <div class="fields-container">
+        <!-- 时间维度（新增） -->
+        <div class="field-category">
+          <div class="category-label">时间维度：</div>
+          <div class="category-fields">
+            <el-radio-group v-model="timeDimension" @change="handleTimeDimensionChange">
+              <el-radio value="total">总量（不按时间分组）</el-radio>
+              <el-radio value="yearly">按年统计</el-radio>
+              <el-radio value="monthly">按月统计</el-radio>
+              <el-radio value="daily">按日统计</el-radio>
+            </el-radio-group>
+
+            <!-- 同期比开关（集成到时间维度中） -->
+            <div v-if="timeDimension !== 'total'" class="comparison-switch">
+              <el-switch v-model="enableComparison" active-text="启用同期比" inactive-text="关闭同期比"
+                @change="handleComparisonChange" />
+              <el-tooltip content="同期比将对比去年同期数据" placement="top">
+                <el-icon class="info-icon">
+                  <QuestionFilled />
+                </el-icon>
+              </el-tooltip>
+            </div>
+          </div>
+        </div>
+
+        <!-- 其他分组维度（原有逻辑） -->
         <div class="field-category" v-for="category in visibleCategories" :key="category.name">
           <div class="category-label">{{ category.label }}：</div>
           <div class="category-fields">
@@ -28,8 +52,14 @@
       </div>
 
       <div class="selected-summary">
-        <el-tag type="info" size="small">
-          已选择 {{ selectedFields.length }} 个统计维度
+        <el-tag type="primary" size="small">
+          时间维度：{{ timeDimensionLabel }}
+        </el-tag>
+        <el-tag type="info" size="small" style="margin-left: 8px;">
+          已选择 {{ selectedFields.length }} 个分组维度
+        </el-tag>
+        <el-tag v-if="enableComparison" type="warning" size="small" style="margin-left: 8px;">
+          同期比已启用
         </el-tag>
       </div>
     </el-card>
@@ -38,6 +68,9 @@
 
 <script lang="ts" setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { QuestionFilled } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import type { TimeDimension } from '../types/api'
 
 interface Field {
   key: string
@@ -54,10 +87,16 @@ interface FieldCategory {
 
 const props = defineProps<{
   initialFields?: string[]
+  initialTimeDimension?: TimeDimension
+  initialEnableComparison?: boolean
 }>()
 
 const emit = defineEmits<{
-  'dimensions-change': [fields: string[]]
+  'dimensions-change': [data: {
+    timeDimension: TimeDimension
+    groupDimensions: string[]
+    enableComparison: boolean
+  }]
 }>()
 
 // 字段分类配置（仅包含可作为统计维度的字段）
@@ -119,7 +158,7 @@ const fieldCategories: FieldCategory[] = [
     name: 'config',
     label: '配置信息',
     fields: [
-      { key: 'LSPZXLH', label: '配置序列号' },
+      { key: 'LSPZXLH', label: '历史配置序列号' },
       { key: 'CONFIG_SEQUENCE_NUM', label: '配置序列号' },
       { key: 'POINTS_CONF_ID', label: '双积分ID' }
     ]
@@ -131,6 +170,11 @@ const getDefaultFields = () => {
   return ['CLZZQYMC', 'QYDM'] // 默认选择企业名称和企业代码（必选字段）
 }
 
+// 时间维度选择
+const timeDimension = ref<TimeDimension>('total')
+const enableComparison = ref<boolean>(false)
+
+// 其他分组维度选择
 const selectedFields = ref<string[]>([])
 
 // 过滤掉时间信息分类（这些字段由时间维度控制，不在这里显示）
@@ -138,50 +182,90 @@ const visibleCategories = computed(() => {
   return fieldCategories.filter(category => category.name !== 'time')
 })
 
-// 方法
-const selectAll = () => {
-  const allFields = fieldCategories.flatMap(category =>
-    category.fields.filter(f => !f.disabled && !f.required).map(f => f.key)
-  )
-  selectedFields.value = [...getDefaultFields(), ...allFields]
-  handleFieldsChange()
+// 时间维度标签
+const timeDimensionLabel = computed(() => {
+  const labels: Record<TimeDimension, string> = {
+    'total': '总量',
+    'yearly': '按年',
+    'monthly': '按月',
+    'daily': '按日'
+  }
+  return labels[timeDimension.value] || '总量'
+})
+
+// 时间维度变化处理
+const handleTimeDimensionChange = (value: TimeDimension) => {
+  // 如果选择总量，自动关闭同期比
+  if (value === 'total') {
+    enableComparison.value = false
+    ElMessage.info('总量模式不支持同期比，已自动关闭')
+  }
+  emitChange()
 }
 
-const selectNone = () => {
-  // 保留必选字段
-  const requiredFields = fieldCategories.flatMap(category =>
-    category.fields.filter(f => f.required).map(f => f.key)
-  )
-  selectedFields.value = requiredFields
-  handleFieldsChange()
+// 同期比变化处理
+const handleComparisonChange = (value: boolean) => {
+  if (value) {
+    ElMessage.success('已启用同期比，将对比去年同期数据')
+  }
+  emitChange()
 }
 
-const selectDefault = () => {
-  selectedFields.value = getDefaultFields()
-  handleFieldsChange()
-}
-
+// 分组维度变化处理
 const handleFieldsChange = () => {
-  emit('dimensions-change', selectedFields.value)
+  emitChange()
+}
+
+// 统一发送变化事件
+const emitChange = () => {
+  emit('dimensions-change', {
+    timeDimension: timeDimension.value,
+    groupDimensions: selectedFields.value,
+    enableComparison: enableComparison.value
+  })
+}
+
+// 默认选择
+const selectDefault = () => {
+  timeDimension.value = 'total'
+  selectedFields.value = getDefaultFields()
+  enableComparison.value = false
+  emitChange()
+  ElMessage.success('已恢复默认选择')
+}
+
+// 清空选择
+const selectNone = () => {
+  timeDimension.value = 'total'
+  selectedFields.value = getDefaultFields() // 保留必选字段
+  enableComparison.value = false
+  emitChange()
+  ElMessage.info('已清空选择（保留必选字段）')
 }
 
 // 初始化
 const initializeFields = () => {
+  if (props.initialTimeDimension) {
+    timeDimension.value = props.initialTimeDimension
+  }
   if (props.initialFields && props.initialFields.length > 0) {
     selectedFields.value = [...props.initialFields]
   } else {
     selectedFields.value = getDefaultFields()
   }
+  if (props.initialEnableComparison !== undefined) {
+    enableComparison.value = props.initialEnableComparison
+  }
 }
 
 // 监听props变化
-watch(() => props.initialFields, () => {
+watch(() => [props.initialFields, props.initialTimeDimension, props.initialEnableComparison], () => {
   initializeFields()
 }, { immediate: true })
 
 // 组件挂载时发送初始选中的字段
 onMounted(() => {
-  emit('dimensions-change', selectedFields.value)
+  emitChange()
 })
 </script>
 
@@ -214,6 +298,13 @@ onMounted(() => {
   gap: 12px;
 }
 
+.time-dimension-category {
+  background-color: #f0f9ff;
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid #bfdbfe;
+}
+
 .category-label {
   font-weight: 600;
   color: #606266;
@@ -232,6 +323,12 @@ onMounted(() => {
   gap: 8px 16px;
 }
 
+.category-fields :deep(.el-radio-group) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
 .field-checkbox {
   margin-right: 0;
   display: inline-flex;
@@ -243,11 +340,33 @@ onMounted(() => {
   margin-left: 4px;
 }
 
+.comparison-switch {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background-color: #fff;
+  border-radius: 4px;
+  border: 1px solid #e4e7ed;
+}
+
+.info-icon {
+  color: #909399;
+  cursor: help;
+  font-size: 16px;
+}
+
 .selected-summary {
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid #e4e7ed;
   text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 /* 响应式设计 */
@@ -263,6 +382,10 @@ onMounted(() => {
 
   .header-actions {
     flex-wrap: wrap;
+  }
+
+  .category-fields :deep(.el-radio-group) {
+    flex-direction: column;
   }
 }
 </style>

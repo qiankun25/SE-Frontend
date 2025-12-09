@@ -86,7 +86,10 @@ interface Props {
   data: any[]
   loading: boolean
   searchConditions: any[]
-  displayFields?: string[]
+  timeDimension?: string // 时间维度
+  groupDimensions?: string[] // 分组维度
+  enableComparison?: boolean // 同期比开关
+  displayFields?: string[] // 保留用于向后兼容
 }
 
 interface Emits {
@@ -99,6 +102,9 @@ const props = withDefaults(defineProps<Props>(), {
   data: () => [],
   loading: false,
   searchConditions: () => [],
+  timeDimension: 'total',
+  groupDimensions: () => [],
+  enableComparison: false,
   displayFields: () => []
 })
 
@@ -175,205 +181,325 @@ const paginatedData = computed(() => {
   }
 })
 
-// 根据用户选择的显示字段和查询条件动态生成表格列
+// 根据用户选择的维度动态生成表格列
 const dynamicColumns = computed(() => {
   try {
     const columns: any[] = []
-    const conditions = props.searchConditions || []
+
+    // 优先使用维度参数（新逻辑）
+    if (props.groupDimensions && props.groupDimensions.length > 0) {
+      return generateColumnsFromDimensions()
+    }
+
+    // 向后兼容：如果有displayFields，使用旧逻辑
     const displayFields = props.displayFields || []
-
-    // 如果没有选择显示字段，使用默认逻辑
-    if (displayFields.length === 0) {
-      return getDefaultColumns(conditions)
+    if (displayFields.length > 0) {
+      return generateColumnsFromDisplayFields(displayFields)
     }
 
-    // 字段映射配置
-    const fieldMapping: Record<string, any> = {
-      'QYDM': {
-        key: 'companyId',
-        label: '合格证企业代码',
-        width: 150,
-        showTooltip: true
-      },
-      'CLZZQYMC': {
-        key: 'companyName',
-        label: '车辆制造企业名称',
-        minWidth: 200,
-        showTooltip: true
-      },
-      'CLZT': {
-        key: 'vehicleCategory',
-        label: '车辆类别',
-        width: 100
-      },
-      'CLXH': {
-        key: 'vehicleModel',
-        label: '车辆型号',
-        width: 150,
-        showTooltip: true
-      },
-      'CLLX': {
-        key: 'vehicleType',
-        label: '车辆类型',
-        width: 120,
-        showTooltip: true
-      },
-      'CLPP': {
-        key: 'vehicleBrand',
-        label: '车辆品牌',
-        width: 120
-      },
-      'CLMC': {
-        key: 'vehicleName',
-        label: '车辆名称',
-        minWidth: 200,
-        showTooltip: true
-      },
-      'RLZL': {
-        key: 'fuelType',
-        label: '燃料种类',
-        width: 100
-      },
-      'PL': {
-        key: 'displacement',
-        label: '排量',
-        width: 80,
-        align: 'right'
-      },
-      'C': {
-        key: 'length',
-        label: '长',
-        width: 80,
-        align: 'right'
-      },
-      'ZZL': {
-        key: 'totalWeight',
-        label: '总质量',
-        width: 100,
-        align: 'right'
-      },
-      'ZBZL': {
-        key: 'curbWeight',
-        label: '整备质量',
-        width: 100,
-        align: 'right'
-      },
-      'ZJ': {
-        key: 'wheelbase',
-        label: '轴距',
-        width: 80,
-        align: 'right'
-      },
-      'UPD': {
-        key: 'uploadTime',
-        label: '上传时间',
-        width: 160,
-        align: 'center'
-      },
-      'SL': {
-        key: 'certificateCount',
-        label: '数量',
-        width: 120,
-        sortable: 'custom',
-        align: 'right',
-        formatter: (value: number) => `<span class="certificate-count">${formatNumber(value)}</span>`
-      },
-      'SCDZ': {
-        key: 'productionAddress',
-        label: '生产地址',
-        minWidth: 150,
-        showTooltip: true
-      },
-      'SF': {
-        key: 'productionProvince',
-        label: '省份',
-        width: 100,
-        showTooltip: true
-      },
-      'CS': {
-        key: 'productionCity',
-        label: '城市',
-        width: 100,
-        showTooltip: true
-      },
-      'QX': {
-        key: 'district',
-        label: '区县',
-        width: 100,
-        showTooltip: true
-      },
-      'G50': {
-        key: 'sixCategory',
-        label: '六大类',
-        width: 100
-      },
-      'XNYBJ': {
-        key: 'newEnergyMark',
-        label: '新能源标记',
-        width: 120,
-        align: 'center'
-      },
-      'XNYLB': {
-        key: 'newEnergyType',
-        label: '新能源类别',
-        width: 120
-      },
-      'QYID': {
-        key: 'announcementCompanyId',
-        label: '公告企业ID',
-        width: 150,
-        showTooltip: true
-      },
-      'GXSJ': {
-        key: 'updateTime',
-        label: '更新时间',
-        width: 160,
-        align: 'center'
-      },
-      'JT': {
-        key: 'group',
-        label: '集团',
-        width: 120,
-        showTooltip: true
-      },
-      // 时间字段 - 根据 viewDimension 使用
-      'year': {
-        key: 'year',
-        label: '年份',
-        width: 100,
-        align: 'center',
-        formatter: (value: number) => value ? `${value}年` : '-'
-      },
-      'month': {
-        key: 'month',
-        label: '月份',
-        width: 80,
-        align: 'center',
-        formatter: (value: number) => value ? `${value}月` : '-'
-      },
-      'date': {
-        key: 'date',
-        label: '日期',
-        width: 120,
-        align: 'center'
-      }
-    }
+    // 最后使用默认逻辑
+    const conditions = props.searchConditions || []
+    return getDefaultColumns(conditions)
 
-    // 根据用户选择的字段生成列
-    displayFields.forEach(fieldKey => {
+  } catch (error) {
+    console.error('动态列生成失败:', error)
+    return []
+  }
+})
+
+// 根据维度参数生成列（新逻辑）
+const generateColumnsFromDimensions = () => {
+  const columns: any[] = []
+
+  // 字段映射配置
+  const fieldMapping: Record<string, any> = {
+    'QYDM': {
+      key: 'companyId',
+      label: '合格证企业代码',
+      width: 150,
+      showTooltip: true
+    },
+    'CLZZQYMC': {
+      key: 'companyName',
+      label: '车辆制造企业名称',
+      minWidth: 200,
+      showTooltip: true
+    },
+    'CLZT': {
+      key: 'vehicleCategory',
+      label: '车辆类别',
+      width: 100
+    },
+    'CLXH': {
+      key: 'vehicleModel',
+      label: '车辆型号',
+      width: 150,
+      showTooltip: true
+    },
+    'CLLX': {
+      key: 'vehicleType',
+      label: '车辆类型',
+      width: 120,
+      showTooltip: true
+    },
+    'CLPP': {
+      key: 'vehicleBrand',
+      label: '车辆品牌',
+      width: 120
+    },
+    'CLMC': {
+      key: 'vehicleName',
+      label: '车辆名称',
+      minWidth: 200,
+      showTooltip: true
+    },
+    'RLZL': {
+      key: 'fuelType',
+      label: '燃料种类',
+      width: 100
+    },
+    'PL': {
+      key: 'displacement',
+      label: '排量',
+      width: 80,
+      align: 'right'
+    },
+    'C': {
+      key: 'length',
+      label: '长',
+      width: 80,
+      align: 'right'
+    },
+    'ZZL': {
+      key: 'totalWeight',
+      label: '总质量',
+      width: 100,
+      align: 'right'
+    },
+    'ZBZL': {
+      key: 'curbWeight',
+      label: '整备质量',
+      width: 100,
+      align: 'right'
+    },
+    'ZJ': {
+      key: 'wheelbase',
+      label: '轴距',
+      width: 80,
+      align: 'right'
+    },
+    'UPD': {
+      key: 'uploadTime',
+      label: '上传时间',
+      width: 160,
+      align: 'center'
+    },
+    'SL': {
+      key: 'certificateCount',
+      label: '数量',
+      width: 120,
+      sortable: 'custom',
+      align: 'right',
+      formatter: (value: number) => `<span class="certificate-count">${formatNumber(value)}</span>`
+    },
+    'SCDZ': {
+      key: 'productionAddress',
+      label: '生产地址',
+      minWidth: 150,
+      showTooltip: true
+    },
+    'SF': {
+      key: 'productionProvince',
+      label: '省份',
+      width: 100,
+      showTooltip: true
+    },
+    'CS': {
+      key: 'productionCity',
+      label: '城市',
+      width: 100,
+      showTooltip: true
+    },
+    'QX': {
+      key: 'district',
+      label: '区县',
+      width: 100,
+      showTooltip: true
+    },
+    'G50': {
+      key: 'sixCategory',
+      label: '六大类',
+      width: 100
+    },
+    'XNYBJ': {
+      key: 'newEnergyMark',
+      label: '新能源标记',
+      width: 120,
+      align: 'center'
+    },
+    'XNYLB': {
+      key: 'newEnergyType',
+      label: '新能源类别',
+      width: 120
+    },
+    'QYID': {
+      key: 'announcementCompanyId',
+      label: '公告企业ID',
+      width: 150,
+      showTooltip: true
+    },
+    'GXSJ': {
+      key: 'updateTime',
+      label: '更新时间',
+      width: 160,
+      align: 'center'
+    },
+    'JT': {
+      key: 'group',
+      label: '集团',
+      width: 120,
+      showTooltip: true
+    },
+    // 时间字段 - 根据 viewDimension 使用
+    'year': {
+      key: 'year',
+      label: '年份',
+      width: 100,
+      align: 'center',
+      formatter: (value: number) => value ? `${value}年` : '-'
+    },
+    'month': {
+      key: 'month',
+      label: '月份',
+      width: 80,
+      align: 'center',
+      formatter: (value: number) => value ? `${value}月` : '-'
+    },
+    'date': {
+      key: 'date',
+      label: '日期',
+      width: 120,
+      align: 'center'
+    }
+  }
+
+  // 1. 添加分组维度列
+  if (props.groupDimensions) {
+    props.groupDimensions.forEach(fieldKey => {
       const fieldConfig = fieldMapping[fieldKey]
       if (fieldConfig) {
         columns.push(fieldConfig)
       }
     })
-
-    return columns
-  } catch (error) {
-    console.error('动态列生成失败:', error)
-    // 发生错误时，仍然返回空数组而不是默认列，避免与displayFields逻辑冲突
-    return []
   }
-})
+
+  // 2. 添加时间维度列
+  if (props.timeDimension && props.timeDimension !== 'total') {
+    if (props.timeDimension === 'yearly') {
+      columns.push(fieldMapping['year'])
+    } else if (props.timeDimension === 'monthly') {
+      columns.push(fieldMapping['year'])
+      columns.push(fieldMapping['month'])
+    } else if (props.timeDimension === 'daily') {
+      columns.push(fieldMapping['date'])
+    }
+  }
+
+  // 3. 添加数量列
+  if (props.enableComparison) {
+    // 同期比模式
+    columns.push({
+      key: 'currentPeriodCount',
+      label: '当期数量',
+      width: 120,
+      sortable: 'custom',
+      align: 'right',
+      formatter: (value: number) => `<span class="certificate-count">${formatNumber(value)}</span>`
+    })
+    columns.push({
+      key: 'previousPeriodCount',
+      label: '同期数量',
+      width: 120,
+      sortable: 'custom',
+      align: 'right',
+      formatter: (value: number) => `<span class="certificate-count">${formatNumber(value)}</span>`
+    })
+    columns.push({
+      key: 'comparisonRatio',
+      label: '同期比',
+      width: 100,
+      align: 'center',
+      formatter: (value: number) => {
+        if (value == null || isNaN(value)) return '-'
+        const color = value > 0 ? '#67c23a' : value < 0 ? '#f56c6c' : '#909399'
+        const symbol = value > 0 ? '+' : ''
+        return `<span style="color: ${color}; font-weight: 600;">${symbol}${(value * 100).toFixed(1)}%</span>`
+      }
+    })
+  } else {
+    // 普通模式
+    columns.push(fieldMapping['SL'])
+  }
+
+  return columns
+}
+
+// 根据displayFields生成列（旧逻辑，向后兼容）
+const generateColumnsFromDisplayFields = (displayFields: string[]) => {
+  const columns: any[] = []
+
+  // 复用字段映射配置
+  const fieldMapping: Record<string, any> = {
+    'QYDM': { key: 'companyId', label: '合格证企业代码', width: 150, showTooltip: true },
+    'CLZZQYMC': { key: 'companyName', label: '车辆制造企业名称', minWidth: 200, showTooltip: true },
+    'CLZT': { key: 'vehicleCategory', label: '车辆类别', width: 100 },
+    'CLXH': { key: 'vehicleModel', label: '车辆型号', width: 150, showTooltip: true },
+    'CLPP': { key: 'vehicleBrand', label: '车辆品牌', width: 120 },
+    'CLMC': { key: 'vehicleName', label: '车辆名称', minWidth: 200, showTooltip: true },
+    'RLZL': { key: 'fuelType', label: '燃料种类', width: 100 },
+    'SF': { key: 'productionProvince', label: '省份', width: 100, showTooltip: true },
+    'CS': { key: 'productionCity', label: '城市', width: 100, showTooltip: true },
+    'G50': { key: 'sixCategory', label: '六大类', width: 100 },
+    'XNYLB': { key: 'newEnergyType', label: '新能源类别', width: 120 },
+    'SL': {
+      key: 'certificateCount',
+      label: '数量',
+      width: 120,
+      sortable: 'custom',
+      align: 'right',
+      formatter: (value: number) => `<span class="certificate-count">${formatNumber(value)}</span>`
+    },
+    'year': {
+      key: 'year',
+      label: '年份',
+      width: 100,
+      align: 'center',
+      formatter: (value: number) => value ? `${value}年` : '-'
+    },
+    'month': {
+      key: 'month',
+      label: '月份',
+      width: 80,
+      align: 'center',
+      formatter: (value: number) => value ? `${value}月` : '-'
+    },
+    'date': {
+      key: 'date',
+      label: '日期',
+      width: 120,
+      align: 'center'
+    }
+  }
+
+  displayFields.forEach(fieldKey => {
+    const fieldConfig = fieldMapping[fieldKey]
+    if (fieldConfig) {
+      columns.push(fieldConfig)
+    }
+  })
+
+  return columns
+}
 
 // 默认列生成逻辑（当没有选择显示字段时使用）
 const getDefaultColumns = (conditions: any[]) => {
