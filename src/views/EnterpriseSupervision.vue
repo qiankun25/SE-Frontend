@@ -5,7 +5,7 @@
       <div class="header-left">
         <h2>企业监管状态</h2>
         <p class="page-description">
-          查询汽车生产企业的监管状态、准入状态、有效标记等监管信息
+          查询汽车生产企业的监管状态、准入状态、有效标记等监管信息（每个企业显示一条记录）
         </p>
       </div>
       <div class="header-right">

@@ -117,11 +117,7 @@
         <el-table-column prop="group_code" label="集团代码" width="150" />
         <el-table-column prop="main_region" label="主要地区" width="120" />
         <el-table-column prop="enterprise_count" label="下属企业数" width="120" sortable="custom" align="center" />
-        <el-table-column label="分布省份" min-width="200" show-overflow-tooltip>
-          <template #default="scope">
-            {{ formatProvinces(scope.row.provinces) }}
-          </template>
-        </el-table-column>
+        <el-table-column prop="province_count" label="分布省份数" width="120" align="center" />
         <el-table-column prop="new_energy_count" label="新能源企业" width="120" align="center" />
         <el-table-column prop="joint_venture_count" label="合资企业" width="120" align="center" />
         <el-table-column label="新能源占比" width="120" align="center">
@@ -167,7 +163,7 @@ const exportFields = ref([
   { key: 'group_name', label: '集团名称', required: true },
   { key: 'main_region', label: '主要地区' },
   { key: 'enterprise_count', label: '下属企业数量' },
-  { key: 'provinces', label: '分布省份列表' },
+  { key: 'province_count', label: '分布省份数量' },
   { key: 'new_energy_count', label: '新能源企业数量' },
   { key: 'joint_venture_count', label: '合资企业数量' },
   { key: 'new_energy_ratio', label: '新能源企业占比(%)' },
@@ -325,7 +321,7 @@ const handleDownloadTemplate = async () => {
         "集团名称": "中国第一汽车集团有限公司",
         "主要地区": "吉林",
         "下属企业数量": "15",
-        "分布省份列表": "吉林, 天津, 四川, 广东",
+        "分布省份数量": "4",
         "新能源企业数量": "3",
         "合资企业数量": "8",
         "新能源企业占比(%)": "20",
@@ -379,13 +375,6 @@ const handleCurrentChange = (page: number) => {
 // 格式化百分比
 const formatPercentage = (value: number) => {
   return `${value}%`
-}
-
-// 格式化省份列表
-const formatProvinces = (provinces: string[]) => {
-  if (!provinces || provinces.length === 0) return '-'
-  if (provinces.length <= 3) return provinces.join(', ')
-  return `${provinces.slice(0, 3).join(', ')} 等${provinces.length}个省份`
 }
 
 // 表格展开处理 - 实现手风琴效果，只允许一个行展开，支持再次点击收起
