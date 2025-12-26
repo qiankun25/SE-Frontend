@@ -76,6 +76,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Refresh, ArrowDown, Document, FolderOpened } from '@element-plus/icons-vue'
+import type { TimeDimension } from '../types/api'
 
 // 导入新的组件
 import CertificateSearchConditions from '../components/CertificateSearchConditions.vue'
@@ -88,13 +89,14 @@ import CertificateResultTable from '../components/CertificateResultTable.vue'
 const loading = ref(false)
 const hasSearched = ref(false)
 const selectedConditions = ref<any[]>([])
+const lastSearchConditions = ref<any[]>([]) // 保存上次查询的条件，用于导出
 const tableData = ref<any[]>([])
 
 // 组件引用
 const searchConditionsRef = ref<InstanceType<typeof CertificateSearchConditions>>()
 
 // 统计维度相关状态
-const timeDimension = ref<string>('total') // 时间维度
+const timeDimension = ref<TimeDimension>('total') // 时间维度
 const groupDimensions = ref<string[]>([]) // 分组维度
 const enableComparison = ref<boolean>(false) // 同期比开关
 
@@ -125,13 +127,14 @@ const handleResetConditions = () => {
 
 const handleResetAll = () => {
   selectedConditions.value = []
+  lastSearchConditions.value = []
   tableData.value = []
   hasSearched.value = false
   // 重置所有
 }
 
 const handleGroupDimensionsChange = (data: {
-  timeDimension: string
+  timeDimension: TimeDimension
   groupDimensions: string[]
   enableComparison: boolean
 }) => {
@@ -188,6 +191,10 @@ const handleSearch = async (conditions: any[]) => {
       }
 
       ElMessage.success(`查询完成，共找到 ${response.data.total} 条记录`)
+
+      // 保存当前查询条件用于导出功能
+      // 必须使用深拷贝，防止后续修改影响
+      lastSearchConditions.value = JSON.parse(JSON.stringify(conditions))
 
       // 查询成功后自动重置条件表单和清空已选条件
       // 这样用户可以直接添加新条件进行下一次查询，无需手动点击重置
@@ -458,6 +465,7 @@ const buildSearchParams = (conditions: any[]) => {
 
 const handleReset = () => {
   selectedConditions.value = []
+  lastSearchConditions.value = []
   tableData.value = []
   hasSearched.value = false
   ElMessage.success('已重置所有条件')
@@ -504,7 +512,7 @@ const handleExport = async () => {
 
     // 构建导出参数 - 只导出当前页数据
     const params = {
-      ...buildSearchParams(selectedConditions.value),
+      ...buildSearchParams(lastSearchConditions.value),
       page: 1, // 当前页码
       pageSize: 100, // 当前页大小
       field: 'certificateCount',
@@ -581,7 +589,7 @@ const handleExportAll = async () => {
     }
 
     const params = {
-      ...buildSearchParams(selectedConditions.value),
+      ...buildSearchParams(lastSearchConditions.value),
       field: 'certificateCount',
       order: 'desc' as const,
       format: 'excel' as const,
@@ -654,7 +662,7 @@ const handleExportData = async (exportData: any) => {
     }
 
     const params = {
-      ...buildSearchParams(selectedConditions.value),
+      ...buildSearchParams(lastSearchConditions.value),
       field: 'certificateCount',
       order: 'desc' as const,
       format: 'excel' as const,
