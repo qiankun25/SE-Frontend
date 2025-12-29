@@ -78,7 +78,7 @@ const certificateFields: Field[] = [
 
 // 企业基本信息字段配置（已隐藏部分字段）
 const enterpriseBasicFields: Field[] = [
-    { key: 'enterprise_id', label: '企业ID', selected: true },
+    // { key: 'enterprise_id', label: '企业ID', selected: true },
     { key: 'enterprise_name', label: '企业名称', selected: true },
     // social_credit_code - 已隐藏
     // supervision_status - 已隐藏
@@ -98,7 +98,7 @@ const enterpriseBasicFields: Field[] = [
 
 // 企业监管状态字段配置（已隐藏部分字段）
 const enterpriseSupervisionFields: Field[] = [
-    { key: 'enterprise_id', label: '企业ID', selected: true },
+    // { key: 'enterprise_id', label: '企业ID', selected: true },
     { key: 'enterprise_name', label: '企业名称', selected: true },
     // social_credit_code - 已隐藏
     { key: 'supervision_status', label: '监管状态', selected: true },

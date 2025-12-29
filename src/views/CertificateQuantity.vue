@@ -82,7 +82,6 @@ import type { TimeDimension } from '../types/api'
 import CertificateSearchConditions from '../components/CertificateSearchConditions.vue'
 import CertificateSelectedConditions from '../components/CertificateSelectedConditions.vue'
 import GroupDimensions from '../components/GroupDimensions.vue'
-import DisplayFields from '../components/DisplayFields.vue'
 import CertificateResultTable from '../components/CertificateResultTable.vue'
 
 // 响应式数据
@@ -99,8 +98,6 @@ const searchConditionsRef = ref<InstanceType<typeof CertificateSearchConditions>
 const timeDimension = ref<TimeDimension>('total') // 时间维度
 const groupDimensions = ref<string[]>([]) // 分组维度
 const enableComparison = ref<boolean>(false) // 同期比开关
-
-const displayFields = ref<string[]>([]) // 用户选择的显示字段（已废弃，将使用维度字段）
 
 // 事件处理函数
 const handleAddCondition = (condition: any) => {
@@ -148,12 +145,6 @@ const handleGroupDimensionsChange = (data: {
     groupDimensions: data.groupDimensions,
     enableComparison: data.enableComparison
   })
-}
-
-const handleDisplayFieldsChange = (fields: string[]) => {
-  displayFields.value = fields
-  // 显示字段变化时，如果已经有查询结果，可以考虑重新渲染表格
-  // 这里不需要重新查询数据，只需要更新显示字段即可
 }
 
 const handleSearch = async (conditions: any[]) => {

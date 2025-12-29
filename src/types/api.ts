@@ -242,7 +242,6 @@ export interface EnterpriseAccessItem {
 // 集团查询相关接口
 export interface GroupSearchParams extends PaginationParams, SortParams {
   group_name?: string; // 集团名称
-  group_code?: string; // 集团代码
   region?: string; // 所在地区
   enterprise_type?: string; // 企业性质（合资/自主）
   has_new_energy?: boolean; // 是否涉及新能源

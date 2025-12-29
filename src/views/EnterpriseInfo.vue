@@ -23,7 +23,7 @@
         </div>
       </template>
 
-      <el-form :model="searchForm" :inline="true" label-width="120px">
+      <el-form :model="searchForm" label-width="120px">
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="企业ID">
@@ -249,7 +249,7 @@ const pagination = reactive({
 
 // 字段选择相关 - 默认选中字段（已排除隐藏字段）
 const selectedFields = ref<string[]>([
-  'enterprise_id',
+  // 'enterprise_id',
   'enterprise_name',
   'enterprise_type',
   'new_energy_flag',
@@ -260,7 +260,7 @@ const selectedFields = ref<string[]>([
 
 // 所有可用字段 - 已隐藏部分字段以体现与企业监管状态的差异
 const allFields = ref([
-  { key: 'enterprise_id', label: '企业ID', required: true, sortable: true },
+  // { key: 'enterprise_id', label: '企业ID', required: true, sortable: true },
   { key: 'enterprise_name', label: '企业名称', required: true, sortable: true },
   // { key: 'social_credit_code', label: '统一社会信用代码', sortable: true }, // 已隐藏
   // { key: 'supervision_status', label: '监管状态', sortable: true }, // 已隐藏

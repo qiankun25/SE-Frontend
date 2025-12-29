@@ -28,7 +28,7 @@
         </div>
       </template>
 
-      <el-form :model="searchForm" :inline="true" label-width="140px">
+      <el-form :model="searchForm" label-width="140px">
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="企业名称">
@@ -187,8 +187,8 @@ import { Refresh, Search } from '@element-plus/icons-vue'
 import { enterpriseSupervisionApi } from '../services/api'
 import type {
   EnterpriseSupervisionParams,
-  EnterpriseSupervisionItem,
-  EnterpriseSupervisionExportParams
+  EnterpriseSupervisionItem
+  // EnterpriseSupervisionExportParams (未使用)
 } from '../types/api'
 import ExportButton from '../components/ExportButton.vue'
 import DisplayFields from '../components/DisplayFields.vue'
@@ -229,7 +229,7 @@ const pagination = reactive({
 
 // 字段选择相关
 const selectedFields = ref<string[]>([
-  'enterprise_id',
+  // 'enterprise_id',
   'enterprise_name',
   'supervision_status',
   'access_status',
@@ -239,7 +239,7 @@ const selectedFields = ref<string[]>([
 
 // 所有可用字段 - 已隐藏部分字段以体现与企业基本信息的差异
 const allFields = ref([
-  { key: 'enterprise_id', label: '企业ID', required: true },
+  // { key: 'enterprise_id', label: '企业ID', required: true },
   { key: 'enterprise_name', label: '企业名称', required: true },
   // { key: 'social_credit_code', label: '统一社会信用代码' }, // 已隐藏
   { key: 'supervision_status', label: '监管状态' },
@@ -462,7 +462,6 @@ const handleView = (row: EnterpriseSupervisionItem) => {
     <div style="text-align: left;">
       <p><strong>企业ID：</strong>${row.enterprise_id || '-'}</p>
       <p><strong>企业名称：</strong>${row.enterprise_name || '-'}</p>
-      <p><strong>统一社会信用代码：</strong>${row.social_credit_code || '-'}</p>
       <p><strong>监管状态：</strong>${row.supervision_status || '-'}</p>
       <p><strong>监管代码：</strong>${row.supervision_code || '-'}</p>
       <p><strong>企业准入状态：</strong>${row.access_status || '-'}</p>
@@ -471,8 +470,6 @@ const handleView = (row: EnterpriseSupervisionItem) => {
       <p><strong>新能源标记：</strong>${row.new_energy_flag || '-'}</p>
       <p><strong>注册地址：</strong>${row.registered_address || '-'}</p>
       <p><strong>生产地址：</strong>${row.production_address || '-'}</p>
-      <p><strong>联系人：</strong>${row.contact_person || '-'}</p>
-      <p><strong>联系电话：</strong>${row.contact_phone || '-'}</p>
     </div>
     `,
     '企业监管详情',

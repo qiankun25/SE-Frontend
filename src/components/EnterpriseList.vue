@@ -39,7 +39,7 @@
     <el-dialog v-model="detailVisible" title="企业详细信息" width="800px" :close-on-click-modal="false">
       <div v-if="enterpriseDetail" class="enterprise-detail">
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="企业名称" span="2">
+          <el-descriptions-item label="企业名称" :span="2">
             <strong>{{ enterpriseDetail.enterprise_name }}</strong>
           </el-descriptions-item>
           <el-descriptions-item label="企业ID">
@@ -48,7 +48,7 @@
           <el-descriptions-item label="企业代码">
             {{ enterpriseDetail.enterprise_code }}
           </el-descriptions-item>
-          <el-descriptions-item label="所属集团" span="2">
+          <el-descriptions-item label="所属集团" :span="2">
             {{ enterpriseDetail.group_name }} ({{ enterpriseDetail.group_code }})
           </el-descriptions-item>
           <el-descriptions-item label="省份">
@@ -70,19 +70,19 @@
               {{ enterpriseDetail.has_new_energy ? '是' : '否' }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="注册地址" span="2">
+          <el-descriptions-item label="注册地址" :span="2">
             {{ enterpriseDetail.registered_address }}
           </el-descriptions-item>
-          <el-descriptions-item label="生产地址" span="2">
+          <el-descriptions-item label="生产地址" :span="2">
             {{ enterpriseDetail.production_address }}
           </el-descriptions-item>
-          <el-descriptions-item label="产品商标" span="2" v-if="enterpriseDetail.product_brands">
+          <el-descriptions-item label="产品商标" :span="2" v-if="enterpriseDetail.product_brands">
             {{ enterpriseDetail.product_brands }}
           </el-descriptions-item>
-          <el-descriptions-item label="企业资质" span="2" v-if="enterpriseDetail.enterprise_qualifications">
+          <el-descriptions-item label="企业资质" :span="2" v-if="enterpriseDetail.enterprise_qualifications">
             {{ enterpriseDetail.enterprise_qualifications }}
           </el-descriptions-item>
-          <el-descriptions-item label="新能源资质" span="2" v-if="enterpriseDetail.new_energy_qualifications">
+          <el-descriptions-item label="新能源资质" :span="2" v-if="enterpriseDetail.new_energy_qualifications">
             {{ enterpriseDetail.new_energy_qualifications }}
           </el-descriptions-item>
         </el-descriptions>
@@ -103,6 +103,11 @@ import type { EnterpriseDetailInfo } from '@/types/api'
 
 interface Props {
   groupCode: string
+  filters?: {
+    region?: string
+    enterprise_type?: string
+    has_new_energy?: boolean | string
+  }
 }
 
 const props = defineProps<Props>()
@@ -124,10 +129,17 @@ const loadEnterprises = async () => {
 
   loading.value = true
   try {
+    // 处理 has_new_energy，如果是空字符串则转为 undefined
+    const processedFilters = props.filters ? {
+      ...props.filters,
+      has_new_energy: props.filters.has_new_energy === '' ? undefined : props.filters.has_new_energy as boolean
+    } : undefined
+
     const response = await groupApi.getEnterpriseDetailed(
       props.groupCode,
       currentPage.value,
-      pageSize.value
+      pageSize.value,
+      processedFilters
     )
 
     if (response.code === 200) {
@@ -178,6 +190,12 @@ watch(() => props.groupCode, () => {
   currentPage.value = 1
   loadEnterprises()
 }, { immediate: true })
+
+// 监听筛选条件变化
+watch(() => props.filters, () => {
+  currentPage.value = 1
+  loadEnterprises()
+}, { deep: true })
 
 onMounted(() => {
   loadEnterprises()

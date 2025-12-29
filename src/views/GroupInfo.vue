@@ -29,40 +29,32 @@
         </div>
       </template>
 
-      <el-form :model="searchForm" :inline="true" label-width="120px">
+      <el-form :model="searchForm" label-width="100px">
         <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="集团名称">
               <el-input v-model="searchForm.group_name" placeholder="请输入集团名称" clearable />
             </el-form-item>
           </el-col>
 
-          <el-col :span="8">
-            <el-form-item label="集团代码">
-              <el-input v-model="searchForm.group_code" placeholder="请输入集团代码" clearable />
-            </el-form-item>
-          </el-col>
-
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="所在地区">
               <el-input v-model="searchForm.region" placeholder="请输入省份或城市" clearable />
             </el-form-item>
           </el-col>
-        </el-row>
 
-        <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="企业性质">
-              <el-select v-model="searchForm.enterprise_type" placeholder="请选择企业性质" clearable>
+              <el-select v-model="searchForm.enterprise_type" placeholder="请选择企业性质" clearable style="width: 100%">
                 <el-option v-for="option in enterpriseTypeOptions" :key="option.value" :label="option.label"
                   :value="option.value" />
               </el-select>
             </el-form-item>
           </el-col>
 
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="新能源业务">
-              <el-select v-model="searchForm.has_new_energy" placeholder="请选择" clearable>
+              <el-select v-model="searchForm.has_new_energy" placeholder="请选择" clearable style="width: 100%">
                 <el-option v-for="option in newEnergyOptions" :key="option.label" :label="option.label"
                   :value="option.value" />
               </el-select>
@@ -101,20 +93,19 @@
       </template>
 
       <el-table :data="tableData" v-loading="loading" stripe border :style="{ width: '100%' }"
-        @sort-change="handleSortChange" :expand-row-keys="expandedRows" row-key="group_code"
+        @sort-change="handleSortChange" :expand-row-keys="expandedRows" row-key="group_name"
         @expand-change="handleExpandChange">
         <!-- 展开列 -->
         <el-table-column type="expand">
           <template #default="{ row }">
             <div class="expand-content">
               <h4>{{ row.group_name }} - 下属企业列表</h4>
-              <EnterpriseList :group-code="row.group_code" />
+              <EnterpriseList :group-code="row.group_name" :filters="searchForm" />
             </div>
           </template>
         </el-table-column>
 
         <el-table-column prop="group_name" label="集团名称" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="group_code" label="集团代码" width="150" />
         <el-table-column prop="main_region" label="主要地区" width="120" />
         <el-table-column prop="enterprise_count" label="下属企业数" width="120" sortable="custom" align="center" />
         <el-table-column prop="province_count" label="分布省份数" width="120" align="center" />
@@ -159,7 +150,6 @@ const tableData = ref<GroupInfo[]>([])
 
 // 导出字段配置
 const exportFields = ref([
-  { key: 'group_code', label: '集团代码', required: true },
   { key: 'group_name', label: '集团名称', required: true },
   { key: 'main_region', label: '主要地区' },
   { key: 'enterprise_count', label: '下属企业数量' },
@@ -180,13 +170,11 @@ const exportFields = ref([
 // 搜索表单
 const searchForm = reactive<{
   group_name: string
-  group_code: string
   region: string
   enterprise_type: string
   has_new_energy: string | boolean
 }>({
   group_name: '',
-  group_code: '',
   region: '',
   enterprise_type: '',
   has_new_energy: ''
@@ -227,7 +215,6 @@ const handleSearch = async () => {
   try {
     const params: GroupSearchParams = {
       group_name: searchForm.group_name,
-      group_code: searchForm.group_code,
       region: searchForm.region,
       enterprise_type: searchForm.enterprise_type,
       has_new_energy: searchForm.has_new_energy === '' ? undefined : searchForm.has_new_energy as boolean,
@@ -258,7 +245,6 @@ const handleSearch = async () => {
 const handleReset = () => {
   Object.assign(searchForm, {
     group_name: '',
-    group_code: '',
     region: '',
     enterprise_type: '',
     has_new_energy: ''
@@ -277,7 +263,6 @@ const handleExport = async (config: any) => {
   try {
     const params: GroupExportParams = {
       group_name: searchForm.group_name,
-      group_code: searchForm.group_code,
       region: searchForm.region,
       enterprise_type: searchForm.enterprise_type,
       has_new_energy: searchForm.has_new_energy === '' ? undefined : searchForm.has_new_energy as boolean,
@@ -317,7 +302,6 @@ const handleDownloadTemplate = async () => {
     // 创建模板数据
     const templateData = [
       {
-        "集团代码": "FAW",
         "集团名称": "中国第一汽车集团有限公司",
         "主要地区": "吉林",
         "下属企业数量": "15",
@@ -381,11 +365,11 @@ const formatPercentage = (value: number) => {
 const handleExpandChange = (row: GroupInfo, expandedRowsArray: GroupInfo[]) => {
   // expandedRowsArray 是当前所有展开的行数组
   // 检查当前行是否在展开数组中
-  const isExpanded = expandedRowsArray.some((r: any) => r.group_code === row.group_code)
+  const isExpanded = expandedRowsArray.some((r: any) => r.group_name === row.group_name)
 
   if (isExpanded) {
     // 如果当前行被展开，只保留当前行（手风琴效果）
-    expandedRows.value = [row.group_code]
+    expandedRows.value = [row.group_name]
   } else {
     // 如果当前行被收起，清空展开数组
     expandedRows.value = []

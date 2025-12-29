@@ -600,11 +600,24 @@ export const groupApi = {
   async getEnterpriseDetailed(
     groupCode: string,
     page: number = 1,
-    pageSize: number = 20
+    pageSize: number = 20,
+    filters?: {
+      region?: string;
+      enterprise_type?: string;
+      has_new_energy?: boolean;
+    }
   ): Promise<ApiResponse<EnterpriseDetailInfo[]>> {
     const params = new URLSearchParams();
     params.append("page", page.toString());
     params.append("page_size", pageSize.toString());
+
+    if (filters) {
+      if (filters.region) params.append("region", filters.region);
+      if (filters.enterprise_type)
+        params.append("enterprise_type", filters.enterprise_type);
+      if (filters.has_new_energy !== undefined && filters.has_new_energy !== null)
+        params.append("has_new_energy", String(filters.has_new_energy));
+    }
 
     return request(
       `/group/enterprises/${groupCode}/detailed?${params.toString()}`

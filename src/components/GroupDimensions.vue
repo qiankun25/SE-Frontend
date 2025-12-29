@@ -16,7 +16,7 @@
         <div class="field-category">
           <div class="category-label">时间维度：</div>
           <div class="category-fields">
-            <el-radio-group v-model="timeDimension" @change="handleTimeDimensionChange">
+            <el-radio-group v-model="timeDimension" @change="(val) => handleTimeDimensionChange(val as TimeDimension)">
               <el-radio value="total">总量（不按时间分组）</el-radio>
               <el-radio value="yearly">按年统计</el-radio>
               <el-radio value="monthly">按月统计</el-radio>
@@ -26,7 +26,7 @@
             <!-- 同期比开关（集成到时间维度中） -->
             <div v-if="timeDimension !== 'total'" class="comparison-switch">
               <el-switch v-model="enableComparison" active-text="启用同期比" inactive-text="关闭同期比"
-                @change="handleComparisonChange" />
+                @change="(val) => handleComparisonChange(val as boolean)" />
               <el-tooltip content="同期比将对比去年同期数据" placement="top">
                 <el-icon class="info-icon">
                   <QuestionFilled />
@@ -108,8 +108,8 @@ const fieldCategories: FieldCategory[] = [
       { key: 'CLZZQYMC', label: '车辆制造企业名称', required: true },
       { key: 'QYDM', label: '合格证企业代码', required: true },
       { key: 'CLZT', label: '车辆类别' },
-      { key: 'QYID', label: '公告企业ID' },
-      { key: 'JT', label: '集团' }
+      // { key: 'QYID', label: '公告企业ID' },
+      // { key: 'JT', label: '集团' }
     ]
   },
   {
@@ -123,18 +123,18 @@ const fieldCategories: FieldCategory[] = [
       { key: 'CPH', label: '产品号' }
     ]
   },
-  {
-    name: 'technical',
-    label: '技术参数',
-    fields: [
-      { key: 'RLZL', label: '燃料种类' },
-      { key: 'PL', label: '排量' },
-      { key: 'C', label: '长' },
-      { key: 'ZZL', label: '总质量' },
-      { key: 'ZBZL', label: '整备质量' },
-      { key: 'ZJ', label: '轴距' }
-    ]
-  },
+  // {
+  //   name: 'technical',
+  //   label: '技术参数',
+  //   fields: [
+  //     { key: 'RLZL', label: '燃料种类' },
+  //     { key: 'PL', label: '排量' },
+  //     { key: 'C', label: '长' },
+  //     { key: 'ZZL', label: '总质量' },
+  //     { key: 'ZBZL', label: '整备质量' },
+  //     { key: 'ZJ', label: '轴距' }
+  //   ]
+  // },
   {
     name: 'production',
     label: '生产信息',
@@ -142,7 +142,7 @@ const fieldCategories: FieldCategory[] = [
       { key: 'SCDZ', label: '生产地址' },
       { key: 'SF', label: '省份' },
       { key: 'CS', label: '城市' },
-      { key: 'QX', label: '区县' }
+      // { key: 'QX', label: '区县' }
     ]
   },
   {
@@ -154,15 +154,15 @@ const fieldCategories: FieldCategory[] = [
       { key: 'XNYLB', label: '新能源类别' }
     ]
   },
-  {
-    name: 'config',
-    label: '配置信息',
-    fields: [
-      { key: 'LSPZXLH', label: '历史配置序列号' },
-      { key: 'CONFIG_SEQUENCE_NUM', label: '配置序列号' },
-      { key: 'POINTS_CONF_ID', label: '双积分ID' }
-    ]
-  }
+  // {
+  //   name: 'config',
+  //   label: '配置信息',
+  //   fields: [
+  //     { key: 'LSPZXLH', label: '历史配置序列号' },
+  //     { key: 'CONFIG_SEQUENCE_NUM', label: '配置序列号' },
+  //     { key: 'POINTS_CONF_ID', label: '双积分ID' }
+  //   ]
+  // }
 ]
 
 // 默认选择的字段
