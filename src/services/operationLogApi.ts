@@ -117,3 +117,45 @@ export async function getUserOperationLogs(params: OperationLogParams): Promise<
 
   return request(`/user/logs/operations${queryString}`);
 }
+
+/**
+ * 导出操作日志（管理员专用）
+ */
+export async function exportOperationLogs(params: {
+  user_id?: number;
+  operation_type?: string;
+  module?: string;
+  start_date?: string;
+  end_date?: string;
+  format?: string;
+  filename?: string;
+  range?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<Blob> {
+  const token = localStorage.getItem("token");
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${BASE_URL}/user/admin/logs/export`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(params),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.detail ||
+        errorData.message ||
+        `HTTP error! status: ${response.status}`
+    );
+  }
+
+  return response.blob();
+}

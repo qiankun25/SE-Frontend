@@ -2,7 +2,7 @@
   <div class="operation-log-audit">
     <el-card class="header-card" shadow="never">
       <div class="page-header">
-        <h2>操作日志审查</h2>
+        <h2>操作日志</h2>
         <p class="subtitle">查看和分析系统操作日志</p>
       </div>
     </el-card>
@@ -14,7 +14,9 @@
           <el-card shadow="hover" class="stat-card">
             <div class="stat-content">
               <div class="stat-icon total">
-                <el-icon><Document /></el-icon>
+                <el-icon>
+                  <Document />
+                </el-icon>
               </div>
               <div class="stat-info">
                 <div class="stat-value">{{ statistics.total_operations.toLocaleString() }}</div>
@@ -27,10 +29,13 @@
           <el-card shadow="hover" class="stat-card">
             <div class="stat-content">
               <div class="stat-icon success">
-                <el-icon><CircleCheck /></el-icon>
+                <el-icon>
+                  <CircleCheck />
+                </el-icon>
               </div>
               <div class="stat-info">
-                <div class="stat-value">{{ (statistics.total_operations - statistics.total_errors).toLocaleString() }}</div>
+                <div class="stat-value">{{ (statistics.total_operations - statistics.total_errors).toLocaleString() }}
+                </div>
                 <div class="stat-label">成功操作</div>
               </div>
             </div>
@@ -40,7 +45,9 @@
           <el-card shadow="hover" class="stat-card">
             <div class="stat-content">
               <div class="stat-icon error">
-                <el-icon><CircleClose /></el-icon>
+                <el-icon>
+                  <CircleClose />
+                </el-icon>
               </div>
               <div class="stat-info">
                 <div class="stat-value">{{ statistics.total_errors.toLocaleString() }}</div>
@@ -53,7 +60,9 @@
           <el-card shadow="hover" class="stat-card">
             <div class="stat-content">
               <div class="stat-icon rate">
-                <el-icon><TrendCharts /></el-icon>
+                <el-icon>
+                  <TrendCharts />
+                </el-icon>
               </div>
               <div class="stat-info">
                 <div class="stat-value">{{ successRate }}%</div>
@@ -71,22 +80,12 @@
         <el-row :gutter="16">
           <el-col :xs="24" :sm="12" :md="8">
             <el-form-item label="用户ID">
-              <el-input
-                v-model.number="filterForm.user_id"
-                placeholder="请输入用户ID"
-                clearable
-                @clear="handleSearch"
-              />
+              <el-input v-model.number="filterForm.user_id" placeholder="请输入用户ID" clearable @clear="handleSearch" />
             </el-form-item>
           </el-col>
           <el-col :xs="24" :sm="12" :md="8">
             <el-form-item label="操作类型">
-              <el-select
-                v-model="filterForm.operation_type"
-                placeholder="请选择操作类型"
-                clearable
-                @change="handleSearch"
-              >
+              <el-select v-model="filterForm.operation_type" placeholder="请选择操作类型" clearable @change="handleSearch">
                 <el-option label="全部" value="" />
                 <el-option label="登录" value="login" />
                 <el-option label="登出" value="logout" />
@@ -100,12 +99,7 @@
           </el-col>
           <el-col :xs="24" :sm="12" :md="8">
             <el-form-item label="模块">
-              <el-select
-                v-model="filterForm.module"
-                placeholder="请选择模块"
-                clearable
-                @change="handleSearch"
-              >
+              <el-select v-model="filterForm.module" placeholder="请选择模块" clearable @change="handleSearch">
                 <el-option label="全部" value="" />
                 <el-option label="认证" value="auth" />
                 <el-option label="合格证" value="certificate" />
@@ -121,37 +115,19 @@
         <el-row :gutter="16">
           <el-col :xs="24" :sm="12" :md="8">
             <el-form-item label="开始日期">
-              <el-date-picker
-                v-model="filterForm.start_date"
-                type="date"
-                placeholder="选择开始日期"
-                format="YYYY-MM-DD"
-                value-format="YYYY-MM-DD"
-                style="width: 100%"
-                @change="handleSearch"
-              />
+              <el-date-picker v-model="filterForm.start_date" type="date" placeholder="选择开始日期" format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD" style="width: 100%" @change="handleSearch" />
             </el-form-item>
           </el-col>
           <el-col :xs="24" :sm="12" :md="8">
             <el-form-item label="结束日期">
-              <el-date-picker
-                v-model="filterForm.end_date"
-                type="date"
-                placeholder="选择结束日期"
-                format="YYYY-MM-DD"
-                value-format="YYYY-MM-DD"
-                style="width: 100%"
-                @change="handleSearch"
-              />
+              <el-date-picker v-model="filterForm.end_date" type="date" placeholder="选择结束日期" format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD" style="width: 100%" @change="handleSearch" />
             </el-form-item>
           </el-col>
           <el-col :xs="24" :sm="12" :md="8">
             <el-form-item label="快捷选择">
-              <el-select
-                v-model="quickTimeRange"
-                placeholder="快捷时间选择"
-                @change="handleQuickTimeRange"
-              >
+              <el-select v-model="quickTimeRange" placeholder="快捷时间选择" @change="handleQuickTimeRange">
                 <el-option label="今天" value="today" />
                 <el-option label="最近7天" value="last7days" />
                 <el-option label="最近30天" value="last30days" />
@@ -165,11 +141,15 @@
           <el-col :span="24">
             <el-form-item>
               <el-button type="primary" @click="handleSearch" :loading="loading">
-                <el-icon><Search /></el-icon>
+                <el-icon>
+                  <Search />
+                </el-icon>
                 查询
               </el-button>
               <el-button @click="handleReset">
-                <el-icon><RefreshLeft /></el-icon>
+                <el-icon>
+                  <RefreshLeft />
+                </el-icon>
                 重置
               </el-button>
             </el-form-item>
@@ -184,27 +164,39 @@
         <div class="card-header">
           <span>操作日志列表</span>
           <div class="header-actions">
-            <el-button
-              type="primary"
-              size="small"
-              @click="handleRefresh"
-              :loading="loading"
-            >
-              <el-icon><Refresh /></el-icon>
+            <el-dropdown @command="handleExportCommand" :disabled="exporting">
+              <el-button type="primary" size="small" :loading="exporting">
+                <el-icon>
+                  <Download />
+                </el-icon>
+                导出日志
+                <el-icon class="el-icon--right">
+                  <ArrowDown />
+                </el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="current">
+                    导出当前页 ({{ logList.length }}条)
+                  </el-dropdown-item>
+                  <el-dropdown-item command="all">
+                    导出全部数据
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            <el-button type="primary" size="small" @click="handleRefresh" :loading="loading">
+              <el-icon>
+                <Refresh />
+              </el-icon>
               刷新
             </el-button>
           </div>
         </div>
       </template>
 
-      <el-table
-        :data="logList"
-        v-loading="loading"
-        stripe
-        border
-        style="width: 100%"
-        :default-sort="{ prop: 'start_time', order: 'descending' }"
-      >
+      <el-table :data="logList" v-loading="loading" stripe border style="width: 100%"
+        :default-sort="{ prop: 'start_time', order: 'descending' }">
         <el-table-column prop="id" label="ID" width="80" align="center" />
         <el-table-column prop="start_time" label="操作时间" width="180" sortable>
           <template #default="{ row }">
@@ -234,12 +226,8 @@
         <el-table-column prop="action" label="动作" width="150" show-overflow-tooltip />
         <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
-            <el-tag
-              :type="row.response_status && row.response_status < 400 ? 'success' : 'danger'"
-              size="small"
-            >
-              {{ row.response_status && row.response_status < 400 ? '成功' : '失败' }}
-            </el-tag>
+            <el-tag :type="row.response_status && row.response_status < 400 ? 'success' : 'danger'" size="small">
+              {{ row.response_status && row.response_status < 400 ? '成功' : '失败' }} </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="ip_address" label="IP地址" width="140" show-overflow-tooltip />
@@ -253,12 +241,7 @@
         <el-table-column prop="result_count" label="结果数" width="100" align="center" />
         <el-table-column label="操作" width="100" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button
-              type="primary"
-              link
-              size="small"
-              @click="handleViewDetail(row)"
-            >
+            <el-button type="primary" link size="small" @click="handleViewDetail(row)">
               查看详情
             </el-button>
           </template>
@@ -267,25 +250,14 @@
 
       <!-- 分页 -->
       <div class="pagination-container">
-        <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.pageSize"
-          :page-sizes="[10, 20, 50, 100]"
-          :total="pagination.total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handlePageChange"
-        />
+        <el-pagination v-model:current-page="pagination.page" v-model:page-size="pagination.pageSize"
+          :page-sizes="[10, 20, 50, 100]" :total="pagination.total" layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange" @current-change="handlePageChange" />
       </div>
     </el-card>
 
     <!-- 详情弹窗 -->
-    <el-dialog
-      v-model="detailDialogVisible"
-      title="操作详情"
-      width="800px"
-      :close-on-click-modal="false"
-    >
+    <el-dialog v-model="detailDialogVisible" title="操作详情" width="800px" :close-on-click-modal="false">
       <div v-if="currentLog" class="log-detail">
         <el-descriptions :column="2" border>
           <el-descriptions-item label="操作ID">{{ currentLog.id }}</el-descriptions-item>
@@ -329,10 +301,8 @@
         <el-divider content-position="left">响应信息</el-divider>
         <el-descriptions :column="2" border>
           <el-descriptions-item label="响应状态">
-            <el-tag
-              :type="currentLog.response_status && currentLog.response_status < 400 ? 'success' : 'danger'"
-              size="small"
-            >
+            <el-tag :type="currentLog.response_status && currentLog.response_status < 400 ? 'success' : 'danger'"
+              size="small">
               {{ currentLog.response_status || '-' }}
             </el-tag>
           </el-descriptions-item>
@@ -395,9 +365,12 @@ import {
   Search,
   RefreshLeft,
   Refresh,
+  Download,
+  ArrowDown,
 } from "@element-plus/icons-vue";
-import { getAllOperationLogs, getSystemStatistics } from "../../services/operationLogApi";
+import { getAllOperationLogs, getSystemStatistics, exportOperationLogs } from "../../services/operationLogApi";
 import type { OperationLogItem, OperationLogStatistics } from "../../types/api";
+import { downloadFile, generateFilename } from "../../utils/export";
 
 // 筛选表单
 const filterForm = reactive({
@@ -422,6 +395,7 @@ const pagination = reactive({
 const logList = ref<OperationLogItem[]>([]);
 const statistics = ref<OperationLogStatistics | null>(null);
 const loading = ref(false);
+const exporting = ref(false);
 
 // 详情弹窗
 const detailDialogVisible = ref(false);
@@ -446,6 +420,8 @@ const fetchLogs = async () => {
       module: filterForm.module,
       start_date: filterForm.start_date,
       end_date: filterForm.end_date,
+      page: pagination.page,
+      pageSize: pagination.pageSize,
       limit: pagination.pageSize,
       offset: (pagination.page - 1) * pagination.pageSize,
     });
@@ -620,6 +596,80 @@ const getDurationClass = (duration: number | undefined) => {
   if (duration < 100) return "duration-fast";
   if (duration < 1000) return "duration-normal";
   return "duration-slow";
+};
+
+// 导出命令处理
+const handleExportCommand = (command: string) => {
+  if (command === "current") {
+    handleExport();
+  } else if (command === "all") {
+    handleExportAll();
+  }
+};
+
+// 导出当前页
+const handleExport = async () => {
+  if (logList.value.length === 0) {
+    ElMessage.warning("当前页没有可导出的数据");
+    return;
+  }
+
+  exporting.value = true;
+  try {
+    const params = {
+      user_id: filterForm.user_id,
+      operation_type: filterForm.operation_type || undefined,
+      module: filterForm.module || undefined,
+      start_date: filterForm.start_date || undefined,
+      end_date: filterForm.end_date || undefined,
+      format: "excel",
+      filename: "操作日志_当前页",
+      range: "current",
+      limit: pagination.pageSize,
+      offset: (pagination.page - 1) * pagination.pageSize,
+    };
+
+    const blob = await exportOperationLogs(params);
+    const filename = generateFilename("操作日志_当前页", "xlsx");
+    downloadFile(blob, filename);
+
+    ElMessage.success(`当前页数据导出成功（${logList.value.length}条记录）`);
+  } catch (error: any) {
+    console.error("导出失败:", error);
+    const errorMessage = error?.message || "导出失败，请重试";
+    ElMessage.error(errorMessage);
+  } finally {
+    exporting.value = false;
+  }
+};
+
+// 导出全部数据
+const handleExportAll = async () => {
+  exporting.value = true;
+  try {
+    const params = {
+      user_id: filterForm.user_id,
+      operation_type: filterForm.operation_type || undefined,
+      module: filterForm.module || undefined,
+      start_date: filterForm.start_date || undefined,
+      end_date: filterForm.end_date || undefined,
+      format: "excel",
+      filename: "操作日志_全部",
+      range: "all",
+    };
+
+    const blob = await exportOperationLogs(params);
+    const filename = generateFilename("操作日志_全部", "xlsx");
+    downloadFile(blob, filename);
+
+    ElMessage.success("全部数据导出成功");
+  } catch (error: any) {
+    console.error("导出失败:", error);
+    const errorMessage = error?.message || "导出失败，请重试";
+    ElMessage.error(errorMessage);
+  } finally {
+    exporting.value = false;
+  }
 };
 
 // 初始化
