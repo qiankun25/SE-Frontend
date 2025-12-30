@@ -377,11 +377,11 @@
           </el-col>
 
           <!-- 显示排行 -->
-          <el-col :span="8">
+          <!-- <el-col :span="8">
             <el-form-item label="显示排行">
               <el-switch v-model="form.showRanking" active-text="显示排名" inactive-text="不显示排名" />
             </el-form-item>
-          </el-col>
+          </el-col> -->
         </el-row>
 
         <!-- 操作按钮 -->
@@ -534,22 +534,29 @@ const handleQuickTimeRangeChange = (value: string) => {
 
   switch (value) {
     case '3months':
-      startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()).toISOString().split('T')[0]
+      // 近3个月：当前月 + 前2个月（共3个月），从往前推2个月的1号开始
+      startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString().split('T')[0]
       break
     case '6months':
-      startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()).toISOString().split('T')[0]
+      // 近6个月：当前月 + 前5个月（共6个月），从往前推5个月的1号开始
+      startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString().split('T')[0]
       break
-    case 'thisYear':  // 修复大小写错误
+    case 'thisYear':
+      // 从今年1月1日开始
       startDate = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0]
       break
     case '1year':
-      startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split('T')[0]
+      // 近1年：当前月 + 前11个月（共12个月），从往前推11个月的1号开始
+      // JavaScript Date 会自动处理跨年（负数月份）
+      startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString().split('T')[0]
       break
     case '2years':
-      startDate = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate()).toISOString().split('T')[0]
+      // 近2年：当前月 + 前23个月（共24个月），从往前推23个月的1号开始
+      startDate = new Date(now.getFullYear(), now.getMonth() - 23, 1).toISOString().split('T')[0]
       break
     case '3years':
-      startDate = new Date(now.getFullYear() - 3, now.getMonth(), now.getDate()).toISOString().split('T')[0]
+      // 近3年：当前月 + 前35个月（共36个月），从往前推35个月的1号开始
+      startDate = new Date(now.getFullYear(), now.getMonth() - 35, 1).toISOString().split('T')[0]
       break
     default:
       return

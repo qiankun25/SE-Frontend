@@ -24,7 +24,7 @@
             </el-radio-group>
 
             <!-- 同期比开关（集成到时间维度中） -->
-            <div v-if="timeDimension !== 'total'" class="comparison-switch">
+            <!-- <div v-if="timeDimension !== 'total'" class="comparison-switch">
               <el-switch v-model="enableComparison" active-text="启用同期比" inactive-text="关闭同期比"
                 @change="(val) => handleComparisonChange(val as boolean)" />
               <el-tooltip content="同期比将对比去年同期数据" placement="top">
@@ -32,7 +32,7 @@
                   <QuestionFilled />
                 </el-icon>
               </el-tooltip>
-            </div>
+            </div> -->
           </div>
         </div>
 
@@ -58,9 +58,9 @@
         <el-tag type="info" size="small" style="margin-left: 8px;">
           已选择 {{ selectedFields.length }} 个分组维度
         </el-tag>
-        <el-tag v-if="enableComparison" type="warning" size="small" style="margin-left: 8px;">
+        <!-- <el-tag v-if="enableComparison" type="warning" size="small" style="margin-left: 8px;">
           同期比已启用
-        </el-tag>
+        </el-tag> -->
       </div>
     </el-card>
   </div>

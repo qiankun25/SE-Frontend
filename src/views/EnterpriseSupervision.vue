@@ -36,12 +36,6 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="8">
-            <el-form-item label="企业ID">
-              <el-input v-model="searchForm.enterprise_id" placeholder="请输入企业ID" clearable />
-            </el-form-item>
-          </el-col>
-
           <!-- 统一社会信用代码 - 已隐藏 -->
           <!-- <el-col :span="8">
             <el-form-item label="统一社会信用代码">
@@ -60,13 +54,14 @@
         </el-row>
 
         <el-row :gutter="20">
-          <el-col :span="8">
+          <!-- 企业准入状态 - 已隐藏 -->
+          <!-- <el-col :span="8">
             <el-form-item label="企业准入状态">
               <el-select v-model="searchForm.access_status" placeholder="请选择企业准入状态" clearable filterable>
                 <el-option v-for="option in accessStatusOptions" :key="option" :label="option" :value="option" />
               </el-select>
             </el-form-item>
-          </el-col>
+          </el-col> -->
 
           <el-col :span="8">
             <el-form-item label="企业类型">
@@ -87,14 +82,15 @@
         </el-row>
 
         <el-row :gutter="20">
-          <el-col :span="8">
+          <!-- 有效标记 - 已隐藏 -->
+          <!-- <el-col :span="8">
             <el-form-item label="有效标记">
               <el-select v-model="searchForm.valid_flag" placeholder="请选择有效标记" clearable>
                 <el-option label="有效" value="有效" />
                 <el-option label="无效" value="无效" />
               </el-select>
             </el-form-item>
-          </el-col>
+          </el-col> -->
 
           <el-col :span="16">
             <div class="search-actions">
@@ -116,9 +112,9 @@
       </el-form>
     </el-card>
 
-    <!-- 字段选择区域 -->
-    <DisplayFields field-type="enterprise_supervision" :initial-fields="selectedFields"
-      @fields-change="handleFieldsChange" />
+    <!-- 字段选择区域 - 已隐藏 -->
+    <!-- <DisplayFields field-type="enterprise_supervision" :initial-fields="selectedFields"
+      @fields-change="handleFieldsChange" /> -->
 
     <!-- 结果展示区域 -->
     <el-card class="result-card" shadow="never">
@@ -191,7 +187,7 @@ import type {
   // EnterpriseSupervisionExportParams (未使用)
 } from '../types/api'
 import ExportButton from '../components/ExportButton.vue'
-import DisplayFields from '../components/DisplayFields.vue'
+// import DisplayFields from '../components/DisplayFields.vue' // 已隐藏字段选择器
 
 // 响应式数据
 const loading = ref(false)
@@ -227,14 +223,12 @@ const pagination = reactive({
   pageSize: 20
 })
 
-// 字段选择相关
+// 字段选择相关 - 与查询条件保持一致
 const selectedFields = ref<string[]>([
-  // 'enterprise_id',
-  'enterprise_name',
-  'supervision_status',
-  'access_status',
-  'enterprise_type',
-  'new_energy_flag'
+  'enterprise_name',      // 企业名称
+  'supervision_status',   // 监管状态
+  'enterprise_type',      // 企业类型
+  'new_energy_flag'       // 新能源标记
 ])
 
 // 所有可用字段 - 已隐藏部分字段以体现与企业基本信息的差异
@@ -244,7 +238,7 @@ const allFields = ref([
   // { key: 'social_credit_code', label: '统一社会信用代码' }, // 已隐藏
   { key: 'supervision_status', label: '监管状态' },
   { key: 'supervision_code', label: '监管代码' },
-  { key: 'access_status', label: '企业准入状态' },
+  // { key: 'access_status', label: '企业准入状态' }, // 已隐藏
   { key: 'valid_flag', label: '有效标记' },
   { key: 'enterprise_type', label: '企业类型' },
   { key: 'new_energy_flag', label: '新能源标记' },
@@ -343,10 +337,10 @@ const handleReset = () => {
   tableData.value = []
 }
 
-// 字段选择变化处理
-const handleFieldsChange = (fields: string[]) => {
-  selectedFields.value = fields
-}
+// 字段选择变化处理 - 已禁用（字段选择器已隐藏）
+// const handleFieldsChange = (fields: string[]) => {
+//   selectedFields.value = fields
+// }
 
 // 获取列最小宽度 - 根据字段数量动态调整最小宽度
 const getColumnMinWidth = (fieldKey: string): number => {

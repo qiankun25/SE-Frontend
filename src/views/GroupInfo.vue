@@ -111,11 +111,6 @@
         <el-table-column prop="province_count" label="分布省份数" width="120" align="center" />
         <el-table-column prop="new_energy_count" label="新能源企业" width="120" align="center" />
         <el-table-column prop="joint_venture_count" label="合资企业" width="120" align="center" />
-        <el-table-column label="新能源占比" width="120" align="center">
-          <template #default="scope">
-            {{ formatPercentage(scope.row.new_energy_ratio) }}
-          </template>
-        </el-table-column>
         <el-table-column label="合资占比" width="120" align="center">
           <template #default="scope">
             {{ formatPercentage(scope.row.joint_venture_ratio) }}
@@ -156,7 +151,6 @@ const exportFields = ref([
   { key: 'province_count', label: '分布省份数量' },
   { key: 'new_energy_count', label: '新能源企业数量' },
   { key: 'joint_venture_count', label: '合资企业数量' },
-  { key: 'new_energy_ratio', label: '新能源企业占比(%)' },
   { key: 'joint_venture_ratio', label: '合资企业占比(%)' },
   {
     key: 'enterprise_names',
@@ -308,7 +302,6 @@ const handleDownloadTemplate = async () => {
         "分布省份数量": "4",
         "新能源企业数量": "3",
         "合资企业数量": "8",
-        "新能源企业占比(%)": "20",
         "合资企业占比(%)": "53.33"
       }
     ]

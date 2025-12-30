@@ -24,29 +24,13 @@
       </template>
 
       <el-form :model="searchForm" label-width="120px">
+        <!-- 第一行：基本信息 -->
         <el-row :gutter="20">
-          <el-col :span="8">
-            <el-form-item label="企业ID">
-              <el-input v-model="searchForm.enterprise_id" placeholder="请输入企业ID" clearable />
-            </el-form-item>
-          </el-col>
-
           <el-col :span="8">
             <el-form-item label="企业名称">
               <el-input v-model="searchForm.enterprise_name" placeholder="请输入企业名称" clearable />
             </el-form-item>
           </el-col>
-
-          <!-- 监管状态 - 已隐藏 -->
-          <!-- <el-col :span="8">
-            <el-form-item label="监管状态">
-              <el-select v-model="searchForm.supervision_status" placeholder="请选择监管状态" clearable filterable multiple
-                collapse-tags collapse-tags-tooltip class="wide-select" popper-class="wide-select-dropdown">
-                <el-option v-for="option in supervisionStatusOptions" :key="option" :label="option" :value="option" />
-              </el-select>
-            </el-form-item>
-          </el-col> -->
-
           <el-col :span="8">
             <el-form-item label="新能源标记">
               <el-select v-model="searchForm.new_energy_flag" placeholder="请选择新能源标记" clearable class="wide-select"
@@ -56,9 +40,6 @@
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="企业类型">
               <el-select v-model="searchForm.enterprise_type" placeholder="请选择企业类型" clearable filterable
@@ -67,73 +48,67 @@
               </el-select>
             </el-form-item>
           </el-col>
+        </el-row>
 
-          <!-- 统一社会信用代码 - 已隐藏 -->
-          <!-- <el-col :span="8">
-            <el-form-item label="统一社会信用代码">
-              <el-input v-model="searchForm.social_credit_code" placeholder="请输入统一社会信用代码" clearable />
-            </el-form-item>
-          </el-col> -->
-
-          <el-col :span="8">
+        <!-- 第二行：地址信息 -->
+        <el-row :gutter="20">
+          <el-col :span="12">
             <el-form-item label="注册地址">
               <el-input v-model="searchForm.registered_address" placeholder="请输入注册地址关键词" clearable />
             </el-form-item>
           </el-col>
-
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="生产地址">
               <el-input v-model="searchForm.production_address" placeholder="请输入生产地址关键词" clearable />
             </el-form-item>
           </el-col>
         </el-row>
 
+        <!-- 第三行：其他信息 -->
         <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="产品商标">
               <el-input v-model="searchForm.product_brand" placeholder="请输入产品商标关键词" clearable />
             </el-form-item>
           </el-col>
-
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="资质">
               <el-input v-model="searchForm.qualification" placeholder="请输入资质关键词" clearable />
             </el-form-item>
           </el-col>
+        </el-row>
 
-          <el-col :span="8">
+        <!-- 操作按钮行 -->
+        <el-row :gutter="20">
+          <el-col :span="24">
             <el-form-item>
-              <el-button type="primary" @click="handleSearch" :loading="loading">
-                <el-icon>
-                  <Search />
-                </el-icon>
-                查询
-              </el-button>
-              <el-button @click="handleReset">
-                <el-icon>
-                  <Refresh />
-                </el-icon>
-                重置
-              </el-button>
-              <el-button type="success" @click="showBatchDialog = true">
-                <el-icon>
-                  <Upload />
-                </el-icon>
-                批量查询
-              </el-button>
+              <div class="search-actions">
+                <el-button type="primary" @click="handleSearch" :loading="loading">
+                  <el-icon>
+                    <Search />
+                  </el-icon>
+                  查询
+                </el-button>
+                <el-button @click="handleReset">
+                  <el-icon>
+                    <Refresh />
+                  </el-icon>
+                  重置
+                </el-button>
+              </div>
             </el-form-item>
           </el-col>
         </el-row>
       </el-form>
     </el-card>
 
-    <!-- 字段选择区域 -->
-    <DisplayFields field-type="enterprise_basic" :initial-fields="selectedFields" @fields-change="handleFieldsChange" />
+    <!-- 字段选择区域 - 已隐藏 -->
+    <!-- <DisplayFields field-type="enterprise_basic" :initial-fields="selectedFields" @fields-change="handleFieldsChange" /> -->
 
     <!-- 批量查询对话框 -->
-    <BatchQueryDialog v-model="showBatchDialog" title="批量查询企业基本信息" :query-types="batchQueryTypes"
+    <!-- <BatchQueryDialog v-model="showBatchDialog" title="批量查询企业基本信息" :query-types="batchQueryTypes"
       placeholder="请输入查询条件，每行一个（支持企业ID或企业名称）" :max-queries="100" :support-file-upload="true" :loading="batchLoading"
-      @confirm="handleBatchSearch" @download-template="handleDownloadTemplate" @file-upload="handleBatchFileUpload" />
+      @confirm="handleBatchSearch" @download-template="handleDownloadTemplate" @file-upload="handleBatchFileUpload" /> -->
 
     <!-- 查询结果区域 -->
     <el-card class="result-card" shadow="never">
@@ -196,15 +171,16 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search, Refresh, Upload } from '@element-plus/icons-vue'
+import { Search, Refresh } from '@element-plus/icons-vue'
+// import { Upload } from '@element-plus/icons-vue' // 未使用
 import type {
   EnterpriseBasicParams,
   EnterpriseBasicItem
 } from '../types/api'
 import { enterpriseBasicApi } from '../services/api'
 import ExportButton from '../components/ExportButton.vue'
-import DisplayFields from '../components/DisplayFields.vue'
-import BatchQueryDialog from '../components/BatchQueryDialog.vue'
+// import DisplayFields from '../components/DisplayFields.vue' // 已隐藏字段选择器
+// import BatchQueryDialog from '../components/BatchQueryDialog.vue' // 未使用
 
 // 响应式数据
 const loading = ref(false)
@@ -247,15 +223,15 @@ const pagination = reactive({
   pageSize: 20
 })
 
-// 字段选择相关 - 默认选中字段（已排除隐藏字段）
+// 字段选择相关 - 与查询条件保持一致
 const selectedFields = ref<string[]>([
-  // 'enterprise_id',
-  'enterprise_name',
-  'enterprise_type',
-  'new_energy_flag',
-  'registered_address',
-  'production_address',
-  'product_brand'
+  'enterprise_name',      // 企业名称
+  'new_energy_flag',      // 新能源标记
+  'enterprise_type',      // 企业类型
+  'registered_address',   // 注册地址
+  'production_address',   // 生产地址
+  'product_brand',        // 产品商标
+  'qualification'         // 资质
 ])
 
 // 所有可用字段 - 已隐藏部分字段以体现与企业监管状态的差异
@@ -360,14 +336,14 @@ const handleReset = () => {
 }
 
 
-// 字段选择变化处理
-const handleFieldsChange = (fields: string[]) => {
-  selectedFields.value = fields
-  // 如果已有数据，重新搜索以更新显示字段
-  if (tableData.value.length > 0) {
-    handleSearch()
-  }
-}
+// 字段选择变化处理 - 已禁用（字段选择器已隐藏）
+// const handleFieldsChange = (fields: string[]) => {
+//   selectedFields.value = fields
+//   // 如果已有数据，重新搜索以更新显示字段
+//   if (tableData.value.length > 0) {
+//     handleSearch()
+//   }
+// }
 
 // 获取列最小宽度 - 根据字段数量动态调整最小宽度
 const getColumnMinWidth = (fieldKey: string): number => {
@@ -665,6 +641,12 @@ onMounted(async () => {
 .result-summary strong {
   color: #409eff;
   font-weight: 600;
+}
+
+.search-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 .pagination-container {
