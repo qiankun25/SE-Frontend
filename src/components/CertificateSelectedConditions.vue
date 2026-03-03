@@ -253,11 +253,13 @@ const formatTimeRange = (condition: any) => {
   // 优先显示快捷时间选择的标签
   if (condition.quickTimeRange) {
     const quickTimeLabels: Record<string, string> = {
+      '1month': '近一个月',
       '3months': '近三个月',
       '6months': '近六个月',
       '1year': '近一年',
       '2years': '近两年',
       '3years': '近三年',
+      'thisYear': '今年',
       'custom': '自定义'
     }
     return quickTimeLabels[condition.quickTimeRange] || condition.quickTimeRange

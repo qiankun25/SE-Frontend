@@ -221,7 +221,7 @@ const handleCommand = (command: string) => {
 
 // 个人信息
 const handleProfile = () => {
-  ElMessage.info('个人信息功能开发中...')
+  router.push('/user/profile')
 }
 
 // 系统设置

@@ -694,11 +694,13 @@ const getDefaultColumns = (conditions: any[]) => {
           if (timeCondition.quickTimeRange) {
             // 快捷时间选择的显示
             const quickTimeLabels: Record<string, string> = {
+              '1month': '近一个月',
               '3months': '近三个月',
               '6months': '近六个月',
               '1year': '近一年',
               '2years': '近两年',
-              '3years': '近三年'
+              '3years': '近三年',
+              'thisYear': '今年'
             }
             return quickTimeLabels[timeCondition.quickTimeRange] || '总量'
           } else if (timeCondition.timeRange) {

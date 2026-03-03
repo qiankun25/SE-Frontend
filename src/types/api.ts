@@ -18,7 +18,29 @@ export interface UserInfo {
   id: string;
   username: string;
   name: string;
+  email?: string;
+  phone?: string;
+  department?: string;
+  organization?: string;
   permissions: string[];
+}
+
+export interface UpdateProfileRequest {
+  name?: string;
+  email?: string;
+  phone?: string;
+  department?: string;
+  organization?: string;
+}
+
+export interface ChangePasswordRequest {
+  old_password: string;
+  new_password: string;
+}
+
+export interface ProfileOptions {
+  departments: string[];
+  organizations: string[];
 }
 
 export interface LoginResponse {

@@ -57,7 +57,7 @@ const router = createRouter({
           component: () => import("../views/CertificateQuantity.vue"),
           meta: {
             requiresAuth: true,
-            title: "合格证上传数量",
+            title: "合格证统计查询",
             icon: "Document",
             parentTitle: "常用业务查询",
           },
@@ -117,7 +117,7 @@ const router = createRouter({
           component: () => import("../views/admin/ExportLimitManagement.vue"),
           meta: {
             requiresAuth: true,
-            title: "导出限制管理",
+            title: "导出管理",
             icon: "Download",
             parentTitle: "管理工具",
             requiredPermissions: ["admin:all"],
@@ -129,7 +129,7 @@ const router = createRouter({
           component: () => import("../views/admin/OperationLogAudit.vue"),
           meta: {
             requiresAuth: true,
-            title: "操作日志审查",
+            title: "操作日志",
             icon: "Document",
             parentTitle: "管理工具",
             requiredPermissions: ["admin:all"],
@@ -177,6 +177,17 @@ const router = createRouter({
             requiresAuth: true,
             title: "其他统计",
             icon: "DataAnalysis",
+            hidden: true,
+          },
+        },
+        {
+          path: "/user/profile",
+          name: "user-profile",
+          component: () => import("../views/UserProfile.vue"),
+          meta: {
+            requiresAuth: true,
+            title: "个人信息",
+            icon: "User",
             hidden: true,
           },
         },

@@ -5,7 +5,7 @@
       <div class="header-left">
         <h2>合格证统计查询</h2>
         <p class="page-description">
-          支持按企业、车型、时间等多维度统计合格证上传数量，提供排名统计和趋势分析
+          支持按企业、车型、时间等多维度统计合格证上传数量（查询范围为2018年开始的公告内整车）
         </p>
       </div>
       <div class="header-right">

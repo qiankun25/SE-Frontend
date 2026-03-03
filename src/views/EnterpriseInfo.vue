@@ -24,7 +24,7 @@
       </template>
 
       <el-form :model="searchForm" label-width="120px">
-        <!-- 第一行：基本信息 -->
+        <!-- 第一行：3个条件 -->
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="企业名称">
@@ -41,37 +41,25 @@
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="企业类型">
-              <el-select v-model="searchForm.enterprise_type" placeholder="请选择企业类型" clearable filterable
-                class="wide-select" popper-class="wide-select-dropdown">
-                <el-option v-for="type in enterpriseTypeOptions" :key="type" :label="type" :value="type" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <!-- 第二行：地址信息 -->
-        <el-row :gutter="20">
-          <el-col :span="12">
             <el-form-item label="注册地址">
               <el-input v-model="searchForm.registered_address" placeholder="请输入注册地址关键词" clearable />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+        </el-row>
+
+        <!-- 第二行：3个条件 -->
+        <el-row :gutter="20">
+          <el-col :span="8">
             <el-form-item label="生产地址">
               <el-input v-model="searchForm.production_address" placeholder="请输入生产地址关键词" clearable />
             </el-form-item>
           </el-col>
-        </el-row>
-
-        <!-- 第三行：其他信息 -->
-        <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="8">
             <el-form-item label="产品商标">
               <el-input v-model="searchForm.product_brand" placeholder="请输入产品商标关键词" clearable />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="8">
             <el-form-item label="资质">
               <el-input v-model="searchForm.qualification" placeholder="请输入资质关键词" clearable />
             </el-form-item>
@@ -99,6 +87,19 @@
             </el-form-item>
           </el-col>
         </el-row>
+
+        <!-- 已隐藏的查询条件 -->
+        <!-- 企业类型 - 已隐藏 -->
+        <!-- <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="企业类型">
+              <el-select v-model="searchForm.enterprise_type" placeholder="请选择企业类型" clearable filterable
+                class="wide-select" popper-class="wide-select-dropdown">
+                <el-option v-for="type in enterpriseTypeOptions" :key="type" :label="type" :value="type" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row> -->
       </el-form>
     </el-card>
 
@@ -227,7 +228,7 @@ const pagination = reactive({
 const selectedFields = ref<string[]>([
   'enterprise_name',      // 企业名称
   'new_energy_flag',      // 新能源标记
-  'enterprise_type',      // 企业类型
+  // 'enterprise_type',      // 企业类型 - 已隐藏
   'registered_address',   // 注册地址
   'production_address',   // 生产地址
   'product_brand',        // 产品商标
@@ -243,7 +244,7 @@ const allFields = ref([
   { key: 'supervision_code', label: '监管代码' },
   { key: 'access_status', label: '企业准入状态' },
   { key: 'valid_flag', label: '有效标记' },
-  { key: 'enterprise_type', label: '企业类型', sortable: true },
+  // { key: 'enterprise_type', label: '企业类型', sortable: true }, // 已隐藏
   { key: 'new_energy_flag', label: '新能源标记', sortable: true },
   { key: 'registered_address', label: '注册地址' },
   { key: 'production_address', label: '生产地址' },
@@ -645,7 +646,7 @@ onMounted(async () => {
 
 .search-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 12px;
 }
 

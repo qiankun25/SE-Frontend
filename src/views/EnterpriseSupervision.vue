@@ -29,20 +29,13 @@
       </template>
 
       <el-form :model="searchForm" label-width="140px">
+        <!-- 查询条件行：3个条件排为一行 -->
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="企业名称">
               <el-input v-model="searchForm.enterprise_name" placeholder="请输入企业名称" clearable />
             </el-form-item>
           </el-col>
-
-          <!-- 统一社会信用代码 - 已隐藏 -->
-          <!-- <el-col :span="8">
-            <el-form-item label="统一社会信用代码">
-              <el-input v-model="searchForm.social_credit_code" placeholder="请输入统一社会信用代码" clearable />
-            </el-form-item>
-          </el-col> -->
-
           <el-col :span="8">
             <el-form-item label="监管状态">
               <el-select v-model="searchForm.supervision_status" placeholder="请选择监管状态" clearable filterable multiple
@@ -51,26 +44,6 @@
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <!-- 企业准入状态 - 已隐藏 -->
-          <!-- <el-col :span="8">
-            <el-form-item label="企业准入状态">
-              <el-select v-model="searchForm.access_status" placeholder="请选择企业准入状态" clearable filterable>
-                <el-option v-for="option in accessStatusOptions" :key="option" :label="option" :value="option" />
-              </el-select>
-            </el-form-item>
-          </el-col> -->
-
-          <el-col :span="8">
-            <el-form-item label="企业类型">
-              <el-select v-model="searchForm.enterprise_type" placeholder="请选择企业类型" clearable filterable>
-                <el-option v-for="option in enterpriseTypeOptions" :key="option" :label="option" :value="option" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-
           <el-col :span="8">
             <el-form-item label="新能源标记">
               <el-select v-model="searchForm.new_energy_flag" placeholder="请选择新能源标记" clearable>
@@ -81,34 +54,71 @@
           </el-col>
         </el-row>
 
+        <!-- 操作按钮行 -->
         <el-row :gutter="20">
-          <!-- 有效标记 - 已隐藏 -->
-          <!-- <el-col :span="8">
+          <el-col :span="24">
+            <el-form-item>
+              <div class="search-actions">
+                <el-button type="primary" @click="handleSearch" :loading="loading">
+                  <el-icon>
+                    <Search />
+                  </el-icon>
+                  查询
+                </el-button>
+                <el-button @click="handleReset">
+                  <el-icon>
+                    <Refresh />
+                  </el-icon>
+                  重置
+                </el-button>
+              </div>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 已隐藏的查询条件 -->
+        <!-- 统一社会信用代码 - 已隐藏 -->
+        <!-- <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="统一社会信用代码">
+              <el-input v-model="searchForm.social_credit_code" placeholder="请输入统一社会信用代码" clearable />
+            </el-form-item>
+          </el-col>
+        </el-row> -->
+
+        <!-- 企业准入状态 - 已隐藏 -->
+        <!-- <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="企业准入状态">
+              <el-select v-model="searchForm.access_status" placeholder="请选择企业准入状态" clearable filterable>
+                <el-option v-for="option in accessStatusOptions" :key="option" :label="option" :value="option" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row> -->
+
+        <!-- 企业类型 - 已隐藏 -->
+        <!-- <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="企业类型">
+              <el-select v-model="searchForm.enterprise_type" placeholder="请选择企业类型" clearable filterable>
+                <el-option v-for="option in enterpriseTypeOptions" :key="option" :label="option" :value="option" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row> -->
+
+        <!-- 有效标记 - 已隐藏 -->
+        <!-- <el-row :gutter="20">
+          <el-col :span="8">
             <el-form-item label="有效标记">
               <el-select v-model="searchForm.valid_flag" placeholder="请选择有效标记" clearable>
                 <el-option label="有效" value="有效" />
                 <el-option label="无效" value="无效" />
               </el-select>
             </el-form-item>
-          </el-col> -->
-
-          <el-col :span="16">
-            <div class="search-actions">
-              <el-button type="primary" @click="handleSearch" :loading="loading">
-                <el-icon>
-                  <Search />
-                </el-icon>
-                查询
-              </el-button>
-              <el-button @click="handleReset">
-                <el-icon>
-                  <Refresh />
-                </el-icon>
-                重置
-              </el-button>
-            </div>
           </el-col>
-        </el-row>
+        </el-row> -->
       </el-form>
     </el-card>
 
@@ -227,7 +237,7 @@ const pagination = reactive({
 const selectedFields = ref<string[]>([
   'enterprise_name',      // 企业名称
   'supervision_status',   // 监管状态
-  'enterprise_type',      // 企业类型
+  // 'enterprise_type',      // 企业类型 - 已隐藏
   'new_energy_flag'       // 新能源标记
 ])
 
@@ -240,7 +250,7 @@ const allFields = ref([
   { key: 'supervision_code', label: '监管代码' },
   // { key: 'access_status', label: '企业准入状态' }, // 已隐藏
   { key: 'valid_flag', label: '有效标记' },
-  { key: 'enterprise_type', label: '企业类型' },
+  // { key: 'enterprise_type', label: '企业类型' }, // 已隐藏
   { key: 'new_energy_flag', label: '新能源标记' },
   // { key: 'registered_address', label: '注册地址' }, // 已隐藏
   // { key: 'production_address', label: '生产地址' }, // 已隐藏
@@ -624,7 +634,9 @@ onMounted(async () => {
 }
 
 .search-actions {
-  text-align: right;
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px;
 }
 
 .pagination-container {

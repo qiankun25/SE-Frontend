@@ -1,15 +1,21 @@
 <template>
   <div class="export-limit-management">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>导出限制管理</span>
-          <el-button type="primary" @click="showAddDialog = true">
-            添加配置
-          </el-button>
-        </div>
-      </template>
+    <!-- 页面标题 -->
+    <div class="page-header">
+      <div class="header-left">
+        <h2>导出管理</h2>
+        <p class="page-description">
+          管理系统用户和角色的导出权限及每日限额配置
+        </p>
+      </div>
+      <div class="header-right">
+        <el-button type="primary" @click="showAddDialog = true">
+          添加配置
+        </el-button>
+      </div>
+    </div>
 
+    <el-card>
       <!-- 搜索筛选 -->
       <el-form :model="searchForm" inline class="search-form">
         <el-form-item label="配置类型">
@@ -323,13 +329,44 @@ onMounted(() => {
 
 <style scoped>
 .export-limit-management {
-  padding: 20px;
+  padding: 0;
 }
 
-.card-header {
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-left h2 {
+  margin: 0 0 8px 0;
+  color: #303133;
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.page-description {
+  margin: 0;
+  color: #606266;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.card-header-custom {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #ebeef5;
+  margin-bottom: 20px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #303133;
 }
 
 .search-form {

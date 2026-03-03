@@ -64,20 +64,22 @@
 
         <el-row :gutter="20">
           <el-col :span="24">
-            <div class="search-actions">
-              <el-button type="primary" @click="handleSearch" :loading="loading">
-                <el-icon>
-                  <Search />
-                </el-icon>
-                查询
-              </el-button>
-              <el-button @click="handleReset">
-                <el-icon>
-                  <Refresh />
-                </el-icon>
-                重置
-              </el-button>
-            </div>
+            <el-form-item>
+              <div class="search-actions">
+                <el-button type="primary" @click="handleSearch" :loading="loading">
+                  <el-icon>
+                    <Search />
+                  </el-icon>
+                  查询
+                </el-button>
+                <el-button @click="handleReset">
+                  <el-icon>
+                    <Refresh />
+                  </el-icon>
+                  重置
+                </el-button>
+              </div>
+            </el-form-item>
           </el-col>
         </el-row>
       </el-form>
@@ -107,7 +109,7 @@
 
         <el-table-column prop="group_name" label="集团名称" min-width="200" show-overflow-tooltip />
         <el-table-column prop="main_region" label="主要地区" width="120" />
-        <el-table-column prop="enterprise_count" label="下属企业数" width="120" sortable="custom" align="center" />
+        <el-table-column prop="enterprise_count" label="下属企业数" width="150" sortable="custom" align="center" />
         <el-table-column prop="province_count" label="分布省份数" width="120" align="center" />
         <el-table-column prop="new_energy_count" label="新能源企业" width="120" align="center" />
         <el-table-column prop="joint_venture_count" label="合资企业" width="120" align="center" />
@@ -422,7 +424,9 @@ onMounted(() => {
 }
 
 .search-actions {
-  text-align: right;
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px;
 }
 
 .pagination-container {

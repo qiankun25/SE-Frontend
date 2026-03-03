@@ -20,6 +20,9 @@ import type {
   GroupInfo,
   GroupDetailInfo,
   EnterpriseItem,
+  UserInfo,
+  UpdateProfileRequest,
+  ChangePasswordRequest,
 } from "../types/api";
 
 import { getApiBaseUrl } from "../utils/request";
@@ -438,6 +441,11 @@ export const commonApi = {
     return request("/common/regions");
   },
 
+  // 获取车辆六大类选项
+  async getVehicleCategories(): Promise<ApiResponse<string[]>> {
+    return request("/common/vehicle-categories");
+  },
+
   // 用户认证相关
   async login(
     username: string,
@@ -468,6 +476,41 @@ export const commonApi = {
   // 获取用户权限
   async getUserPermissions(): Promise<ApiResponse<string[]>> {
     return request("/auth/permissions");
+  },
+
+  // 获取用户信息
+  async getUserProfile(): Promise<ApiResponse<UserInfo>> {
+    return request("/auth/profile");
+  },
+
+  // 更新用户信息
+  async updateUserProfile(
+    data: UpdateProfileRequest
+  ): Promise<ApiResponse<UserInfo>> {
+    return request("/auth/profile", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 获取个人信息选项（部门和单位）
+  async getProfileOptions(): Promise<
+    ApiResponse<{
+      departments: string[];
+      organizations: string[];
+    }>
+  > {
+    return request("/auth/profile/options");
+  },
+
+  // 修改密码
+  async changePassword(
+    data: ChangePasswordRequest
+  ): Promise<ApiResponse<null>> {
+    return request("/auth/profile/change-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   },
 
   // 记录操作日志

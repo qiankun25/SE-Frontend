@@ -120,12 +120,13 @@
                 <!-- 快捷时间范围 -->
                 <el-select v-model="form.quickTimeRange" placeholder="快捷时间" style="width: 180px; height: 32px;"
                   clearable @change="handleQuickTimeRangeChange">
-                  <el-option label="今年" value="thisYear" />
+                  <el-option label="近一个月" value="1month" />
                   <el-option label="近三个月" value="3months" />
                   <el-option label="近六个月" value="6months" />
                   <el-option label="近一年" value="1year" />
                   <el-option label="近两年" value="2years" />
                   <el-option label="近三年" value="3years" />
+                  <el-option label="今年" value="thisYear" />
                 </el-select>
 
                 <!-- 自定义时间范围 -->
@@ -290,12 +291,7 @@
           <el-col :span="8">
             <el-form-item label="六大类">
               <el-select v-model="form.sixCategories" multiple placeholder="请选择车辆六大类" style="width: 100%">
-                <el-option label="货车" value="货车" />
-                <el-option label="乘用车" value="乘用车" />
-                <el-option label="专用车" value="专用车" />
-                <el-option label="摩托车" value="摩托车" />
-                <el-option label="农用车" value="农用车" />
-                <el-option label="挂车" value="挂车" />
+                <el-option v-for="category in sixCategoryOptions" :key="category" :label="category" :value="category" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -503,11 +499,19 @@ const form = reactive<SearchForm>({
 const companyDatabase = ref<CompanyInfo[]>([])
 const loadingCompanies = ref(false)
 
+// 格式化本地日期为 YYYY-MM-DD 格式（避免时区问题）
+const formatLocalDate = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 // 时间范围选择
 // 修改类型定义，允许 null 值以支持重置功能
 const timeRange = ref<[string, string] | undefined>([
-  new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],   // 默认开始日期：今年1月1日
-  new Date().toISOString().split('T')[0]                                  // 默认结束日期：今天
+  formatLocalDate(new Date(new Date().getFullYear(), 0, 1)),   // 默认开始日期：今年1月1日
+  formatLocalDate(new Date())                                  // 默认结束日期：今天
 ])
 
 // 时间范围处理方法
@@ -521,42 +525,45 @@ const handleQuickTimeRangeChange = (value: string) => {
     // 自定义时间范围，设置默认范围今年
     if (!timeRange.value || !timeRange.value[0] || !timeRange.value[1]) {
       timeRange.value = [
-        new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
-        new Date().toISOString().split('T')[0]
+        formatLocalDate(new Date(new Date().getFullYear(), 0, 1)),
+        formatLocalDate(new Date())
       ]
     }
     return
   }
 
   const now = new Date()
-  const endDate = now.toISOString().split('T')[0]
+  const endDate = formatLocalDate(now)
   let startDate: string
 
   switch (value) {
+    case '1month':
+      startDate = formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1))
+      break
     case '3months':
       // 近3个月：当前月 + 前2个月（共3个月），从往前推2个月的1号开始
-      startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString().split('T')[0]
+      startDate = formatLocalDate(new Date(now.getFullYear(), now.getMonth() - 2, 1))
       break
     case '6months':
       // 近6个月：当前月 + 前5个月（共6个月），从往前推5个月的1号开始
-      startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString().split('T')[0]
+      startDate = formatLocalDate(new Date(now.getFullYear(), now.getMonth() - 5, 1))
       break
     case 'thisYear':
       // 从今年1月1日开始
-      startDate = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0]
+      startDate = formatLocalDate(new Date(now.getFullYear(), 0, 1))
       break
     case '1year':
       // 近1年：当前月 + 前11个月（共12个月），从往前推11个月的1号开始
       // JavaScript Date 会自动处理跨年（负数月份）
-      startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString().split('T')[0]
+      startDate = formatLocalDate(new Date(now.getFullYear(), now.getMonth() - 11, 1))
       break
     case '2years':
       // 近2年：当前月 + 前23个月（共24个月），从往前推23个月的1号开始
-      startDate = new Date(now.getFullYear(), now.getMonth() - 23, 1).toISOString().split('T')[0]
+      startDate = formatLocalDate(new Date(now.getFullYear(), now.getMonth() - 23, 1))
       break
     case '3years':
       // 近3年：当前月 + 前35个月（共36个月），从往前推35个月的1号开始
-      startDate = new Date(now.getFullYear(), now.getMonth() - 35, 1).toISOString().split('T')[0]
+      startDate = formatLocalDate(new Date(now.getFullYear(), now.getMonth() - 35, 1))
       break
     default:
       return
@@ -615,8 +622,26 @@ const fetchProvinces = async () => {
   }
 }
 
+// 获取六大类选项
+const fetchSixCategories = async () => {
+  try {
+    const { commonApi } = await import('../services/api')
+    const response = await commonApi.getVehicleCategories()
+
+    if (response.code === 200 && response.data && response.data.length > 0) {
+      sixCategoryOptions.value = response.data
+      console.log(`✅ 成功加载 ${response.data.length} 个六大类选项`)
+    } else {
+      console.warn('获取六大类列表失败或为空，使用默认列表')
+    }
+  } catch (error) {
+    console.warn('获取六大类列表出错，使用默认列表:', error)
+  }
+}
+
 // 选项数据
 const vehicleModelOptions = ref(['Model S', 'Model 3', 'Model X', 'Model Y', 'H9', '汉EV'])
+const sixCategoryOptions = ref(['乘用车', '客车', '货车', '挂车', '专用车'])
 const vehicleBrandOptions = ref(['特斯拉', '比亚迪', '红旗', '奥迪', '宝马', '奔驰'])
 const vehicleNameOptions = ref(['电动轿车', '混合动力SUV', '纯电动客车', '燃油货车'])
 const productionAddressOptions = ref(['上海临港', '深圳坪山', '长春一汽', '北京亦庄'])
@@ -1035,6 +1060,9 @@ onMounted(() => {
   // 获取省份列表数据
   fetchProvinces()
 
+  // 获取六大类选项数据
+  fetchSixCategories()
+
   // 初始化时间范围（默认使用 quickTimeRange 的值）
   if (form.quickTimeRange) {
     handleQuickTimeRangeChange(form.quickTimeRange)
@@ -1154,8 +1182,8 @@ const handleReset = () => {
 
   // 重置时间范围为今年
   timeRange.value = [
-    new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
-    new Date().toISOString().split('T')[0]
+    formatLocalDate(new Date(new Date().getFullYear(), 0, 1)),
+    formatLocalDate(new Date())
   ] as [string, string]
 
   // 重置所有建议
