@@ -80,8 +80,7 @@ export type TimeDimension = "total" | "yearly" | "monthly" | "daily";
 
 // 合格证总量查询相关接口
 export interface CertificateQuantityParams
-  extends PaginationParams,
-    SortParams {
+  extends PaginationParams, SortParams {
   // 企业信息
   companyName?: string;
   companyNames?: string[]; // 支持多个企业名称
@@ -146,6 +145,7 @@ export interface CertificateQuantityItem {
   vehicleCategory?: string;
   sixCategory?: string;
   fuelType?: string;
+  newEnergyFlag?: string; // 新能源标记
   newEnergyType?: string;
   productionAddress?: string;
   productionProvince?: string;
@@ -449,8 +449,7 @@ export interface EnterpriseSupervisionItem {
   contact_phone?: string;
 }
 
-export interface EnterpriseSupervisionExportParams
-  extends EnterpriseSupervisionParams {
+export interface EnterpriseSupervisionExportParams extends EnterpriseSupervisionParams {
   format: "excel" | "csv";
   filename?: string;
   fields?: string[];

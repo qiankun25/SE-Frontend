@@ -332,7 +332,7 @@ const generateColumnsFromDimensions = () => {
       width: 100
     },
     'XNYBJ': {
-      key: 'newEnergyMark',
+      key: 'newEnergyFlag',
       label: '新能源标记',
       width: 120,
       align: 'center'
